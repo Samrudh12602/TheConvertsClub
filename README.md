@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Convert Club
 
-## Getting Started
+GDPI (MBA group discussion and personal interview) prep platform for convertsclub.in: a public
+marketing site plus Student, Mentor and Admin portals behind one login.
 
-First, run the development server:
+Next.js 16 (App Router) · TypeScript strict · Tailwind v4 · Zod · React Hook Form · Vitest.
+Planned: Prisma + Neon Postgres, Auth.js, Razorpay, Resend, Vercel Blob, Vercel Cron.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm run check` | Typecheck, lint, tests (run before every commit) |
+| `npm test` | Vitest |
+| `npm run build` | Production build |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Set `APP_ENV=production` to see the site with demo content hidden.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Status
 
-## Learn More
+| Phase | State |
+| --- | --- |
+| 0 Foundation | Tokens, fonts, UI primitives, CI, docs: **done**. Portal shells: **pending** (portal designs not yet read). |
+| 1 Auth and roles | Not started (login UI exists, unwired) |
+| 2 Public site and payments | Public site **built**. Razorpay, DB-backed catalog, webhooks, credits, welcome email: **pending** |
+| 3-7 | Not started |
 
-To learn more about Next.js, take a look at the following resources:
+## Layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/app/(public)/     marketing site, checkout, login, legal
+src/components/ui/    design-system primitives (Button, Card, Field, Pill, Notice)
+src/components/site/  public-site components
+src/lib/              catalog, settings, money (paise), IST dates, validation, copy
+docs/                 DESIGN_MAP.md, DECISIONS.md
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Money is integer paise, shown with Indian grouping. Timestamps are UTC, shown in IST.
+Read `docs/DECISIONS.md` first: it lists every assumption and what blocks go-live.

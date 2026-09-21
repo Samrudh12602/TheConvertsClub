@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Design tokens from the Claude Design handoff ("Handoff - Tokens, Components, Emails").
+ * Oxblood is the only accent. No shadows anywhere: separation is a 1px --color-line border
+ * on white against --color-paper.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: #f6f3ee;
+  --color-surface: #fbf9f6;
+  --color-card: #ffffff;
+  --color-line: #e5dfd7;
+  --color-line-soft: #f0ebe4;
+  --color-line-strong: #e0d9cf;
+  --color-ink: #16130f;
+  --color-ink-body: #2a241e;
+  --color-ink-2: #4a4239;
+  --color-ink-muted: #6b635a;
+  --color-ink-faint: #6f655a;
+
+  --color-oxblood: #7a1f2b;
+  --color-oxblood-deep: #5e1620;
+  --color-oxblood-hover: #932836;
+  --color-oxblood-tint: #f5e9ea;
+  --color-oxblood-line: #e6cdd0;
+  --color-oxblood-pale: #e0d2d4;
+
+  --color-green: #14472f;
+  --color-green-tint: #edf0e9;
+  --color-amber: #a8500f;
+  --color-amber-tint: #faefe4;
+  --color-amber-line: #ead6be;
+  --color-amber-ink: #7a4415;
+  --color-indigo: #2b2a7a;
+  --color-indigo-tint: #eef0f6;
+
+  --color-sand: #efe9e1;
+  --color-sand-line: #d7cdbf;
+
+  /* Text and dividers on ink (dark) panels */
+  --color-dark-muted: #8c8377;
+  --color-dark-soft: #b5ada2;
+  --color-dark-body: #c7bfb5;
+  --color-dark-line: #2b251e;
+  --color-blush: #c58f96;
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--color-paper);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-oxblood);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--color-oxblood-deep);
+    text-decoration: underline;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-oxblood);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Type scale (handoff "Type"). Tabular numerals belong on money, counts and times. */
+@utility type-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 4.2vw, 44px);
+  line-height: 1.1;
+  text-wrap: pretty;
+}
+@utility type-page {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+}
+@utility type-section {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+}
+@utility type-eyebrow {
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+@utility type-label {
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+@utility tnum {
+  font-variant-numeric: tabular-nums;
 }
