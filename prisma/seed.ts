@@ -5,7 +5,7 @@ import ws from "ws";
 import { PRODUCTS, SINGLES_ORDER } from "./seed-data";
 import { purgeDemo } from "./demo";
 import { DEFAULT_SETTINGS } from "../src/lib/settings";
-import { grantCredit, reserveCredit, consumeCredit, type Tx } from "../src/server/credits";
+import { getBalances, grantCredit, reserveCredit, consumeCredit, type Tx } from "../src/server/credits";
 import { HOUR, istDateString, istToUtc, splitIntoSlots } from "../src/server/scheduling";
 import { accrualFor, bonusesDue, overallScore, serviceForReview, serviceForSession, type BonusRuleLite, type RateTable } from "../src/server/payroll";
 
@@ -158,6 +158,10 @@ async function seedDemo() {
   }
 
   // ── session helpers
+  async function ensure(userId: string, kind: "PI" | "GD" | "WAT" | "SOP_DETAILED" | "GUIDANCE" | "STRATEGY") {
+    const b = (await getBalances(db, userId))[kind];
+    if (!b || b.available < 1) await grantCredit(db, { userId, kind, quantity: 1, reason: "Season history (demo)" });
+  }
   async function feedbackFor(sessionId: string | null, reviewId: string | null, mentorId: string, when: Date, bias = 0) {
     const scores = Object.fromEntries(RUBRIC.map((r) => [r, Math.max(3, Math.min(9.5, Math.round((6.4 + bias + (rnd() - 0.5) * 3) * 2) / 2))]));
     const overall = overallScore(scores);
@@ -216,6 +220,7 @@ async function seedDemo() {
     const s = await db.session.create({ data: { type, focus, status, studentId: student.id, mentorId: m.id, slotId: slot.id, startsAt: at, endsAt: new Date(at.getTime() + HOUR), meetingUrl: m.meetingUrl } });
     await db.slot.update({ where: { id: slot.id }, data: { status: "BOOKED" } });
     const kind = type === "MOCK_PI" ? "PI" : type === "STRATEGY_CALL" ? "STRATEGY" : type === "GUIDANCE" ? "GUIDANCE" : "GD";
+    await ensure(student.id, kind);
     await reserveCredit(db as unknown as Parameters<typeof reserveCredit>[0], { userId: student.id, kind, sessionId: s.id });
     return s;
   }
@@ -231,18 +236,22 @@ async function seedDemo() {
     const at = dayAt(offset, time);
     const b = await db.gdBatch.create({ data: { topic, startsAt: at, endsAt: new Date(at.getTime() + HOUR), capacity: 8, moderatorId: m.id, meetingUrl: m.meetingUrl } });
     await db.slot.updateMany({ where: { mentorId: m.id, startsAt: at, status: "OPEN" }, data: { status: "BOOKED" } });
-    for (const s of joined) await db.gdParticipant.create({ data: { batchId: b.id, studentId: s.id, status: "JOINED" } });
+    for (const s of joined) {
+      await db.gdParticipant.create({ data: { batchId: b.id, studentId: s.id, status: "JOINED" } });
+      const sess = await db.session.create({ data: { type: "GD_BATCH", status: "CONFIRMED", studentId: s.id, mentorId: m.id, startsAt: at, endsAt: new Date(at.getTime() + HOUR), gdBatchId: b.id, meetingUrl: m.meetingUrl } });
+      await ensure(s.id, "GD");
+      await reserveCredit(db as unknown as Parameters<typeof reserveCredit>[0], { userId: s.id, kind: "GD", sessionId: sess.id });
+    }
     for (const s of waitlisted) await db.gdParticipant.create({ data: { batchId: b.id, studentId: s.id, status: "WAITLISTED" } });
     return b;
   }
   const others = students.slice(1);
   const gdA = await gd("Abstract · \"A closed door\"", ishita, 2, "17:00", others.slice(0, 6));
-  await gd("Case · Ola vs Uber unit economics", arjun, 3, "17:00", students.slice(0, 1).length ? others.slice(0, 8).concat([]).slice(0, 8) : []);
+  await gd("Case · Ola vs Uber unit economics", arjun, 3, "17:00", others.slice(0, 8), others.slice(8));
   await gd("Current affairs · AI and jobs", neha, 4, "19:00", others.slice(0, 3));
   const gdMine = await gd("Abstract · \"The next mile\"", kabir, 5, "18:00", [ananya, ...others.slice(0, 4)]);
   await gd("Case · Tata vs Reliance retail", ishita, 6, "18:00", []);
   void gdA; void gdMine;
-  await reserveCredit(db as unknown as Parameters<typeof reserveCredit>[0], { userId: ananya.id, kind: "GD" });
 
   // ── a season of history for the other students (backfilled credits so the ledger stays consistent)
   const plan: [M, number][] = [[rohit, 22], [ishita, 16], [arjun, 24], [neha, 9], [kabir, 6]];

@@ -87,6 +87,7 @@ export function describeCredit(c: Credit, style: "long" | "short" = "long"): str
 
 /** "From ₹99" style label for a set of products, or the single price. */
 export function priceRangeLabel(products: CatalogProduct[], now: Date = new Date()): string {
+  if (products.length === 0) return "—";
   const prices = products.map((p) => priceView(p, now).payablePaise).sort((a, b) => a - b);
   return prices.length > 1 ? prices.map(formatPaise).join(" / ") : formatPaise(prices[0]);
 }
