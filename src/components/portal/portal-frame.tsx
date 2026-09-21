@@ -1,4 +1,5 @@
 import { PortalSidebar } from "@/components/portal/sidebar";
+import { PortalTopbar } from "@/components/portal/topbar";
 import { portals, type PortalRole } from "@/lib/portal-nav";
 
 /** Credits box, student only. `credits` come from the CreditLedger (Phase 2); empty until then. */
@@ -38,18 +39,25 @@ export function PortalFrame({
   role,
   credits,
   tier,
+  topRight,
+  titleOverrides,
   children,
 }: {
   role: PortalRole;
   credits?: string[];
   tier?: "SENIOR" | "JUNIOR" | null;
+  topRight?: React.ReactNode;
+  titleOverrides?: Record<string, { title?: string; sub?: string }>;
   children: React.ReactNode;
 }) {
   const footer = role === "student" ? <CreditsBox credits={credits ?? []} /> : role === "mentor" && tier ? <TierBox tier={tier} /> : null;
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink md:flex-row">
       <PortalSidebar role={role} groups={portals[role].groups} footer={footer} />
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PortalTopbar role={role} titleOverrides={titleOverrides}>{topRight}</PortalTopbar>
+        {children}
+      </div>
     </div>
   );
 }

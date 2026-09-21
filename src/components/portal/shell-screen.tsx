@@ -14,11 +14,10 @@ export async function ShellScreen({ role, params }: { role: PortalRole; params: 
   const screen = resolveScreen(config, [config.base, ...slug].join("/"));
   if (!screen) notFound();
 
-  const crumb = role === "admin" ? screen.sub : undefined;
   return (
-    <PortalPage title={screen.title} sub={role === "admin" ? undefined : screen.sub} crumb={crumb}>
-      <Notice>Shell only. Sign-in and data aren&apos;t wired yet, so nothing real shows on this screen. It is hidden entirely in production.</Notice>
-      <Card className="text-sm leading-[1.6] text-ink-muted">This screen has a design but isn&apos;t built yet. See docs/DESIGN_MAP.md for its status.</Card>
+    <PortalPage>
+      <Notice>This screen has a design but isn&apos;t built yet.</Notice>
+      <Card className="text-sm leading-[1.6] text-ink-muted">Check back soon. See docs/DESIGN_MAP.md for build status.</Card>
     </PortalPage>
   );
 }

@@ -91,3 +91,27 @@ export function priceRangeLabel(products: CatalogProduct[], now: Date = new Date
   const prices = products.map((p) => priceView(p, now).payablePaise).sort((a, b) => a - b);
   return prices.length > 1 ? prices.map(formatPaise).join(" / ") : formatPaise(prices[0]);
 }
+
+export interface CouponLite {
+  type: "PERCENT" | "FLAT";
+  /** Percent (1-100) or flat paise. */
+  value: number;
+  expiresAt: Date | null;
+  maxUses: number | null;
+  usedCount: number;
+  active: boolean;
+}
+
+export type CouponCheck = { ok: true; discountPaise: number } | { ok: false; reason: string };
+
+/** Razorpay's minimum charge is ₹1, so a coupon can never take an order below 100 paise. */
+export const MIN_CHARGE_PAISE = 100;
+
+export function checkCoupon(c: CouponLite | null, payablePaise: number, now: Date = new Date()): CouponCheck {
+  if (!c || !c.active) return { ok: false, reason: "That code isn't valid." };
+  if (c.expiresAt && c.expiresAt < now) return { ok: false, reason: "That code has expired." };
+  if (c.maxUses !== null && c.usedCount >= c.maxUses) return { ok: false, reason: "That code has been fully used." };
+  const raw = c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100) : c.value;
+  const discountPaise = Math.max(0, Math.min(raw, payablePaise - MIN_CHARGE_PAISE));
+  return discountPaise > 0 ? { ok: true, discountPaise } : { ok: false, reason: "That code doesn't apply to this order." };
+}

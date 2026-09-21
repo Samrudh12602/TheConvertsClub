@@ -6,6 +6,8 @@ import { describeCredit, priceView } from "@/lib/pricing";
 import { formatIstDayMonth } from "@/lib/datetime";
 import { formatPaise } from "@/lib/money";
 import { getPolicy } from "@/lib/settings-db";
+import { paymentsConfigured } from "@/server/razorpay";
+import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
@@ -20,7 +22,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   const policy = await getPolicy();
   const v = priceView(product);
+  const user = await currentUser();
   const summary: CheckoutSummary = {
+    slug: product.slug,
     name: product.name,
     items: product.credits.map((c) => describeCredit(c)),
     listPricePaise: v.strikePaise,
@@ -32,6 +36,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         ? `Early-bird applied · ${formatPaise(v.discountPaise)} off until ${formatIstDayMonth(v.earlyBirdEndsAt)}`
         : null,
     refundWindowHours: policy.refundWindowHours,
+    paymentsEnabled: paymentsConfigured(),
+    prefill: user ? { name: user.name?.replace(/\s*\(demo\)\s*/, "") ?? "", email: user.email, phone: user.phone ?? "" } : undefined,
   };
 
   return <CheckoutView summary={summary} />;

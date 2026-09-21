@@ -6,6 +6,8 @@
 export const DEFAULT_SETTINGS = {
   bookingMode: "AUTO_CONFIRM" as "AUTO_CONFIRM" | "ADMIN_APPROVAL",
   holdMinutes: 10,
+  /** Earliest bookable start, in hours from now. */
+  minLeadHours: 2,
   cancelNoticeHours: 12,
   maxReschedules: 2,
   refundWindowHours: 48,

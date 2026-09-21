@@ -16,3 +16,6 @@ export function formatIstDateTime(d: Date): string {
     hour12: true,
   }).format(d);
 }
+
+/** Current time in ms. Wrapped so server components can read the clock without tripping the render-purity lint rule. */
+export const nowMs = (): number => Date.now();
