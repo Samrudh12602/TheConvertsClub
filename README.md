@@ -29,8 +29,14 @@ Set `APP_ENV=production` to see the site with demo content hidden.
 | --- | --- |
 | 0 Foundation | Tokens, fonts, UI primitives, CI, docs: **done**. Portal shells: **pending** (portal designs not yet read). |
 | 1 Auth and roles | Not started (login UI exists, unwired) |
-| 2 Public site and payments | Public site **built**. Razorpay, DB-backed catalog, webhooks, credits, welcome email: **pending** |
+| 2 Public site and payments | Public site **built and deployed** (https://the-converts-club.vercel.app). Razorpay, DB-backed catalog, webhooks, credits, welcome email: **pending** |
 | 3-7 | Not started |
+
+## Deploy
+
+Vercel project `the-converts-club`, connected to `Samrudh12602/TheConvertsClub`: `main` deploys to production,
+other branches to previews. Add third-party keys with `scripts/set-vercel-env.sh <preview|production>`
+(hidden prompts, stored as Sensitive). Use Razorpay TEST keys on `preview`; live keys only at go-live.
 
 ## Layout
 

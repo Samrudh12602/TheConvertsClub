@@ -6,8 +6,8 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 
 ## Open questions (blockers to go live, not to keep building)
 
-1. **GitHub repo**: none created yet. Needs your account (private repo).
-2. **Vercel**: project not created; CLI not installed. Needs `vercel login` from you.
+1. ~~GitHub repo~~ **Done.** `Samrudh12602/TheConvertsClub`, `main` is the default branch. It is **PUBLIC** (chosen by you); the earlier prototype remains on branch `claude/convert-club-platform-design-9641yp`. Consider making it private: `gh repo edit Samrudh12602/TheConvertsClub --visibility private --accept-visibility-change-consequences`.
+2. ~~Vercel~~ **Done.** Project `the-converts-club` (personal scope `samdhaimodkar-2351`), Git-connected. First deploy was auto-assigned to production: https://the-converts-club.vercel.app
 3. **Domain DNS** for convertsclub.in: needed only at go-live.
 4. **Razorpay** test keys + webhook secret: needed to finish Phase 2 payments.
 5. **Resend** account + verified sending domain: needed for magic links and emails.
@@ -37,6 +37,7 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 | 15 | GST | Off by default (`gstEnabled: false`). Needs a CA decision before it is switched on. | `settings.ts` |
 | 16 | `middleware.ts` | Next.js 16 renamed it `proxy.ts`. Route guards will use `proxy.ts`. | Phase 1 |
 | 17 | Recording / refund claims in copy | Copied from the design ("recording available 90 days", "refundable within 48 hours if no credit used"). Recordings are not in the build spec; confirm you offer them. | `content.ts` |
+| 19 | Vercel env vars | `AUTH_SECRET`, `CRON_SECRET` (Sensitive, generated) on Production+Preview; `NEXT_PUBLIC_APP_URL=https://convertsclub.in` on Production. Third-party keys are added with `scripts/set-vercel-env.sh`, never through chat. | Vercel |
 | 18 | Copy claims about mentors | "Converted in 2024 or 2025", "screened and trial mock" are design copy. Confirm they are true or the FAQ overstates. | `content.ts` |
 
 ## Where the prompt and the design disagreed
