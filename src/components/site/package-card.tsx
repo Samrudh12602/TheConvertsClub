@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { ButtonLink } from "@/components/ui/button";
-import type { CatalogProduct } from "@/lib/catalog";
+import type { CatalogProduct } from "@/lib/pricing";
 import { Price, buyHref } from "@/components/site/price";
 
 /** Package card in the two designed tones: light (white) and dark (ink). */

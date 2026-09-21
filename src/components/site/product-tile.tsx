@@ -1,5 +1,5 @@
 import { ButtonLink } from "@/components/ui/button";
-import type { CatalogProduct } from "@/lib/catalog";
+import type { CatalogProduct } from "@/lib/pricing";
 import { Price, buyHref, buyLabel } from "@/components/site/price";
 
 export function ProductTile({ product }: { product: CatalogProduct }) {

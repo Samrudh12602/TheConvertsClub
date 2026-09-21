@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
-import { isProductionEnv } from "@/lib/env";
+import { showDemoContent } from "@/lib/env";
 import { legalDocs, type LegalSlug } from "@/lib/content";
 
 const ORDER: { slug: LegalSlug; label: string }[] = [
@@ -14,7 +14,7 @@ export async function LegalPage({ slug }: { slug: LegalSlug }) {
   const doc = (await legalDocs())[slug];
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-3.5 px-5 py-[26px]">
-      {!isProductionEnv() && (
+      {showDemoContent() && (
         <Notice>Structure only. A lawyer and a CA should write and review the final text, particularly refunds, GST and DPDP obligations.</Notice>
       )}
       <nav aria-label="Legal" className="flex gap-1.5">

@@ -15,3 +15,12 @@ export const isProductionEnv = (): boolean => appEnv() === "production";
 
 export const appUrl = (): string =>
   (process.env.NEXT_PUBLIC_APP_URL ?? "https://convertsclub.in").replace(/\/$/, "");
+
+/**
+ * Demo mode: the seeded demo accounts can sign in with a passcode and demo content (fake mentors, placeholder
+ * results) is shown. Turn OFF (DEMO_LOGIN_ENABLED=false) and purge demo data before real launch.
+ */
+export const demoMode = (): boolean => process.env.DEMO_LOGIN_ENABLED === "true";
+
+/** Demo content shows outside production, or anywhere demo mode is on. */
+export const showDemoContent = (): boolean => !isProductionEnv() || demoMode();

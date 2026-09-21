@@ -43,6 +43,10 @@
   --color-dark-body: #c7bfb5;
   --color-dark-line: #2b251e;
   --color-blush: #c58f96;
+  --color-dark-text: #e9e3da;
+  --color-dark-active: #2e2822;
+  --color-dark-hover: #241f19;
+  --color-dark-dot: #3a332b;
 
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;

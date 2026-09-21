@@ -2,7 +2,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { DarkPanel } from "@/components/ui/card";
 import { Price, buyHref } from "@/components/site/price";
 import { ProductTile } from "@/components/site/product-tile";
-import { describeCredit, FEATURED_SLUG, getProduct, getProducts } from "@/lib/catalog";
+import { getProduct, getProducts } from "@/lib/catalog";
+import { describeCredit, FEATURED_SLUG } from "@/lib/pricing";
 
 // Early-bird pricing flips on a date, so re-render at least hourly.
 export const revalidate = 3600;

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CheckoutView, type CheckoutSummary } from "@/components/site/checkout-view";
-import { describeCredit, getProduct, priceView } from "@/lib/catalog";
+import { getProduct } from "@/lib/catalog";
+import { describeCredit, priceView } from "@/lib/pricing";
 import { formatIstDayMonth } from "@/lib/datetime";
 import { formatPaise } from "@/lib/money";
-import { getPolicy } from "@/lib/settings";
+import { getPolicy } from "@/lib/settings-db";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 

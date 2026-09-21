@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { describeCredit, getProduct } from "@/lib/catalog";
+import { getProduct } from "@/lib/catalog";
+import { describeCredit } from "@/lib/pricing";
 import { isProductionEnv } from "@/lib/env";
 
 export const metadata: Metadata = { title: "You're in", robots: { index: false, follow: false } };

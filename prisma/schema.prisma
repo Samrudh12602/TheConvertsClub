@@ -1,0 +1,811 @@
+// The Convert Club. Money is integer paise. Timestamps are UTC (displayed in IST).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────── Enums ─────────────
+
+enum Role {
+  STUDENT
+  MENTOR
+  ADMIN
+}
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+enum MentorTier {
+  SENIOR
+  JUNIOR
+}
+enum MentorStatus {
+  ACTIVE
+  PAUSED
+  OFFBOARDED
+}
+enum ProductKind {
+  BUNDLE
+  SINGLE
+}
+enum CreditKind {
+  PI
+  GD
+  WAT
+  SOP_BASIC
+  SOP_DETAILED
+  SOP_REVISION
+  STRATEGY
+  GUIDANCE
+}
+enum OrderStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+enum PaymentStatus {
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+enum EnrollmentStatus {
+  ACTIVE
+  REFUNDED
+}
+enum LedgerType {
+  GRANT
+  RESERVE
+  CONSUME
+  RELEASE
+  ADJUST
+}
+enum SlotStatus {
+  OPEN
+  HELD
+  BOOKED
+  BLOCKED
+}
+enum SessionType {
+  MOCK_PI
+  STRATEGY_CALL
+  GUIDANCE
+  GD_BATCH
+}
+enum PiFocus {
+  HR_PROFILE
+  ACADEMICS
+  STRESS
+  INSTITUTE_FINAL
+  CURRENT_AFFAIRS
+  CROSS_QUESTIONING
+}
+enum SessionStatus {
+  REQUESTED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+enum GdParticipantStatus {
+  JOINED
+  WAITLISTED
+  LEFT
+}
+enum ReviewKind {
+  WAT
+  SOP_BASIC
+  SOP_DETAILED
+}
+enum ReviewStatus {
+  SUBMITTED
+  ASSIGNED
+  COMPLETED
+}
+enum Recommendation {
+  READY
+  NEARLY_THERE
+  NEEDS_MORE_MOCKS
+  REWORK_BASICS
+}
+enum PayService {
+  PI
+  GD
+  WAT
+  GUIDANCE
+  SOP
+}
+enum AccrualStatus {
+  ACCRUED
+  APPROVED
+  PAID
+}
+enum BonusPeriod {
+  SEASON
+  MONTH
+}
+enum PayoutRunStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+enum ApplicationStage {
+  NEW
+  SCREENING
+  TRIAL_MOCK
+  OFFER
+  ACCEPTED
+  REJECTED
+}
+enum CouponType {
+  PERCENT
+  FLAT
+}
+enum CallOutcome {
+  SCHEDULED
+  WAITING
+  CONVERTED
+  REJECTED
+}
+enum EmailStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// ───────────── Identity (Auth.js + roles) ─────────────
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  phone         String?
+  role          Role       @default(STUDENT)
+  status        UserStatus @default(ACTIVE)
+  isDemo        Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  accounts       Account[]
+  studentProfile StudentProfile?
+  mentorProfile  MentorProfile?
+  orders         Order[]
+  enrollments    Enrollment[]
+  ledger         CreditLedger[]
+  studentSessions Session[]      @relation("StudentSessions")
+  reviews        Review[]
+  calls          CallTracker[]
+  notifications  Notification[]
+  messagesTo     Message[]      @relation("MessageTo")
+  messagesFrom   Message[]      @relation("MessageFrom")
+  gdParticipants GdParticipant[]
+  ratings        SessionRating[]
+  auditLogs      AuditLog[]
+
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StudentProfile {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  college          String?
+  degree           String?
+  workExMonths     Int?
+  targetInstitutes String[]
+  weakAreas        String[]
+  preferences      Json?
+  onboardingStep   Int       @default(0)
+  onboardedAt      DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CallTracker {
+  id            String      @id @default(cuid())
+  studentId     String
+  institute     String
+  interviewDate DateTime?
+  stage         String?
+  outcome       CallOutcome @default(SCHEDULED)
+  createdAt     DateTime    @default(now())
+  student       User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+model MentorProfile {
+  id               String       @id @default(cuid())
+  userId           String       @unique
+  tier             MentorTier   @default(JUNIOR)
+  bio              String?
+  college          String?
+  batchYear        Int?
+  meetingUrl       String?
+  photoUrl         String?
+  /// AES-GCM encrypted JSON (UPI / bank). Never returned to the client in plaintext.
+  payoutEncrypted  String?
+  status           MentorStatus @default(ACTIVE)
+  /// True for the Admin's own mentor mode.
+  isAdminMentor    Boolean      @default(false)
+  publicVisible    Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  availability AvailabilityWindow[]
+  slots        Slot[]
+  sessions     Session[]           @relation("MentorSessions")
+  reviews      Review[]            @relation("MentorReviews")
+  feedback     Feedback[]
+  accruals     PayoutAccrual[]
+  bonusAwards  BonusAward[]
+  payouts      Payout[]
+  adjustments  Adjustment[]
+  gdBatches    GdBatch[]
+
+  @@index([tier, status])
+}
+
+model MentorInvite {
+  id         String     @id @default(cuid())
+  email      String
+  tokenHash  String     @unique
+  tier       MentorTier @default(JUNIOR)
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([email])
+}
+
+model MentorApplication {
+  id              String           @id @default(cuid())
+  name            String
+  email           String
+  phone           String
+  institute       String
+  callsConverted  String
+  hoursPerWeek    Int
+  stage           ApplicationStage @default(NEW)
+  scorecard       Json?
+  recommendedTier MentorTier?
+  notes           String?
+  createdAt       DateTime         @default(now())
+
+  @@index([stage])
+}
+
+// ───────────── Catalog, orders, credits ─────────────
+
+model Product {
+  id              String      @id @default(cuid())
+  slug            String      @unique
+  name            String
+  kind            ProductKind
+  pricePaise      Int
+  mrpPaise        Int?
+  earlyBirdEndsAt DateTime?
+  enrolledOnly    Boolean     @default(false)
+  active          Boolean     @default(true)
+  summary         String
+  includes        String[]
+  badge           String?
+  sortOrder       Int         @default(0)
+  singleOrder     Int?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  credits     ProductCredit[]
+  orders      Order[]
+  enrollments Enrollment[]
+}
+
+model ProductCredit {
+  id        String     @id @default(cuid())
+  productId String
+  kind      CreditKind
+  quantity  Int
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, kind])
+}
+
+model Coupon {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  type      CouponType
+  /// Percent (1-100) or flat paise, per `type`.
+  value     Int
+  expiresAt DateTime?
+  maxUses   Int?
+  usedCount Int        @default(0)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  orders    Order[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String?
+  productId       String
+  couponId        String?
+  listPricePaise  Int
+  discountPaise   Int
+  amountPaise     Int
+  status          OrderStatus @default(CREATED)
+  razorpayOrderId String?     @unique
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  createdAt       DateTime    @default(now())
+  user            User?       @relation(fields: [userId], references: [id])
+  product         Product     @relation(fields: [productId], references: [id])
+  coupon          Coupon?     @relation(fields: [couponId], references: [id])
+  payments        Payment[]
+  enrollment      Enrollment?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  razorpayPaymentId String        @unique
+  status            PaymentStatus
+  amountPaise       Int
+  feePaise          Int?
+  taxPaise          Int?
+  method            String?
+  capturedAt        DateTime?
+  raw               Json?
+  createdAt         DateTime      @default(now())
+  order             Order         @relation(fields: [orderId], references: [id])
+  refunds           Refund[]
+
+  @@index([orderId])
+}
+
+/// One row per processed Razorpay webhook event id: makes handling idempotent.
+model WebhookEvent {
+  id          String   @id
+  type        String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+  payload     Json
+}
+
+model Refund {
+  id               String   @id @default(cuid())
+  paymentId        String
+  razorpayRefundId String   @unique
+  amountPaise      Int
+  status           String
+  reason           String?
+  createdById      String?
+  createdAt        DateTime @default(now())
+  payment          Payment  @relation(fields: [paymentId], references: [id])
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  userId    String
+  productId String
+  orderId   String           @unique
+  status    EnrollmentStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+  product   Product          @relation(fields: [productId], references: [id])
+  order     Order            @relation(fields: [orderId], references: [id])
+
+  @@index([userId])
+}
+
+/// Append-only. `delta` moves the available balance, `reservedDelta` moves the reserved (held) balance.
+///  GRANT: delta +n | RESERVE: delta -n, reserved +n | CONSUME: reserved -n | RELEASE: delta +n, reserved -n | ADJUST: delta ±n
+model CreditLedger {
+  id            String     @id @default(cuid())
+  userId        String
+  kind          CreditKind
+  type          LedgerType
+  delta         Int
+  reservedDelta Int        @default(0)
+  enrollmentId  String?
+  sessionId     String?
+  reviewId      String?
+  reason        String?
+  createdById   String?
+  createdAt     DateTime   @default(now())
+  user          User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, kind])
+  @@index([sessionId])
+}
+
+// ───────────── Scheduling ─────────────
+
+model AvailabilityWindow {
+  id          String        @id @default(cuid())
+  mentorId    String
+  startsAt    DateTime
+  endsAt      DateTime
+  repeatUntil DateTime?
+  createdAt   DateTime      @default(now())
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId, startsAt])
+}
+
+model Slot {
+  id        String        @id @default(cuid())
+  mentorId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  status    SlotStatus    @default(OPEN)
+  heldUntil DateTime?
+  heldById  String?
+  mentor    MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  session   Session?
+
+  /// A mentor cannot have two slots starting at the same instant.
+  @@unique([mentorId, startsAt])
+  @@index([status, startsAt])
+}
+
+model Session {
+  id              String        @id @default(cuid())
+  type            SessionType
+  focus           PiFocus?
+  status          SessionStatus @default(REQUESTED)
+  studentId       String?
+  mentorId        String?
+  /// Unique: a slot can back at most one session.
+  slotId          String?       @unique
+  startsAt        DateTime?
+  endsAt          DateTime?
+  meetingUrl      String?
+  notes           String?
+  gdBatchId       String?
+  rescheduleCount Int           @default(0)
+  cancelledAt     DateTime?
+  reminder24Sent  Boolean       @default(false)
+  reminder1Sent   Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  student         User?         @relation("StudentSessions", fields: [studentId], references: [id])
+  mentor          MentorProfile? @relation("MentorSessions", fields: [mentorId], references: [id])
+  slot            Slot?         @relation(fields: [slotId], references: [id])
+  gdBatch         GdBatch?      @relation(fields: [gdBatchId], references: [id])
+  feedback        Feedback?
+  rating          SessionRating?
+  accrual         PayoutAccrual?
+
+  @@index([studentId, startsAt])
+  @@index([mentorId, startsAt])
+  @@index([status, startsAt])
+}
+
+model GdBatch {
+  id          String          @id @default(cuid())
+  topic       String
+  startsAt    DateTime
+  endsAt      DateTime
+  capacity    Int             @default(8)
+  moderatorId String?
+  meetingUrl  String?
+  status      SessionStatus   @default(CONFIRMED)
+  createdAt   DateTime        @default(now())
+  moderator   MentorProfile?  @relation(fields: [moderatorId], references: [id])
+  participants GdParticipant[]
+  sessions    Session[]
+
+  @@index([startsAt])
+}
+
+model GdParticipant {
+  id        String              @id @default(cuid())
+  batchId   String
+  studentId String
+  status    GdParticipantStatus @default(JOINED)
+  joinedAt  DateTime            @default(now())
+  batch     GdBatch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student   User                @relation(fields: [studentId], references: [id])
+
+  @@unique([batchId, studentId])
+}
+
+model Review {
+  id               String       @id @default(cuid())
+  studentId        String
+  kind             ReviewKind
+  title            String?
+  fileKey          String?
+  fileName         String?
+  textBody         String?
+  status           ReviewStatus @default(SUBMITTED)
+  assignedMentorId String?
+  dueAt            DateTime
+  submittedAt      DateTime     @default(now())
+  completedAt      DateTime?
+  student          User         @relation(fields: [studentId], references: [id])
+  assignedMentor   MentorProfile? @relation("MentorReviews", fields: [assignedMentorId], references: [id])
+  feedback         Feedback?
+  accrual          PayoutAccrual?
+
+  @@index([studentId])
+  @@index([assignedMentorId, status])
+}
+
+model Feedback {
+  id                String         @id @default(cuid())
+  sessionId         String?        @unique
+  reviewId          String?        @unique
+  mentorId          String
+  /// { "Content depth": 8, ... } 1-10
+  scores            Json
+  overall           Float
+  strengths         String
+  weaknesses        String
+  redFlags          String?
+  answerFraming     String?
+  questionsToPrepare String?
+  recommendation    Recommendation
+  /// Visible to Admin only. Never sent to the student.
+  privateNote       String?
+  submittedAt       DateTime       @default(now())
+  session           Session?       @relation(fields: [sessionId], references: [id])
+  review            Review?        @relation(fields: [reviewId], references: [id])
+  mentor            MentorProfile  @relation(fields: [mentorId], references: [id])
+}
+
+model SessionRating {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  studentId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+}
+
+// ───────────── Pay ─────────────
+
+model PayRate {
+  id          String     @id @default(cuid())
+  tier        MentorTier
+  service     PayService
+  amountPaise Int
+
+  @@unique([tier, service])
+}
+
+model PayoutAccrual {
+  id                String        @id @default(cuid())
+  mentorId          String
+  sessionId         String?       @unique
+  reviewId          String?       @unique
+  service           PayService
+  amountPaise       Int
+  /// Snapshot of the rate at the moment feedback was submitted; later rate/tier changes never alter it.
+  rateSnapshotPaise Int
+  tierSnapshot      MentorTier
+  status            AccrualStatus @default(ACCRUED)
+  payoutId          String?
+  createdAt         DateTime      @default(now())
+  mentor            MentorProfile @relation(fields: [mentorId], references: [id])
+  session           Session?      @relation(fields: [sessionId], references: [id])
+  review            Review?       @relation(fields: [reviewId], references: [id])
+  payout            Payout?       @relation(fields: [payoutId], references: [id])
+
+  @@index([mentorId, status])
+}
+
+model BonusRule {
+  id          String      @id @default(cuid())
+  tier        MentorTier
+  period      BonusPeriod @default(SEASON)
+  threshold   Int
+  amountPaise Int
+  active      Boolean     @default(true)
+  awards      BonusAward[]
+
+  @@unique([tier, period, threshold])
+}
+
+model BonusAward {
+  id          String        @id @default(cuid())
+  mentorId    String
+  ruleId      String
+  periodKey   String
+  amountPaise Int
+  status      AccrualStatus @default(ACCRUED)
+  payoutId    String?
+  createdAt   DateTime      @default(now())
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+  rule        BonusRule     @relation(fields: [ruleId], references: [id])
+
+  @@unique([mentorId, ruleId, periodKey])
+}
+
+model PayoutRun {
+  id        String          @id @default(cuid())
+  label     String
+  status    PayoutRunStatus @default(DRAFT)
+  createdAt DateTime        @default(now())
+  paidAt    DateTime?
+  payouts   Payout[]
+}
+
+model Payout {
+  id          String        @id @default(cuid())
+  runId       String
+  mentorId    String
+  amountPaise Int
+  /// UTR / bank reference entered by Admin when marking paid.
+  reference   String?
+  paidAt      DateTime?
+  run         PayoutRun     @relation(fields: [runId], references: [id])
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+  accruals    PayoutAccrual[]
+
+  @@index([mentorId])
+}
+
+model Adjustment {
+  id          String        @id @default(cuid())
+  mentorId    String
+  amountPaise Int
+  reason      String
+  createdAt   DateTime      @default(now())
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  amountPaise Int
+  incurredOn  DateTime
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+// ───────────── Comms, content, ops ─────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  body       String
+  createdAt  DateTime @default(now())
+  from       User     @relation("MessageFrom", fields: [fromUserId], references: [id])
+  to         User     @relation("MessageTo", fields: [toUserId], references: [id])
+
+  @@index([toUserId, createdAt])
+}
+
+model EmailLog {
+  id         String      @id @default(cuid())
+  template   String
+  recipient  String
+  subject    String
+  status     EmailStatus
+  providerId String?
+  error      String?
+  createdAt  DateTime    @default(now())
+
+  @@index([template, createdAt])
+}
+
+model EmailTemplate {
+  key       String   @id
+  subject   String
+  heading   String
+  body      String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String?
+  entityId  String?
+  before    Json?
+  after     Json?
+  ip        String?
+  createdAt DateTime @default(now())
+  actor     User?    @relation(fields: [actorId], references: [id])
+
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  quote     String
+  who       String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model FaqItem {
+  id        String  @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int     @default(0)
+  published Boolean @default(true)
+}
+
+/// Student library (audience STUDENT) and mentor resources (audience MENTOR).
+model Resource {
+  id       String   @id @default(cuid())
+  audience Role
+  kind     String
+  title    String
+  meta     String?
+  url      String?
+  sortOrder Int     @default(0)
+}
+
+/// Fixed-window counters for throttling login, booking and checkout endpoints.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}

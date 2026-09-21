@@ -1,6 +1,8 @@
-import { priceRangeLabel, getProducts } from "@/lib/catalog";
-import { getPolicy, times } from "@/lib/settings";
-import { isProductionEnv } from "@/lib/env";
+import { getProducts } from "@/lib/catalog";
+import { priceRangeLabel } from "@/lib/pricing";
+import { times } from "@/lib/settings";
+import { getPolicy } from "@/lib/settings-db";
+import { showDemoContent } from "@/lib/env";
 
 /**
  * Public marketing copy, taken from the Claude Design "Public Site" file.
@@ -95,7 +97,7 @@ const DEMO_MENTORS: PublicMentor[] = [
 
 /** Phase 1: reads ACTIVE MentorProfile rows and exposes name, photo, college and a short bio only. Never tier. */
 export async function getPublicMentors(): Promise<PublicMentor[]> {
-  return isProductionEnv() ? [] : DEMO_MENTORS;
+  return !showDemoContent() ? [] : DEMO_MENTORS;
 }
 
 export interface ResultsContent {
@@ -105,7 +107,7 @@ export interface ResultsContent {
 
 /** Returns null until real, consented figures exist. */
 export async function getResults(): Promise<ResultsContent | null> {
-  if (isProductionEnv()) return null;
+  if (!showDemoContent()) return null;
   return {
     stats: [
       { value: "[ xx ]", label: "students prepared last season" },

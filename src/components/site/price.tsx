@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { priceView, type CatalogProduct } from "@/lib/catalog";
+import { priceView, type CatalogProduct } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
 
 export function buyHref(p: CatalogProduct): string {
