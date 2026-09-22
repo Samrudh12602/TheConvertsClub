@@ -19,6 +19,10 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
    login page shows only Google + demo access.
 6. ~~Google OAuth~~ **Not yet provided.** Without it the login page falls back to email-link + demo
    access, which is enough to test all three roles today (see the demo credentials below).
+6b. ~~ADMIN_EMAIL~~ **Done.** Set to samdhaimodkar@gmail.com. That address becomes the real Admin
+   automatically the moment it signs in (Google or email link) — no real admin account exists yet
+   because signing in needs Google OAuth or Resend, neither configured yet. Once either is added,
+   sign in with this address once and you're the real admin.
 7. ~~Neon Postgres~~ **Done.** Provisioned via the Vercel Marketplace, migrated (43 tables), seeded
    with real reference data (catalog, pay rates, bonus rules) and a full demo dataset.
 8. **Legal text**: `/terms`, `/privacy`, `/refunds` are structure only. **A lawyer and a CA must review them before launch** (refunds, GST, DPDP).
@@ -42,6 +46,20 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     lower-risk equivalents instead of a half-built impersonation feature or a fake-looking timeline:
     the Student/Mentor 360 pages (`/admin/students/[id]`, `/admin/mentors/[id]`) show everything
     "view as" would, read-only; the Scheduler is a reassign-anyone list (the design's "layout B").
+13. **Mentor pipeline is real, not a stub.** `/become-a-mentor` now actually submits (requires a
+    LinkedIn URL and a professional photo, both validated — the photo's real file signature is
+    checked, not just its extension). Admin can add a mentor directly (`/admin/mentors`, photo
+    upload or a pasted URL, account created immediately — no invite email to wait on) or promote an
+    application (`/admin/applications`, carries the submitted photo over, no re-upload). `/mentors`
+    now reads real mentor rows; it only shows the demo roster when there are zero real ones and the
+    environment allows demo content.
+14. **Mentor and applicant photos are private-store-backed, not a second public Blob store.**
+    A Vercel Blob store's access mode (public/private) is fixed at creation and can't be mixed —
+    confirmed by testing, not assumed. Rather than provision and wire a second store just for
+    public photos, photos are served through two of our own routes reading the existing private
+    store: `/api/mentor-photo/[mentorId]` (no auth, gated on the same ACTIVE/publicVisible rule the
+    public page uses) and `/api/files/applications/[id]` (admin-only). Simpler, one store, same
+    security properties.
 
 ## Assumptions
 
