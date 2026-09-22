@@ -13,8 +13,19 @@ export function appEnv(): AppEnv {
 
 export const isProductionEnv = (): boolean => appEnv() === "production";
 
-export const appUrl = (): string =>
-  (process.env.NEXT_PUBLIC_APP_URL ?? "https://convertsclub.in").replace(/\/$/, "");
+/**
+ * Public base URL. Prefers an explicit NEXT_PUBLIC_APP_URL (set this once the custom domain is
+ * actually live). Otherwise falls back to Vercel's own auto-injected production URL, which is
+ * always correct for whatever domain is *actually* connected right now — never hardcode a domain
+ * here, since a wrong one silently breaks every email link, canonical URL and sitemap entry.
+ */
+export const appUrl = (): string => {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  if (vercelUrl) return `https://${vercelUrl}`;
+  return "http://localhost:3000";
+};
 
 /**
  * Demo mode: the seeded demo accounts can sign in with a passcode and demo content (fake mentors, placeholder

@@ -8,8 +8,19 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 
 1. ~~GitHub repo~~ **Done.** `Samrudh12602/TheConvertsClub`, `main` is the default branch. It is **PUBLIC** (chosen by you); the earlier prototype remains on branch `claude/convert-club-platform-design-9641yp`. Consider making it private: `gh repo edit Samrudh12602/TheConvertsClub --visibility private --accept-visibility-change-consequences`.
 2. ~~Vercel~~ **Done.** Project `the-converts-club` (personal scope `samdhaimodkar-2351`), Git-connected. First deploy was auto-assigned to production: https://the-converts-club.vercel.app
-3. **Domain DNS** for convertsclub.in: needed only at go-live (the app is fully functional on the
-   `.vercel.app` URL in the meantime; the domain is a DNS/branding step, not a functionality one).
+3. **Domain** convertsclub.in: **not purchased yet** (confirmed with you directly). I attached the
+   domain name to the Vercel project (`vercel domains add`) so the DNS records are ready the moment
+   you buy it — that command only tells Vercel "route this hostname here if it ever resolves to us,"
+   it does not register, reserve or charge for the domain. Nothing to do until you've bought it;
+   then add an `A` record `convertsclub.in → 76.76.21.21` at your registrar (get the exact current
+   record with `vercel domains inspect convertsclub.in`). The app is fully functional on the
+   `.vercel.app` URL in the meantime — `appUrl()` (`src/lib/env.ts`) now resolves automatically to
+   whichever URL is actually live (Vercel's own `VERCEL_PROJECT_PRODUCTION_URL`), so every email
+   link, sitemap entry and canonical URL updates itself the moment the domain goes live — no code
+   or env var change needed then. (Caught and fixed a bug from this: `NEXT_PUBLIC_APP_URL` had been
+   set to `https://convertsclub.in` — a domain that doesn't resolve — which would have sent every
+   login/notification email with a dead link. Removed the env var and the hardcoded fallback that
+   caused it.)
 4. **Razorpay** live keys + webhook secret: the *code* is done (orders, checkout, signature-verified
    webhook, idempotent fulfilment, refunds) — nothing has been charged yet because no key is set.
    Add test keys with `scripts/set-vercel-env.sh preview` to test end-to-end before going live.
@@ -82,7 +93,7 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 | 15 | GST | Off by default (`gstEnabled: false`). Needs a CA decision before it is switched on. | `settings.ts` |
 | 16 | `middleware.ts` | Next.js 16 renamed it `proxy.ts`. Route guards will use `proxy.ts`. | Phase 1 |
 | 17 | Recording / refund claims in copy | Copied from the design ("recording available 90 days", "refundable within 48 hours if no credit used"). Recordings are not in the build spec; confirm you offer them. | `content.ts` |
-| 19 | Vercel env vars | `AUTH_SECRET`, `CRON_SECRET` (Sensitive, generated) on Production+Preview; `NEXT_PUBLIC_APP_URL=https://convertsclub.in` on Production. Third-party keys are added with `scripts/set-vercel-env.sh`, never through chat. | Vercel |
+| 19 | Vercel env vars | `AUTH_SECRET`, `CRON_SECRET`, `ADMIN_EMAIL` (Sensitive, generated/set) on Production+Preview. `NEXT_PUBLIC_APP_URL` deliberately left **unset** — `appUrl()` auto-resolves to the real live URL instead (see item 3). Third-party keys are added with `scripts/set-vercel-env.sh`, never through chat. | Vercel |
 | 18 | Copy claims about mentors | "Converted in 2024 or 2025", "screened and trial mock" are design copy. Confirm they are true or the FAQ overstates. | `content.ts` |
 
 ## Where the prompt and the design disagreed
