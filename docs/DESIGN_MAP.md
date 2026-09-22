@@ -32,11 +32,41 @@ meaningful numbers) and Archivo (everything else) via `next/font`.
 | `/invite/[token]` | Not drawn: login card, mentor heading | Built as specified in handoff | `.../invite/[token]/page.tsx` |
 | `/terms` `/privacy` `/refunds` | Legal | Built, one route each | `.../terms|privacy|refunds` |
 
-## Portals (Phase 0 shells, Phase 3+ screens)
+## Portals
 
-Not started. Route list is in the Handoff "Screen map" tab: Student (13 routes), Mentor (10, of which
-`/mentor/sessions/[id]` is "not drawn, reuse feedback screen locked"), Admin (17). Each will be
-mapped here after reading its design file.
+All 40 routes across the three portals are built (13 Student, 10 Mentor, 17 Admin — matching the
+Handoff "Screen map" tab exactly). Shared chrome (light sidebar for Student/Mentor, dark for Admin,
+sticky topbar, credits/tier box) lives in `src/components/portal/`.
+
+**Student** (`Student Portal.dc.html`): dashboard (direction A, "next session first" — direction B
+"readiness first" not built, same reasoning as Home direction A below), onboarding wizard, booking
+flow (type → focus → day → slot, with a live hold countdown), GD batches with waitlist, sessions list
++ feedback report, WAT/SOP upload (file or pasted text), progress charts, calls tracker, library,
+payments + in-portal top-up, settings (data export/deletion), help.
+
+**Mentor** (`Mentor Portal.dc.html`): dashboard, availability manager (add window, repeat weekly,
+copy last week, block a date, click-to-toggle week grid), sessions, feedback form (rubric + 5 text
+areas + private note, autosaved draft), WAT/SOP queue, earnings + pay structure, messages, resources,
+profile (payout details encrypted at rest, masked on every read). `/mentor/sessions/[id]` reuses the
+feedback screen read-only, as the design's screen map specifies.
+
+**Admin** (`Admin Portal.dc.html`): dashboard (KPIs, needs-you-now queue, capacity meters, today's
+sessions), Students/Mentors/Applications (with 360 detail pages), Scheduler, Sessions, Reviews,
+Payouts (approve → run → mark paid), Finance (revenue, refunds), Products (catalog + coupons),
+Analytics (funnel, outcomes — real data only, see note below), Communications (broadcast + delivery
+stats), Content (testimonials/FAQ, wired to the actual public pages), Settings, Audit log.
+
+**Not built**, with the honest substitute in place of each:
+- **Scheduler "layout A" (drag-and-drop weekly timeline)** — built "layout B" instead: a list of
+  upcoming sessions with a suggested-best-match reassign dropdown per row. Same job, no fake
+  interactivity.
+- **"View as student/mentor"** (impersonation with a persistent banner) — the Student/Mentor 360
+  detail pages show the same information, read-only, without the access-control risk of a half-built
+  impersonation feature.
+- **Admin 2FA and a command palette** — not built; flagged as a Phase 7 hardening item.
+- **Analytics "site visitors" / "packages viewed"** — these need a page-analytics tool (not wired
+  up), so the Analytics screen only shows numbers it can compute from real orders and sessions, with
+  a note explaining the gap rather than showing fabricated traffic figures.
 
 ## Things in the design that could not be implemented as drawn
 

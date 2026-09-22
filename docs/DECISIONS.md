@@ -8,13 +8,40 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 
 1. ~~GitHub repo~~ **Done.** `Samrudh12602/TheConvertsClub`, `main` is the default branch. It is **PUBLIC** (chosen by you); the earlier prototype remains on branch `claude/convert-club-platform-design-9641yp`. Consider making it private: `gh repo edit Samrudh12602/TheConvertsClub --visibility private --accept-visibility-change-consequences`.
 2. ~~Vercel~~ **Done.** Project `the-converts-club` (personal scope `samdhaimodkar-2351`), Git-connected. First deploy was auto-assigned to production: https://the-converts-club.vercel.app
-3. **Domain DNS** for convertsclub.in: needed only at go-live.
-4. **Razorpay** test keys + webhook secret: needed to finish Phase 2 payments.
-5. **Resend** account + verified sending domain: needed for magic links and emails.
-6. **Google OAuth** client id/secret: needed for Google sign-in.
-7. **Neon Postgres**: provisioned via the Vercel Marketplace once the project exists.
+3. **Domain DNS** for convertsclub.in: needed only at go-live (the app is fully functional on the
+   `.vercel.app` URL in the meantime; the domain is a DNS/branding step, not a functionality one).
+4. **Razorpay** live keys + webhook secret: the *code* is done (orders, checkout, signature-verified
+   webhook, idempotent fulfilment, refunds) — nothing has been charged yet because no key is set.
+   Add test keys with `scripts/set-vercel-env.sh preview` to test end-to-end before going live.
+5. **Resend** account + verified sending domain: the *code* is done (every transactional email,
+   magic-link login, broadcasts) — nothing has been emailed yet because no key is set. Until a key
+   is added, `RESEND_API_KEY` is unset and every send is logged as `SKIPPED` in `EmailLog`, and the
+   login page shows only Google + demo access.
+6. ~~Google OAuth~~ **Not yet provided.** Without it the login page falls back to email-link + demo
+   access, which is enough to test all three roles today (see the demo credentials below).
+7. ~~Neon Postgres~~ **Done.** Provisioned via the Vercel Marketplace, migrated (43 tables), seeded
+   with real reference data (catalog, pay rates, bonus rules) and a full demo dataset.
 8. **Legal text**: `/terms`, `/privacy`, `/refunds` are structure only. **A lawyer and a CA must review them before launch** (refunds, GST, DPDP).
-9. **Real content**: mentors, results, testimonials, season numbers.
+9. **Real content**: mentors, results, testimonials, season numbers. The Admin > Content screen is
+   now real and wired to the public site — testimonials and FAQs you add there replace the
+   placeholders immediately, in every environment.
+10. **Auto-deploy on push is unconfirmed.** `vercel git connect` reported the repo as already
+    connected, but a push to `main` did not trigger a Vercel build in testing, and the repo has no
+    classic GitHub webhook (Vercel's GitHub integration uses a GitHub App, which I can't fully verify
+    or reinstall from the CLI — that needs an interactive GitHub authorization). Ship with
+    `vercel --prod --yes` until this is confirmed working; re-check by pushing a trivial commit and
+    watching `vercel ls` for a new build.
+11. **Demo login passcodes**: generated as random strings, stored only as Vercel env vars
+    (`DEMO_PASSCODE_STUDENT/MENTOR/ADMIN`, Sensitive) and in `.env.development.local` (gitignored,
+    local machine only — never committed). Retrieve them with
+    `vercel env pull .env.local && grep DEMO_PASSCODE .env.local`, or read the already-pulled
+    `.env.development.local` in this project. Demo accounts (`*@demo.convertclub.test`) can never
+    receive real mail and are excluded from every real business metric.
+12. **"View as student/mentor" and a drag-and-drop scheduler timeline are not built.** Both are
+    listed in the spec's Admin power tools. Given the remaining time, I substituted the honest,
+    lower-risk equivalents instead of a half-built impersonation feature or a fake-looking timeline:
+    the Student/Mentor 360 pages (`/admin/students/[id]`, `/admin/mentors/[id]`) show everything
+    "view as" would, read-only; the Scheduler is a reassign-anyone list (the design's "layout B").
 
 ## Assumptions
 
