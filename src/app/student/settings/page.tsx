@@ -1,4 +1,6 @@
+import { Panel } from "@/components/portal/ui";
 import { PortalPage } from "@/components/portal/portal-page";
+import { SetPasswordForm } from "@/components/portal/set-password-form";
 import { DeletionRequest } from "@/components/student/deletion-request";
 import { getSettings } from "@/lib/settings-db";
 import { requireStudent } from "@/server/session";
@@ -26,6 +28,9 @@ export default async function SettingsPage() {
           <div className="whitespace-nowrap rounded-[7px] bg-line-soft px-[11px] py-2 text-[12.5px] font-semibold leading-none text-ink">{r.value}</div>
         </div>
       ))}
+      <Panel title={user.passwordHash ? "Change password" : "Set a password"} flush={false}>
+        <SetPasswordForm hasPassword={Boolean(user.passwordHash)} />
+      </Panel>
     </PortalPage>
   );
 }

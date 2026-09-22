@@ -6,7 +6,7 @@ import type { EmailProps } from "@/emails/transactional";
  * Tier is never a variable: no student-facing email can mention it.
  */
 export type TemplateKey =
-  | "magic_link" | "welcome" | "booking_confirmed" | "booking_requested" | "reminder_24h" | "reminder_1h"
+  | "magic_link" | "welcome" | "welcome_account" | "booking_confirmed" | "booking_requested" | "reminder_24h" | "reminder_1h"
   | "session_cancelled" | "session_rescheduled" | "feedback_published" | "review_completed"
   | "mentor_invite" | "mentor_added" | "mentor_assignment" | "mentor_availability_change"
   | "payout_processed" | "refund_processed" | "broadcast";
@@ -22,6 +22,7 @@ export interface TemplateDef {
 export const TEMPLATES: Record<TemplateKey, TemplateDef> = {
   magic_link: { subject: "Your Convert Club login link", head: "Log in to The Convert Club", body: "Use the button below to sign in. It works once and expires in 24 hours.", cta: "Log in", footer: "If you didn't ask for this, ignore this email." },
   welcome: { subject: "You're in — set up your Convert Club account", head: "Payment confirmed", body: "Your credits are waiting. Set a login, finish the four onboarding questions, and slots open to you immediately.", cta: "Set up my account", footer: "This link expires in 24 hours. Request a new one any time from the login page." },
+  welcome_account: { subject: "Welcome to The Convert Club, {name}", head: "Your account is ready", body: "You can log in any time with your email and password. Buy a package or a single session whenever you're ready to book your first mock.", cta: "See packages" },
   booking_confirmed: { subject: "Your {session} is confirmed — {when}", head: "You're booked", body: "Your mentor has your profile and will have read it before you join. Arrive two minutes early and treat it like the real thing.", cta: "Join link and details", footer: "Need to move it? Free until {deadline}, from your sessions page." },
   booking_requested: { subject: "We've got your request — {session}, {when}", head: "Request received", body: "We'll confirm your slot shortly and email you the moment it's approved. Your credit is held until then.", cta: "See my sessions" },
   reminder_24h: { subject: "Tomorrow: {session} at {time}", head: "Your session is tomorrow", body: "A quick reminder. Have your resume and application form ready.", cta: "Session details", footer: "Need to move it? Free until {deadline}." },

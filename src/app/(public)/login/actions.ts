@@ -3,7 +3,7 @@
 import { AuthError } from "next-auth";
 import { headers } from "next/headers";
 import { signIn } from "@/auth";
-import { loginEmailSchema } from "@/lib/validation/forms";
+import { loginEmailSchema, passwordLoginSchema } from "@/lib/validation/forms";
 import { safeNext } from "@/lib/roles";
 import { rateLimit } from "@/server/ratelimit";
 
@@ -28,6 +28,18 @@ export async function emailSignIn(_prev: LoginState, formData: FormData): Promis
     await signIn("resend", { email, redirectTo: dest(formData) });
   } catch (e) {
     if (e instanceof AuthError) return { error: "We couldn't send the login email. Try again, or use another way to sign in." };
+    throw e; // NEXT_REDIRECT
+  }
+  return {};
+}
+
+export async function passwordSignIn(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const parsed = passwordLoginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check your email and password." };
+  try {
+    await signIn("password", { email: parsed.data.email.toLowerCase(), password: parsed.data.password, redirectTo: dest(formData) });
+  } catch (e) {
+    if (e instanceof AuthError) return { error: "That email and password don't match, or this account hasn't set a password yet." };
     throw e; // NEXT_REDIRECT
   }
   return {};

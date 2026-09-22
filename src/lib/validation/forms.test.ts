@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestDetailsSchema, mentorApplicationSchema, normalizeIndianPhone } from "./forms";
+import { guestDetailsSchema, mentorApplicationSchema, normalizeIndianPhone, setPasswordSchema, signupSchema } from "./forms";
 
 describe("normalizeIndianPhone", () => {
   it.each([
@@ -37,4 +37,20 @@ describe("mentorApplicationSchema", () => {
   it.each(["https://linkedin.com/in/rohitk", "https://www.linkedin.com/in/rohitk", "https://in.linkedin.com/in/rohitk"])("accepts LinkedIn variants: %s", (u) =>
     expect(mentorApplicationSchema.safeParse({ ...base, linkedinUrl: u }).success).toBe(true),
   );
+});
+
+describe("signupSchema", () => {
+  const base = { name: "Ananya Nair", email: "ananya@example.com", password: "correct-horse-1", confirmPassword: "correct-horse-1" };
+  it("accepts matching passwords", () => expect(signupSchema.safeParse(base).success).toBe(true));
+  it("rejects mismatched confirmation", () => {
+    const r = signupSchema.safeParse({ ...base, confirmPassword: "different-1" });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0]?.path).toEqual(["confirmPassword"]);
+  });
+  it("rejects a password under 8 characters", () => expect(signupSchema.safeParse({ ...base, password: "short1", confirmPassword: "short1" }).success).toBe(false));
+});
+
+describe("setPasswordSchema", () => {
+  it("accepts matching passwords", () => expect(setPasswordSchema.safeParse({ password: "a-fine-password-1", confirmPassword: "a-fine-password-1" }).success).toBe(true));
+  it("rejects mismatched confirmation", () => expect(setPasswordSchema.safeParse({ password: "a-fine-password-1", confirmPassword: "nope" }).success).toBe(false));
 });

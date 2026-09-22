@@ -1,4 +1,6 @@
+import { Panel } from "@/components/portal/ui";
 import { PortalPage } from "@/components/portal/portal-page";
+import { SetPasswordForm } from "@/components/portal/set-password-form";
 import { ProfileForm } from "@/components/mentor/profile-form";
 import { decryptJson } from "@/server/crypto";
 import { requireMentor } from "@/server/session";
@@ -24,6 +26,9 @@ export default async function Profile() {
         {[["Name", user.name?.replace(/\s*\(demo\)/, "")], ["College and batch", `${mentor.college ?? "—"}${mentor.batchYear ? `, ${mentor.batchYear}` : ""}`], ["Tier", `${mentor.tier} · set by Samrudh, never shown to students`], ["Email", user.email]].map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v}</dd></div>)}
       </dl>
       <ProfileForm initial={{ bio: mentor.bio ?? "", meetingUrl: mentor.meetingUrl ?? "", status: mentor.status === "PAUSED" ? "PAUSED" : "ACTIVE" }} payoutMasked={mask(mentor.payoutEncrypted)} />
+      <Panel title={user.passwordHash ? "Change password" : "Set a password"} flush={false}>
+        <SetPasswordForm hasPassword={Boolean(user.passwordHash)} />
+      </Panel>
     </PortalPage>
   );
 }

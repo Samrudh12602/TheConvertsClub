@@ -23,6 +23,26 @@ export type GuestDetails = z.infer<typeof guestDetailsSchema>;
 export const loginEmailSchema = z.object({ email });
 export type LoginEmail = z.infer<typeof loginEmailSchema>;
 
+const password = z.string().min(8, "At least 8 characters");
+
+export const passwordLoginSchema = z.object({ email, password: z.string().min(1, "Enter your password") });
+export type PasswordLogin = z.infer<typeof passwordLoginSchema>;
+
+export const signupSchema = z
+  .object({
+    name: z.string().trim().min(2, "Enter your full name").max(100),
+    email,
+    password,
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, { error: "Passwords don't match", path: ["confirmPassword"] });
+export type SignupInput = z.infer<typeof signupSchema>;
+
+export const setPasswordSchema = z
+  .object({ password, confirmPassword: z.string() })
+  .refine((d) => d.password === d.confirmPassword, { error: "Passwords don't match", path: ["confirmPassword"] });
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
+
 const linkedinUrl = z
   .string()
   .trim()
