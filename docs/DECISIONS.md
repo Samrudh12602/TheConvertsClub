@@ -71,6 +71,24 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     store: `/api/mentor-photo/[mentorId]` (no auth, gated on the same ACTIVE/publicVisible rule the
     public page uses) and `/api/files/applications/[id]` (admin-only). Simpler, one store, same
     security properties.
+15. **Vercel Marketplace's Resend integration requires a paid plan** ($20/mo Pro minimum — the free
+    tier I initially tried is disabled for this account). Did not purchase it without asking; you
+    chose the free direct-signup path at resend.com instead (same result, $0 cost). Provisioning
+    also requires accepting Resend's marketplace terms as the account owner in the browser — not
+    something I can do on your behalf even with permission, so that path stays available if you ever
+    want the convenience later.
+16. **Email + password login, for any role.** Works unconditionally (bcrypt, no external service
+    needed) — this was added because Resend wasn't configured yet and you needed a way to actually
+    use the site. Students self-register at `/signup`; mentors and admin get their account through
+    the existing flows (invite, direct-add, promote-application, `ADMIN_EMAIL`) and can add a
+    password afterwards from their own settings/profile page. Role-based routing is unchanged: it
+    was always read from the database (`User.role`), never from which method someone signed in with.
+17. **`NEXT_PUBLIC_APP_URL` should almost never be set explicitly.** Caught and fixed a live bug:
+    it had been set to `https://convertsclub.in`, a domain that isn't purchased, so every email link
+    generated in production would have been dead. `appUrl()` now falls back to Vercel's own
+    `VERCEL_PROJECT_PRODUCTION_URL`, which is always correct for whatever's actually live — no
+    manual update needed the day the real domain goes live. Only set the env var if you deliberately
+    want a URL Vercel wouldn't infer on its own.
 
 ## Assumptions
 
