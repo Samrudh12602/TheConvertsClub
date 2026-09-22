@@ -3,6 +3,7 @@ import { priceRangeLabel } from "@/lib/pricing";
 import { times } from "@/lib/settings";
 import { getPolicy } from "@/lib/settings-db";
 import { showDemoContent } from "@/lib/env";
+import { db } from "@/lib/db";
 
 /**
  * Public marketing copy, taken from the Claude Design "Public Site" file.
@@ -35,7 +36,7 @@ export async function getServices() {
   ];
 }
 
-export const faqs = async () => {
+const defaultFaqs = async () => {
   const p = await getPolicy();
   return [
     { q: "Who takes the mock interviews?", a: "Students and recent graduates who converted the same calls in 2024 or 2025. Everyone is screened and does a trial mock before they take a paying session." },
@@ -48,6 +49,13 @@ export const faqs = async () => {
     { q: "Who can see my SOP, marks and feedback?", a: "Your assigned mentor and Samrudh. Files are stored privately and download links expire." },
   ];
 };
+
+/** Admin-added FaqItem rows (Content screen) take over once any exist; otherwise these defaults show. */
+export async function faqs() {
+  const rows = await db.faqItem.findMany({ where: { published: true }, orderBy: { sortOrder: "asc" } });
+  if (rows.length > 0) return rows.map((r) => ({ q: r.question, a: r.answer }));
+  return defaultFaqs();
+}
 
 export const mentorPerks = [
   { title: "Paid per session", body: "Rates are fixed and visible in your portal. Pay accrues the moment you submit feedback, not when the student pays." },
@@ -101,12 +109,21 @@ export async function getPublicMentors(): Promise<PublicMentor[]> {
 }
 
 export interface ResultsContent {
-  stats: { value: string; label: string }[];
+  /** Season stat tiles: no verified-numbers source exists yet, so these only ever show as demo placeholders. */
+  stats: { value: string; label: string }[] | null;
   testimonials: { quote: string; who: string }[];
+  /** True when the content is demo/placeholder and the "replace before launch" notice should show. */
+  isDemo: boolean;
 }
 
-/** Returns null until real, consented figures exist. */
+/**
+ * Testimonials come from the Testimonial table (Admin > Content) once any are published — real content,
+ * shown in every environment. With none published yet: null in production (honest empty state), or
+ * placeholder demo content outside production so the page isn't blank while building.
+ */
 export async function getResults(): Promise<ResultsContent | null> {
+  const real = await db.testimonial.findMany({ where: { published: true }, orderBy: { createdAt: "desc" } });
+  if (real.length > 0) return { stats: null, testimonials: real.map((t) => ({ quote: t.quote, who: t.who })), isDemo: false };
   if (!showDemoContent()) return null;
   return {
     stats: [
@@ -121,5 +138,6 @@ export async function getResults(): Promise<ResultsContent | null> {
       { quote: "Placeholder. Keep them short. Two sentences beats a paragraph.", who: "— Name, converted [institute]" },
       { quote: "Placeholder. One from someone who bought a single mock, not a package, balances the page.", who: "— Name, converted [institute]" },
     ],
+    isDemo: true,
   };
 }

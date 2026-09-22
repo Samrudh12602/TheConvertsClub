@@ -16,17 +16,19 @@ export default async function ResultsPage() {
         </Card>
       ) : (
         <>
-          <Notice>Placeholder figures, shown outside production only. Replace with your verified season numbers before launch — every claim here needs a student who consented to it.</Notice>
-          <ul className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
-            {results.stats.map((r) => (
-              <li key={r.label}>
-                <DarkPanel className="h-full p-5">
-                  <p className="tnum font-display text-[30px] font-bold leading-none">{r.value}</p>
-                  <p className="mt-[9px] text-[12.5px] leading-normal text-dark-muted">{r.label}</p>
-                </DarkPanel>
-              </li>
-            ))}
-          </ul>
+          {results.isDemo && <Notice>Placeholder figures, shown outside production only. Replace with your verified season numbers before launch — every claim here needs a student who consented to it.</Notice>}
+          {results.stats && (
+            <ul className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+              {results.stats.map((r) => (
+                <li key={r.label}>
+                  <DarkPanel className="h-full p-5">
+                    <p className="tnum font-display text-[30px] font-bold leading-none">{r.value}</p>
+                    <p className="mt-[9px] text-[12.5px] leading-normal text-dark-muted">{r.label}</p>
+                  </DarkPanel>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3">
             {results.testimonials.map((t) => (
               <Card key={t.quote}>

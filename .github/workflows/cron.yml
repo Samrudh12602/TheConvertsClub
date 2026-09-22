@@ -1,0 +1,28 @@
+name: Frequent cron jobs
+
+# Vercel's Hobby plan only allows cron schedules that run once a day, but hold-expiry and
+# session reminders need to run every few minutes. GitHub Actions' free scheduled workflows
+# fill that gap: this just calls our own API routes with the same CRON_SECRET Vercel Cron uses.
+# (Booking already treats an expired hold as free the moment it's looked at, so a late run here
+# only delays janitorial cleanup, never lets two students double-book a slot.)
+#
+# GitHub does not guarantee schedules run at the exact minute — expect occasional few-minute drift.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  call-cron-endpoints:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Expire holds
+        run: |
+          curl -sS -o /dev/null -w "expire-holds: %{http_code}\n" --fail-with-body \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://the-converts-club.vercel.app' }}/api/cron/expire-holds"
+      - name: Send reminders
+        run: |
+          curl -sS -o /dev/null -w "reminders: %{http_code}\n" --fail-with-body \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://the-converts-club.vercel.app' }}/api/cron/reminders"
