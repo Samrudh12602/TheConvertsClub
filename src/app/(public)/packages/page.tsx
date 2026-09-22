@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { PackageCard } from "@/components/site/package-card";
-import { Price, buyHref, buyLabel } from "@/components/site/price";
+import { EnrolledOnlyNote, Price, buyHref, buyLabel, isPubliclyPurchasable } from "@/components/site/price";
 import { getBundles, getSingles } from "@/lib/catalog";
 
 export const metadata: Metadata = {
@@ -35,9 +35,13 @@ export default async function PackagesPage() {
             <div key={s.slug} className="flex flex-col gap-[9px] rounded-[10px] border border-line p-[15px]">
               <h3 className="text-[12.5px] font-medium leading-[1.4] text-ink-2">{s.name}</h3>
               <Price product={s} className="text-[21px] text-ink" />
-              <ButtonLink href={buyHref(s)} variant="fillOnHover" aria-label={buyLabel(s, "long")} className="mt-auto rounded-[7px] text-xs">
-                {buyLabel(s)}
-              </ButtonLink>
+              {isPubliclyPurchasable(s) ? (
+                <ButtonLink href={buyHref(s)} variant="fillOnHover" aria-label={buyLabel(s, "long")} className="mt-auto rounded-[7px] text-xs">
+                  {buyLabel(s)}
+                </ButtonLink>
+              ) : (
+                <EnrolledOnlyNote className="mt-auto rounded-[7px] border border-line-soft bg-surface py-2 text-center text-[11px] leading-[1.4] text-ink-faint" />
+              )}
             </div>
           ))}
         </div>

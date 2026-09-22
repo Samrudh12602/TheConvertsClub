@@ -39,6 +39,69 @@ export async function getBalances(tx: Tx, userId: string) {
   return foldLedger(rows.map((r) => ({ kind: r.kind, delta: r._sum.delta ?? 0, reservedDelta: r._sum.reservedDelta ?? 0 })));
 }
 
+export interface CreditSummary {
+  /** Total ever granted (purchases + admin adjustments), net of any negative adjustment. */
+  granted: number;
+  /** Free to spend right now. */
+  available: number;
+  /** Held by an active booking or in-review submission. */
+  reserved: number;
+  /** Used up (completed session, late cancel, no-show, or a consumed review). */
+  used: number;
+}
+
+/**
+ * Full picture per credit kind: granted, available, held and used. Kinds are never merged or
+ * interchangeable — a PI credit can never cover a GD or WAT, so this always reports them separately.
+ * used = granted - available - reserved (CONSUME removes from reserved without returning it to available).
+ */
+export async function getCreditSummary(tx: Tx, userId: string): Promise<Partial<Record<CreditKind, CreditSummary>>> {
+  const [grants, balances] = await Promise.all([
+    tx.creditLedger.groupBy({ by: ["kind"], where: { userId, type: { in: ["GRANT", "ADJUST"] } }, _sum: { delta: true } }),
+    getBalances(tx, userId),
+  ]);
+  const out: Partial<Record<CreditKind, CreditSummary>> = {};
+  for (const g of grants) {
+    const granted = g._sum.delta ?? 0;
+    const bal = balances[g.kind] ?? { available: 0, reserved: 0 };
+    out[g.kind] = { granted, available: bal.available, reserved: bal.reserved, used: Math.max(0, granted - bal.available - bal.reserved) };
+  }
+  for (const kind of Object.keys(balances) as CreditKind[]) {
+    if (!out[kind]) {
+      const bal = balances[kind]!;
+      out[kind] = { granted: bal.available + bal.reserved, available: bal.available, reserved: bal.reserved, used: 0 };
+    }
+  }
+  return out;
+}
+
+export interface EnrollmentCredits {
+  enrollmentId: string;
+  productSlug: string;
+  productName: string;
+  purchasedAt: Date;
+  status: "ACTIVE" | "REFUNDED";
+  /** Exactly what this one purchase granted — never merged with credits from another purchase. */
+  credits: { kind: CreditKind; quantity: number }[];
+}
+
+/** Every enrollment (course/service purchased) with exactly what it granted, oldest first. */
+export async function getEnrollmentBreakdown(db: PrismaClient, userId: string): Promise<EnrollmentCredits[]> {
+  const rows = await db.enrollment.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    include: { product: { include: { credits: true } } },
+  });
+  return rows.map((e) => ({
+    enrollmentId: e.id,
+    productSlug: e.product.slug,
+    productName: e.product.name,
+    purchasedAt: e.createdAt,
+    status: e.status,
+    credits: e.product.credits.map((c) => ({ kind: c.kind, quantity: c.quantity })),
+  }));
+}
+
 /** Serialise all credit movements for one student so two concurrent bookings can never double-spend. */
 export async function lockUser(tx: Prisma.TransactionClient, userId: string) {
   await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;

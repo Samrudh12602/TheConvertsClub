@@ -17,8 +17,10 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const product = slug ? await getProduct(slug) : null;
 
   if (!product) redirect("/packages");
-  // Enrolled-only products are bought from inside the student portal.
-  if (product.enrolledOnly) redirect("/login");
+  // Enrolled-only products (e.g. Additional PI) are never sold here, even to a signed-in visitor who
+  // types the URL directly — only from inside the student portal, and only once actually enrolled.
+  // Login alone doesn't unlock it, so this never suggests it does.
+  if (product.enrolledOnly) redirect("/packages");
 
   const policy = await getPolicy();
   const v = priceView(product);

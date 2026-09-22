@@ -2,14 +2,25 @@ import clsx from "clsx";
 import { priceView, type CatalogProduct } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
 
+/** Enrolled-only products (e.g. Additional PI) are never buyable from the public site — only from
+ * inside the student portal once actually enrolled. Public pages show the price but no buy action. */
+export const isPubliclyPurchasable = (p: CatalogProduct) => !p.enrolledOnly;
+
 export function buyHref(p: CatalogProduct): string {
-  // Enrolled-only products are bought from inside the student portal, never as a guest.
-  return p.enrolledOnly ? "/login" : `/checkout?product=${p.slug}`;
+  return `/checkout?product=${p.slug}`;
 }
 
 export function buyLabel(p: CatalogProduct, style: "short" | "long" = "short"): string {
-  if (p.enrolledOnly) return "Log in to buy";
   return style === "long" ? `Buy ${p.name}` : "Buy";
+}
+
+/** Shown in place of a Buy button for enrolled-only products on public pages. */
+export function EnrolledOnlyNote({ className }: { className?: string }) {
+  return (
+    <p className={className ?? "text-center text-[11.5px] leading-[1.4] text-ink-faint"}>
+      For enrolled students only
+    </p>
+  );
 }
 
 export function Price({

@@ -25,6 +25,22 @@ export const CREDIT_LABEL: Record<CreditKind, string> = {
   PI: "PI", GD: "GD", WAT: "WAT", SOP_BASIC: "SOP basic", SOP_DETAILED: "SOP", SOP_REVISION: "SOP rev", STRATEGY: "strategy", GUIDANCE: "guidance",
 };
 
+/** Full, singular names — used wherever a credit type needs to read unambiguously on its own,
+ * never abbreviated or merged with another kind (PI, GD, WAT, SOP etc. are always separate). */
+export const CREDIT_FULL_LABEL: Record<CreditKind, string> = {
+  PI: "Mock PI",
+  GD: "GD / GE batch",
+  WAT: "WAT evaluation",
+  SOP_BASIC: "Basic SOP review",
+  SOP_DETAILED: "Detailed SOP review",
+  SOP_REVISION: "SOP revision",
+  STRATEGY: "Strategy call",
+  GUIDANCE: "Guidance call",
+};
+
+/** Fixed, stable display order for credit kinds — used everywhere a full breakdown is shown. */
+export const CREDIT_KIND_ORDER: CreditKind[] = ["PI", "GD", "WAT", "SOP_BASIC", "SOP_DETAILED", "SOP_REVISION", "STRATEGY", "GUIDANCE"];
+
 export type Tone = "green" | "amber" | "oxblood" | "indigo" | "stone";
 
 export const SESSION_STATUS: Record<SessionStatus, { label: string; tone: Tone }> = {

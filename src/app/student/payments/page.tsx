@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, Panel } from "@/components/portal/ui";
+import { CreditBreakdown } from "@/components/portal/credit-breakdown";
 import { PortalBuy } from "@/components/student/portal-buy";
 import { getProducts } from "@/lib/catalog";
 import { db } from "@/lib/db";
@@ -8,6 +9,7 @@ import { fmtDate } from "@/lib/format";
 import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
 import { paymentsConfigured } from "@/server/razorpay";
+import { getCreditSummary, getEnrollmentBreakdown } from "@/server/credits";
 import { requireStudent } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +18,13 @@ export const metadata = { title: "Payments" };
 export default async function PaymentsPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const user = await requireStudent();
   const sp = await searchParams;
-  const [orders, products, enrolled] = await Promise.all([
+  const [orders, products, enrollments, creditSummary] = await Promise.all([
     db.order.findMany({ where: { userId: user.id, status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" }, include: { product: { select: { name: true } }, payments: { select: { razorpayPaymentId: true } } } }),
     getProducts(),
-    db.enrollment.count({ where: { userId: user.id, status: "ACTIVE" } }),
+    getEnrollmentBreakdown(db, user.id),
+    getCreditSummary(db, user.id),
   ]);
+  const enrolled = enrollments.filter((e) => e.status === "ACTIVE").length;
   const me = { name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" };
   const canPay = paymentsConfigured();
   const extra = products.filter((p) => p.kind === "SINGLE" && (!p.enrolledOnly || enrolled > 0));
@@ -30,6 +34,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   return (
     <PortalPage width="max-w-[820px]">
       {sp.paid && <Flash tone="green">Payment received. Your credits are on the way and will appear in the sidebar in a moment.</Flash>}
+      <CreditBreakdown summary={creditSummary} enrollments={enrollments} />
       {addl && enrolled > 0 && (
         <div className="flex flex-wrap items-center gap-3.5 rounded-[11px] border border-line bg-card p-4">
           <div className="min-w-[240px] flex-1">
