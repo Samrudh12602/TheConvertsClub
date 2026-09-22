@@ -14,11 +14,12 @@ import { appUrl } from "@/lib/env";
 import { AdminError, approveAccruals, approveBonuses, assertConfigWritable, assignSession, confirmRequested, createPayoutRun, markPayoutPaid, previewBonuses, type Actor } from "@/server/admin";
 import { cancelSession, BookingError } from "@/server/booking";
 import { refundOrder, CheckoutError } from "@/server/checkout";
+import { addMentorDirect, MentorAdminError, promoteApplication } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 const fail = (e: unknown): Result => {
-  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError) return { ok: false, error: e.message };
+  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError) return { ok: false, error: e.message };
   console.error(e);
   return { ok: false, error: "Something went wrong. Please try again." };
 };
@@ -70,6 +71,48 @@ export async function inviteMentorAction(input: unknown): Promise<Result> {
     await sendEmail({ template: "mentor_invite", to: email, url: `${appUrl()}/invite/${token}` });
     await audit({ actorId: actor.id, action: "mentor.invited", entity: "MentorInvite", after: { email, tier: p.tier } });
     return { ok: true, message: `Invite sent to ${email}.` };
+  } catch (e) { return fail(e); }
+}
+
+const addMentorSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.email(),
+  tier: z.enum(["JUNIOR", "SENIOR"]),
+  college: z.string().trim().max(120).optional(),
+  batchYear: z.coerce.number().int().min(1990).max(2100).optional(),
+  bio: z.string().trim().max(300).optional(),
+  meetingUrl: z.union([z.url(), z.literal("")]).optional(),
+  linkedinUrl: z.union([z.url(), z.literal("")]).optional(),
+  photoUrl: z.union([z.url(), z.literal("")]).optional(),
+});
+
+/** Bound directly to a <form action={...}>, so it can receive a File in the FormData. */
+export async function addMentorDirectAction(_prev: Result | null, formData: FormData): Promise<Result> {
+  try {
+    const actor = await guard("mentor-add");
+    const p = addMentorSchema.parse(Object.fromEntries(formData.entries()));
+    const file = formData.get("photo");
+    await addMentorDirect(actor, {
+      ...p,
+      photo: file instanceof File && file.size > 0 ? { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) } : undefined,
+    });
+    revalidatePath("/admin/mentors");
+    revalidatePath("/mentors");
+    return { ok: true, message: `${p.name} is set up. A login link has been emailed to them.` };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function promoteApplicationAction(applicationId: string, tier: unknown): Promise<Result> {
+  try {
+    const actor = await guard("app-promote");
+    const t = z.enum(["JUNIOR", "SENIOR"]).parse(tier);
+    await promoteApplication(actor, applicationId, t);
+    revalidatePath("/admin/applications");
+    revalidatePath("/admin/mentors");
+    revalidatePath("/mentors");
+    return { ok: true, message: "Promoted to mentor. A login link has been emailed to them." };
   } catch (e) { return fail(e); }
 }
 

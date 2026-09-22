@@ -90,9 +90,9 @@ export const legalDocs = async () => {
 
 export type LegalSlug = "terms" | "privacy" | "refunds";
 
-/* ---------- DEMO content: never shown in production ---------- */
+export interface PublicMentor { id: string; name: string; college: string; bio: string; photoSrc: string | null; demo?: boolean }
 
-export interface PublicMentor { name: string; college: string; bio: string; demo?: boolean }
+/* ---------- DEMO content: never shown in production ---------- */
 
 const DEMO_MENTORS: PublicMentor[] = [
   { name: "Rohit Kulkarni", college: "IIM Bangalore, 2025", bio: "Mechanical, two years at a power utility. Takes the stress rounds." },
@@ -101,11 +101,25 @@ const DEMO_MENTORS: PublicMentor[] = [
   { name: "Neha Pillai", college: "MDI Gurgaon, 2026", bio: "Commerce background. Handles academics-heavy panels." },
   { name: "Kabir Shah", college: "IIM Indore, 2026", bio: "IPM. Knows the fresher and young-profile interviews." },
   { name: "Samrudh", college: "Founder", bio: "Runs the strategy calls and everything behind the scenes." },
-].map((m) => ({ ...m, demo: true }));
+].map((m, i) => ({ ...m, id: `demo-${i}`, photoSrc: null, demo: true }));
 
-/** Phase 1: reads ACTIVE MentorProfile rows and exposes name, photo, college and a short bio only. Never tier. */
+/** Real ACTIVE, publicly-visible mentors, exposing name, photo, college and a short bio only. Never tier. */
 export async function getPublicMentors(): Promise<PublicMentor[]> {
-  return !showDemoContent() ? [] : DEMO_MENTORS;
+  const rows = await db.mentorProfile.findMany({
+    where: { status: "ACTIVE", publicVisible: true, isAdminMentor: false, user: { isDemo: false } },
+    orderBy: { createdAt: "asc" },
+    include: { user: { select: { name: true } } },
+  });
+  if (rows.length > 0) {
+    return rows.map((m) => ({
+      id: m.id,
+      name: m.user.name ?? "Mentor",
+      college: m.college ?? "",
+      bio: m.bio ?? "",
+      photoSrc: m.photoKey ? `/api/mentor-photo/${m.id}` : m.photoUrl,
+    }));
+  }
+  return showDemoContent() ? DEMO_MENTORS : [];
 }
 
 export interface ResultsContent {

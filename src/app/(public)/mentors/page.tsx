@@ -25,14 +25,19 @@ export default async function MentorsPage() {
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
           {mentors.map((m) => (
-            <li key={m.name}>
+            <li key={m.id}>
               <Card className="h-full">
-                <div
-                  aria-hidden
-                  className="flex aspect-square w-full items-center justify-center rounded-[10px] border border-dashed border-sand-line bg-sand p-3 text-center text-[11.5px] font-medium leading-[1.4] text-ink-faint"
-                >
-                  Photo
-                </div>
+                {m.photoSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- dynamic/private-backed source, not an optimizable static asset
+                  <img src={m.photoSrc} alt="" className="aspect-square w-full rounded-[10px] border border-line object-cover" />
+                ) : (
+                  <div
+                    aria-hidden
+                    className="flex aspect-square w-full items-center justify-center rounded-[10px] border border-dashed border-sand-line bg-sand p-3 text-center text-[11.5px] font-medium leading-[1.4] text-ink-faint"
+                  >
+                    Photo
+                  </div>
+                )}
                 <h2 className="mt-[13px] font-display text-[15px] font-bold leading-tight text-ink">{m.name}</h2>
                 <p className="mt-1 text-[11.5px] font-semibold leading-[1.3] text-oxblood">{m.college}</p>
                 <p className="mt-2 text-pretty text-[12.5px] leading-[1.6] text-ink-muted">{m.bio}</p>

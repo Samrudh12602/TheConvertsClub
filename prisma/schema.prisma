@@ -258,7 +258,12 @@ model MentorProfile {
   college          String?
   batchYear        Int?
   meetingUrl       String?
+  /// Blob storage key for an uploaded photo (private store, served via /api/mentor-photo/[id]). Preferred over photoUrl.
+  photoKey         String?
+  /// External photo URL, used only when photoKey is not set (e.g. admin pastes a link instead of uploading).
   photoUrl         String?
+  /// Admin's own reference only. Never shown on the public site.
+  linkedinUrl      String?
   /// AES-GCM encrypted JSON (UPI / bank). Never returned to the client in plaintext.
   payoutEncrypted  String?
   status           MentorStatus @default(ACTIVE)
@@ -302,11 +307,17 @@ model MentorApplication {
   institute       String
   callsConverted  String
   hoursPerWeek    Int
+  linkedinUrl     String?
+  /// Blob storage key for the submitted professional photo (private; admin-only view until promoted).
+  photoKey        String?
+  photoFileName   String?
   stage           ApplicationStage @default(NEW)
   scorecard       Json?
   recommendedTier MentorTier?
   notes           String?
   createdAt       DateTime         @default(now())
+  /// Set once this application has been turned into a mentor account.
+  promotedMentorId String?
 
   @@index([stage])
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Meter, StatusPill } from "@/components/portal/ui";
-import { InviteMentorForm } from "@/components/admin/invite-mentor-form";
+import { AddMentorTabs } from "@/components/admin/add-mentor-tabs";
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/money";
 
@@ -28,15 +28,24 @@ export default async function MentorsPage() {
 
   return (
     <PortalPage>
-      <InviteMentorForm />
+      <AddMentorTabs />
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
         {mentors.map((m, i) => {
           const { open, booked, accrued } = stats[i];
           const total = open + booked;
+          const hasPhoto = m.photoKey || m.photoUrl;
           return (
             <Link key={m.id} href={`/admin/mentors/${m.id}`} className="flex flex-col gap-2.5 rounded-[11px] border border-line bg-card p-4 text-inherit no-underline hover:border-ink hover:no-underline">
               <div className="flex items-start justify-between gap-2.5">
-                <div><p className="font-display text-sm font-bold leading-[1.3] text-ink">{nm(m.user.name)}</p><p className="mt-0.5 text-[11px] text-ink-faint">{m.college ?? "—"}</p></div>
+                <div className="flex items-center gap-2.5">
+                  {hasPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- private/dynamic source, not an optimizable static asset
+                    <img src={m.photoKey ? `/api/mentor-photo/${m.id}` : m.photoUrl!} alt="" className="size-9 flex-none rounded-full object-cover" />
+                  ) : (
+                    <span aria-hidden className="flex size-9 flex-none items-center justify-center rounded-full bg-line-soft text-[11px] font-semibold text-ink-faint">{nm(m.user.name).slice(0, 2).toUpperCase()}</span>
+                  )}
+                  <div><p className="font-display text-sm font-bold leading-[1.3] text-ink">{nm(m.user.name)}</p><p className="mt-0.5 text-[11px] text-ink-faint">{m.college ?? "—"}</p></div>
+                </div>
                 <div className="flex flex-col items-end gap-1"><span className="rounded bg-oxblood px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-white">{m.tier}</span><StatusPill tone={m.status === "ACTIVE" ? "green" : m.status === "PAUSED" ? "amber" : "stone"}>{m.status}</StatusPill></div>
               </div>
               <Meter label="This week" note={`${booked} / ${total || 0} booked`} pct={total ? (booked / total) * 100 : 0} tone="oxblood" />

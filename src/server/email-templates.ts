@@ -8,7 +8,8 @@ import type { EmailProps } from "@/emails/transactional";
 export type TemplateKey =
   | "magic_link" | "welcome" | "booking_confirmed" | "booking_requested" | "reminder_24h" | "reminder_1h"
   | "session_cancelled" | "session_rescheduled" | "feedback_published" | "review_completed"
-  | "mentor_invite" | "mentor_assignment" | "mentor_availability_change" | "payout_processed" | "refund_processed" | "broadcast";
+  | "mentor_invite" | "mentor_added" | "mentor_assignment" | "mentor_availability_change"
+  | "payout_processed" | "refund_processed" | "broadcast";
 
 export interface TemplateDef {
   subject: string;
@@ -30,6 +31,7 @@ export const TEMPLATES: Record<TemplateKey, TemplateDef> = {
   feedback_published: { subject: "Your feedback from {session} is ready", head: "Scored {score} overall", body: "Two things worked, two cost you marks, and there's a rewrite of the answer that went wrong. Read it before you book the next one.", cta: "Read the report", footer: "Rate the session while it's fresh — it's how we decide who takes your next one." },
   review_completed: { subject: "Your {session} review is ready", head: "Your review is ready", body: "Your mentor has marked your submission. Read the notes and, if you have a revision credit, send the next version.", cta: "Read the review" },
   mentor_invite: { subject: "You're invited to mentor at The Convert Club", head: "Join as a mentor", body: "Samrudh has invited you to take mocks on your own hours, paid per session. Accept with the email address this was sent to.", cta: "Accept the invite", footer: "This invite expires in 7 days." },
+  mentor_added: { subject: "You're set up as a mentor at The Convert Club", head: "Your mentor account is ready", body: "Samrudh has set up your mentor account. Log in with this email address to set your availability and take your first mock.", cta: "Log in", footer: "This link expires in 24 hours. Request a new one any time from the login page." },
   mentor_assignment: { subject: "Assigned: {student}, {when}", head: "A session has been assigned to you", body: "{detail}", cta: "Open the session", footer: "Can't make it? Tell Samrudh now, not on the day." },
   mentor_availability_change: { subject: "Availability change: {when}", head: "One of your slots changed", body: "{detail}", cta: "Open availability" },
   payout_processed: { subject: "{amount} sent — {period} payout", head: "Your {period} payout is on its way", body: "{detail} The reference below matches your bank statement.", cta: "See the breakdown" },

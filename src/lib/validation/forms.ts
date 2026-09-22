@@ -23,12 +23,19 @@ export type GuestDetails = z.infer<typeof guestDetailsSchema>;
 export const loginEmailSchema = z.object({ email });
 export type LoginEmail = z.infer<typeof loginEmailSchema>;
 
+const linkedinUrl = z
+  .string()
+  .trim()
+  .pipe(z.url("Enter your LinkedIn profile URL"))
+  .refine((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//i.test(u), "That doesn't look like a LinkedIn URL");
+
 export const mentorApplicationSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(100),
   email,
   phone,
   institute: z.string().trim().min(3, "Tell us your institute and batch").max(120),
   callsConverted: z.string().trim().min(3, "Tell us which calls you converted").max(500),
+  linkedinUrl,
   hoursPerWeek: z
     .string()
     .trim()
