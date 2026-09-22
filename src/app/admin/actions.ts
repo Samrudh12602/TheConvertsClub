@@ -24,6 +24,10 @@ const fail = (e: unknown): Result => {
   return { ok: false, error: "Something went wrong. Please try again." };
 };
 
+/** A blank number input submits "" via FormData or controlled state, which z.coerce.number()
+ * would turn into 0 rather than "absent" — strip it to undefined first so .optional() applies. */
+const emptyToUndef = (v: unknown) => (v === "" ? undefined : v);
+
 async function guard(scope: string): Promise<Actor> {
   const user = await requireAdmin();
   if (!(await rateLimit(`admin:${scope}:${user.id}`, 200, 600)).ok) throw new AdminError("Too many requests. Slow down for a minute.");
@@ -79,7 +83,7 @@ const addMentorSchema = z.object({
   email: z.email(),
   tier: z.enum(["JUNIOR", "SENIOR"]),
   college: z.string().trim().max(120).optional(),
-  batchYear: z.coerce.number().int().min(1990).max(2100).optional(),
+  batchYear: z.preprocess(emptyToUndef, z.coerce.number().int().min(1990).max(2100).optional()),
   bio: z.string().trim().max(300).optional(),
   meetingUrl: z.union([z.url(), z.literal("")]).optional(),
   linkedinUrl: z.union([z.url(), z.literal("")]).optional(),
@@ -244,7 +248,9 @@ export async function updateProductAction(input: unknown): Promise<Result> {
   } catch (e) { return fail(e); }
 }
 
-const couponSchema = z.object({ code: z.string().trim().min(3).max(24), type: z.enum(["PERCENT", "FLAT"]), value: z.coerce.number().int().min(1), maxUses: z.coerce.number().int().min(0).optional(), expiresAt: z.string().optional() });
+// A blank "max uses" input submits "" (from CouponForm's controlled state), which coerces to 0 and
+// would pass min(0) silently — a brand-new coupon with maxUses 0 would read as "already fully used".
+const couponSchema = z.object({ code: z.string().trim().min(3).max(24), type: z.enum(["PERCENT", "FLAT"]), value: z.coerce.number().int().min(1), maxUses: z.preprocess(emptyToUndef, z.coerce.number().int().min(1).optional()), expiresAt: z.string().optional() });
 export async function createCouponAction(input: unknown): Promise<Result> {
   try {
     const actor = await guard("coupon");
