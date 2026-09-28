@@ -2,23 +2,23 @@ import { MessageComposer, MessageThread } from "@/components/portal/message-thre
 import { PortalPage } from "@/components/portal/portal-page";
 import { Panel } from "@/components/portal/ui";
 import { getThread } from "@/server/messages";
-import { requireMentor } from "@/server/session";
+import { requireStudent } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Messages" };
 
-export default async function Messages() {
-  const { user } = await requireMentor();
+export default async function StudentMessages() {
+  const user = await requireStudent();
   const thread = await getThread(user.id);
   return (
     <PortalPage width="max-w-[700px]">
       <MessageThread
         messages={thread.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
         otherLabel="The Convert Club team"
-        empty="No messages yet. Write to us here about sessions, pay or anything you need."
+        empty="No messages yet. Ask us anything about your plan, a session, or a payment."
       />
       <Panel title="Message the team" flush={false}>
-        <MessageComposer placeholder="Write to the team…" />
+        <MessageComposer placeholder="How can we help?" />
       </Panel>
     </PortalPage>
   );

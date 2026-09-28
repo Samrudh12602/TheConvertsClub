@@ -90,6 +90,24 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     manual update needed the day the real domain goes live. Only set the env var if you deliberately
     want a URL Vercel wouldn't infer on its own.
 
+18. **In-app notifications are now visible.** `notify()` had been writing `Notification` rows from ~20
+    places (bookings, payments, feedback, payouts, applications) but nothing read them. There is now a
+    bell in every portal's top bar (`NotificationBell`, `/api/notifications`): unread badge, dropdown,
+    mark one / all read, refreshes every 30 s and on window focus. The API is scoped to the signed-in
+    user, so ids can't touch anyone else's rows.
+19. **Messages are a real two-way support thread, student/mentor <-> the team.** Students and mentors
+    write from `/student/messages` / `/mentor/messages`; each message is stored once against the primary
+    admin, and every admin gets a bell notification with a deep link. Admin answers from
+    `/admin/messages` (inbox, "awaiting reply" flag, reply box) or the new "Message" button on a
+    student/mentor page. Deliberately **no student <-> mentor direct messaging** (keeps mentor tier/pay
+    and contact details out of student hands). Demo accounts only reach demo admins and real accounts
+    real admins, so test chatter never lands in your real inbox. Not yet emailed: with no Resend key, a
+    message is only visible in-app; once a key is added, a "you have a new message" email is the next
+    obvious step.
+20. **Local dev needs its own `AUTH_SECRET`.** Vercel marks it Sensitive, so `vercel env pull` can't
+    fetch it. A throwaway one was generated into the gitignored `.env.development.local`. Note local
+    dev talks to the **same live Neon database** as production — treat test actions accordingly.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

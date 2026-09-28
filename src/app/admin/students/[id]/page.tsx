@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { CreditBreakdown } from "@/components/portal/credit-breakdown";
@@ -35,7 +36,7 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           <p className="mt-1 text-[12.5px] text-ink-faint">{student.email}{student.phone ? ` · ${student.phone}` : ""}</p>
           <p className="mt-1.5 text-[12.5px] font-medium text-oxblood">{activePlans.length > 0 ? activePlans.join(" · ") : "Not enrolled in anything yet"}</p>
         </div>
-        <div className="flex items-center gap-2"><StatusPill tone={student.status === "ACTIVE" ? "green" : "oxblood"}>{student.status === "ACTIVE" ? "Active" : "Suspended"}</StatusPill><StudentStatusToggle userId={student.id} status={student.status} /></div>
+        <div className="flex items-center gap-2"><Link href={`/admin/messages?u=${student.id}`} className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink no-underline hover:no-underline">Message</Link><StatusPill tone={student.status === "ACTIVE" ? "green" : "oxblood"}>{student.status === "ACTIVE" ? "Active" : "Suspended"}</StatusPill><StudentStatusToggle userId={student.id} status={student.status} /></div>
       </div>
 
       <Panel title="Profile" flush={false}>

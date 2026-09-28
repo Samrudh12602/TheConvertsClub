@@ -1,9 +1,11 @@
 import { signOutAction } from "@/app/actions/auth";
+import { NotificationBell } from "@/components/portal/notification-bell";
 import { initials } from "@/lib/format";
 
 export function UserChip({ name }: { name?: string | null }) {
   return (
     <div className="flex items-center gap-2">
+      <NotificationBell />
       <span title={name ?? ""} className="flex size-[30px] items-center justify-center rounded-full bg-line-soft text-[11.5px] font-semibold leading-none text-ink-2">
         {initials(name)}
       </span>
