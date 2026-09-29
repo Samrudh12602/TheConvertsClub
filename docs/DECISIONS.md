@@ -104,7 +104,26 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     real admins, so test chatter never lands in your real inbox. Not yet emailed: with no Resend key, a
     message is only visible in-app; once a key is added, a "you have a new message" email is the next
     obvious step.
-20. **Local dev needs its own `AUTH_SECRET`.** Vercel marks it Sensitive, so `vercel env pull` can't
+20. **Gmail is now a real send option, and wins over Resend when both are set.** `sendEmail()`
+    (`src/server/email.ts`) tries Gmail SMTP (an App Password, via nodemailer) first, then falls back
+    to Resend, and logs `SKIPPED` with no provider configured — nothing else in the app changes.
+    Every email's reply-to defaults to the sending mailbox, so a reply from a student or applicant
+    lands directly in your own Gmail inbox — no extra "receiving" code needed, Gmail already does that.
+    `scripts/set-vercel-env.sh` now prompts for `GMAIL_USER` / `GMAIL_APP_PASSWORD` alongside Resend.
+21. **New students get an email-verification link; new mentors do not get a login until you approve
+    them.** Signup (`/signup`) sends a "confirm your email" link (`/verify-email`, single-use, 48h,
+    hashed in the existing `VerificationToken` table); it doesn't block using the site while unverified
+    — this only records the confirmation, since nothing currently depends on it. The mentor rule was
+    **already true before this change** and needed no new gating: a public mentor application
+    (`submitApplication`) only ever creates a `MentorApplication` row, never a `User` — there is no
+    login for an applicant until you promote them from `/admin/applications`, or invite them directly.
+    Verified by tracing every place a `User` gets `role: "MENTOR"` in the codebase: `addMentorDirect`,
+    `promoteApplication`, and the invite-accept route all require either `requireAdmin()` first or a
+    token you generated for that exact email. What's new here is real email around that: the applicant
+    gets a "we've got your application" email, and your own Gmail inbox gets a direct alert (in
+    addition to the existing in-app admin notification) with reply-to set to the applicant, so you can
+    just hit reply.
+22. **Local dev needs its own `AUTH_SECRET`.** Vercel marks it Sensitive, so `vercel env pull` can't
     fetch it. A throwaway one was generated into the gitignored `.env.development.local`. Note local
     dev talks to the **same live Neon database** as production — treat test actions accordingly.
 

@@ -9,6 +9,7 @@ import { signupSchema } from "@/lib/validation/forms";
 import { hashPassword, PasswordError } from "@/server/password";
 import { rateLimit } from "@/server/ratelimit";
 import { sendEmail } from "@/server/email";
+import { createVerifyEmailLink } from "@/server/auth-tokens";
 import { audit } from "@/server/audit";
 
 export interface SignupState {
@@ -39,11 +40,8 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
   const user = await db.user.create({ data: { email, name: name.trim(), role: "STUDENT", passwordHash } });
   await db.studentProfile.create({ data: { userId: user.id } });
   await audit({ actorId: user.id, action: "auth.signup", entity: "User", entityId: user.id, ip });
-  try {
-    await sendEmail({ template: "welcome_account", to: email, vars: { name: name.trim() }, url: "/packages" });
-  } catch (e) {
-    console.error("welcome email failed", e);
-  }
+  const verifyLink = await createVerifyEmailLink(email);
+  await sendEmail({ template: "verify_email", to: email, url: verifyLink });
 
   const next = safeNext(String(formData.get("next") ?? "")) ?? "/student/onboarding";
   try {

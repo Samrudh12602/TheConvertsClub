@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { audit } from "@/server/audit";
 import { assertConfigWritable, type Actor } from "@/server/admin";
 import { createLoginLink } from "@/server/magic-link";
-import { sendEmail } from "@/server/email";
+import { adminInbox, sendEmail } from "@/server/email";
 import { MAX_PHOTO_BYTES, sniffImage, UploadError } from "@/server/upload-validation";
 
 export class MentorAdminError extends Error {}
@@ -160,5 +160,11 @@ export async function submitApplication(input: SubmitApplicationInput) {
   const admins = await db.user.findMany({ where: { role: "ADMIN", status: "ACTIVE" }, select: { id: true } });
   const { notify } = await import("@/server/notify");
   for (const a of admins) await notify(a.id, { title: `New mentor application: ${app.name}`, href: "/admin/applications" });
+
+  // Two real emails, independent of the in-app bell: one confirming receipt to the applicant, one
+  // alerting the owner's own inbox so it isn't missed between logins. sendEmail never throws.
+  await sendEmail({ template: "application_received", to: app.email });
+  const inbox = adminInbox();
+  if (inbox) await sendEmail({ template: "application_admin_alert", to: inbox, vars: { name: app.name, institute: app.institute }, url: "/admin/applications", replyTo: app.email });
   return app;
 }
