@@ -126,6 +126,26 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 22. **Local dev needs its own `AUTH_SECRET`.** Vercel marks it Sensitive, so `vercel env pull` can't
     fetch it. A throwaway one was generated into the gitignored `.env.development.local`. Note local
     dev talks to the **same live Neon database** as production — treat test actions accordingly.
+23. **PDF receipts, generated locally, never sent to a third party.** `@react-pdf/renderer` (MIT,
+    pure JS, no native binary, no Chromium) renders the PDF in the same Vercel function that already
+    has the order — a customer's name, email and amount never leave our own servers to reach a
+    PDF-generation SaaS. No GST/tax line, by design (item price, discount, total only). It's attached
+    to the payment-confirmation email (delivered over Gmail SMTPS or Resend's HTTPS API, both already
+    encrypted in transit) and downloadable two ways: `/student/payments/[orderId]` for a logged-in
+    student (ownership checked against the real session, same as the page itself already did), and a
+    link on `/checkout/success` for a guest who hasn't logged in yet. That second path deliberately
+    does **not** trust the order id alone as a bearer credential — a receipt carries real PII, and an
+    order id is a plausible-enough target to guess at. It uses the same pattern as the existing
+    email-verification links (`src/server/receipt-access.ts`): a random token, SHA-256-hashed at rest,
+    scoped to one order, expiring after 72h. Found and fixed one real bug while building this: the
+    Helvetica base-14 PDF font has no ₹ (U+20B9) or − (U+2212) glyph, so both silently vanished from
+    the rendered PDF — the PDF now formats money as "Rs. 1,234", ASCII-only, while the site and emails
+    keep the real ₹ symbol (real fonts, unaffected).
+24. **`nodemailer` stays on v8, not the latest v10 (a known, deferred security item).** `next-auth`
+    5.0.0-beta.32 pins its own nodemailer dependency to `^7.0.7 || ^8.0.5`; forcing v10 breaks that
+    peer resolution (`npm ls` reports an invalid tree). v8.0.11 has several disclosed advisories
+    (`npm audit`) with no clean fix available while on this next-auth version. Revisit when next-auth
+    bumps its own pin, or when this stops depending on next-auth's Credentials/Google/Resend providers.
 
 ## Assumptions
 

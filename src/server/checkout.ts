@@ -11,6 +11,8 @@ import { createLoginLink } from "@/server/magic-link";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
+import { loadReceiptData } from "@/server/receipt";
+import { renderReceiptPdf } from "@/server/receipt-pdf";
 import type { CreditKind } from "@/generated/prisma/client";
 
 export class CheckoutError extends Error {}
@@ -116,9 +118,12 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
     // Best-effort side effects after the money and credits are safely committed.
     try {
       const link = await createLoginLink(result.user.email, "/student/onboarding");
+      const receipt = await loadReceiptData(result.orderId);
+      const attachments = receipt ? [{ filename: `receipt-${result.orderId}.pdf`, content: await renderReceiptPdf(receipt), contentType: "application/pdf" }] : undefined;
       await sendEmail({
         template: "welcome", to: result.user.email, url: link, vars: { package: result.product.name },
         details: [{ k: "Package", v: result.product.name }, { k: "Paid", v: formatPaise(result.amountPaise) }, { k: "Credits", v: result.product.credits.map((c) => describeCredit(c, "short")).join(" · ") }],
+        attachments,
       });
       await notify(result.user.id, { title: `Payment confirmed: ${result.product.name}`, href: "/student" });
     } catch (e) { console.error("post-fulfil side effects failed", e); }

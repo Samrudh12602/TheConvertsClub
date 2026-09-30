@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { roleHome } from "@/lib/roles";
 import { describeCredit } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
+import { createReceiptLink } from "@/server/receipt-access";
 import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Payment", robots: { index: false, follow: false } };
@@ -43,6 +44,8 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     );
   }
 
+  const receiptHref = await createReceiptLink(order.id);
+
   return (
     <div className="mx-auto max-w-[640px] px-5 py-10">
       <Card className="rounded-[14px] p-8 text-center">
@@ -61,14 +64,15 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             ))}
           </ul>
         </div>
-        {alreadyTheirs ? (
-          <ButtonLink href={roleHome(user!.role)} size="lg" className="mt-5 rounded-[9px] px-[22px]">Go to dashboard</ButtonLink>
-        ) : (
-          <>
-            <ButtonLink href="/login" size="lg" className="mt-5 rounded-[9px] px-[22px]">Log in</ButtonLink>
-            <p className="mt-4 text-xs text-ink-faint">Didn&apos;t get the email? Check spam, then use “Email me a login link” on the login page with the same address.</p>
-          </>
-        )}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+          {alreadyTheirs ? (
+            <ButtonLink href={roleHome(user!.role)} size="lg" className="rounded-[9px] px-[22px]">Go to dashboard</ButtonLink>
+          ) : (
+            <ButtonLink href="/login" size="lg" className="rounded-[9px] px-[22px]">Log in</ButtonLink>
+          )}
+          <ButtonLink href={receiptHref} variant="secondary" size="lg" className="rounded-[9px] px-[22px]">Download receipt (PDF)</ButtonLink>
+        </div>
+        {!alreadyTheirs && <p className="mt-4 text-xs text-ink-faint">Didn&apos;t get the email? Check spam, then use “Email me a login link” on the login page with the same address.</p>}
       </Card>
     </div>
   );

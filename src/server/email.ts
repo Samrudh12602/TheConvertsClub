@@ -22,6 +22,12 @@ export const emailConfigured = () => emailProvider() !== null;
 /** Demo and test addresses can never receive real mail. */
 const isUndeliverable = (to: string) => /\.test$/i.test(to.trim());
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 export interface SendArgs {
   template: TemplateKey;
   to: string;
@@ -31,20 +37,27 @@ export interface SendArgs {
   url?: string;
   /** Where replies go. Defaults to the sending mailbox, so replies land in the owner's inbox. */
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 interface Rendered { subject: string; html: string; text: string }
 
-async function deliverGmail(to: string, r: Rendered, replyTo?: string) {
+async function deliverGmail(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
   const user = process.env.GMAIL_USER as string;
   const transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass: process.env.GMAIL_APP_PASSWORD as string } });
-  const info = await transport.sendMail({ from: { name: "The Convert Club", address: user }, to, replyTo: replyTo ?? user, subject: r.subject, html: r.html, text: r.text });
+  const info = await transport.sendMail({
+    from: { name: "The Convert Club", address: user }, to, replyTo: replyTo ?? user, subject: r.subject, html: r.html, text: r.text,
+    attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
+  });
   return info.messageId as string;
 }
 
-async function deliverResend(to: string, r: Rendered, replyTo?: string) {
+async function deliverResend(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
   const from = process.env.EMAIL_FROM || "The Convert Club <onboarding@resend.dev>";
-  const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({ from, to, subject: r.subject, html: r.html, text: r.text, ...(replyTo ? { replyTo } : {}) });
+  const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
+    from, to, subject: r.subject, html: r.html, text: r.text, ...(replyTo ? { replyTo } : {}),
+    attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content })),
+  });
   if (error) throw new Error(error.message);
   return data?.id;
 }
@@ -75,7 +88,7 @@ export async function sendEmail(a: SendArgs): Promise<{ status: "SENT" | "FAILED
     const html = await render(createElement(TransactionalEmail, props));
     const text = await render(createElement(TransactionalEmail, props), { plainText: true });
     const rendered = { subject, html, text };
-    const id = provider === "gmail" ? await deliverGmail(a.to, rendered, a.replyTo) : await deliverResend(a.to, rendered, a.replyTo);
+    const id = provider === "gmail" ? await deliverGmail(a.to, rendered, a.replyTo, a.attachments) : await deliverResend(a.to, rendered, a.replyTo, a.attachments);
     await log("SENT", { providerId: id });
     return { status: "SENT", id };
   } catch (e) {
