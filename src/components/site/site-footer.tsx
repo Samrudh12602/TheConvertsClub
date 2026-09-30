@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
 
 const LINKS = [
   { href: "/how-it-works", label: "How it works" },
@@ -8,10 +9,10 @@ const LINKS = [
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: "/refunds", label: "Refunds" },
-  { href: "/login", label: "Log in" },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ account }: { account: { role: RoleName; home: string } | null }) {
+  const last = account ? { href: account.home, label: PORTAL_LABEL[account.role] } : { href: "/login", label: "Log in" };
   return (
     <footer className="mt-8 bg-ink px-5 py-8">
       <div className="mx-auto flex max-w-[1120px] flex-wrap justify-between gap-6">
@@ -22,7 +23,7 @@ export function SiteFooter() {
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap items-start gap-1.5">
-          {LINKS.map((l) => (
+          {[...LINKS, last].map((l) => (
             <Link
               key={l.href}
               href={l.href}

@@ -16,7 +16,7 @@ export default async function PublicLayout({ children }: { children: React.React
       </a>
       <SiteHeader account={account} />
       <main id="main">{children}</main>
-      <SiteFooter />
+      <SiteFooter account={account} />
     </div>
   );
 }

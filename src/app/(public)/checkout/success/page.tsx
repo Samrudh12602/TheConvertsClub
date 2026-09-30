@@ -4,8 +4,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AutoRefresh } from "@/components/site/auto-refresh";
 import { db } from "@/lib/db";
+import { roleHome } from "@/lib/roles";
 import { describeCredit } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
+import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Payment", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,8 +18,14 @@ const mask = (e: string) => e.replace(/^(.{2}).*(@.*)$/, "$1•••$2");
 export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
   const { order: orderId } = await searchParams;
   if (!orderId) redirect("/packages");
-  const order = await db.order.findUnique({ where: { id: orderId }, include: { product: { include: { credits: true } } } });
+  const [order, user] = await Promise.all([
+    db.order.findUnique({ where: { id: orderId }, include: { product: { include: { credits: true } } } }),
+    currentUser(),
+  ]);
   if (!order) redirect("/packages");
+  // If the buyer was already signed in, fulfilment attached the order to that same account — no
+  // separate "set up your account" email or login step applies to them.
+  const alreadyTheirs = user?.id === order.userId;
 
   if (order.status !== "PAID") {
     const failed = order.status === "FAILED";
@@ -41,7 +49,9 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         <div aria-hidden className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-tint font-display text-xl font-bold leading-none text-green">✓</div>
         <h1 className="mt-[18px] font-display text-2xl font-bold leading-[1.25] text-ink">You&apos;re in</h1>
         <p className="mt-2.5 text-pretty text-sm leading-[1.7] text-ink-muted">
-          Payment of {formatPaise(order.amountPaise)} confirmed. We&apos;ve emailed {mask(order.guestEmail)} a link to set up your account — the credits are already waiting.
+          {alreadyTheirs
+            ? `Payment of ${formatPaise(order.amountPaise)} confirmed. Your credits are ready.`
+            : `Payment of ${formatPaise(order.amountPaise)} confirmed. We've emailed ${mask(order.guestEmail)} a link to set up your account — the credits are already waiting.`}
         </p>
         <div className="mt-5 rounded-[10px] border border-line-soft bg-surface p-4 text-left">
           <h2 className="type-label text-ink-faint">Credits added</h2>
@@ -51,8 +61,14 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             ))}
           </ul>
         </div>
-        <ButtonLink href="/login" size="lg" className="mt-5 rounded-[9px] px-[22px]">Log in</ButtonLink>
-        <p className="mt-4 text-xs text-ink-faint">Didn&apos;t get the email? Check spam, then use “Email me a login link” on the login page with the same address.</p>
+        {alreadyTheirs ? (
+          <ButtonLink href={roleHome(user!.role)} size="lg" className="mt-5 rounded-[9px] px-[22px]">Go to dashboard</ButtonLink>
+        ) : (
+          <>
+            <ButtonLink href="/login" size="lg" className="mt-5 rounded-[9px] px-[22px]">Log in</ButtonLink>
+            <p className="mt-4 text-xs text-ink-faint">Didn&apos;t get the email? Check spam, then use “Email me a login link” on the login page with the same address.</p>
+          </>
+        )}
       </Card>
     </div>
   );

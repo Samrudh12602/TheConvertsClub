@@ -3,6 +3,9 @@ export type RoleName = "STUDENT" | "MENTOR" | "ADMIN";
 export const roleHome = (role: RoleName | undefined | null): string =>
   role === "ADMIN" ? "/admin" : role === "MENTOR" ? "/mentor" : role === "STUDENT" ? "/student" : "/login";
 
+/** Label for the "you're already signed in" CTA on public pages (site header, footer). */
+export const PORTAL_LABEL: Record<RoleName, string> = { STUDENT: "My dashboard", MENTOR: "Mentor portal", ADMIN: "Admin console" };
+
 /** Only same-site relative paths are allowed as post-login destinations (no open redirects). */
 export function safeNext(next: string | null | undefined): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return null;

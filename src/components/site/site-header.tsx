@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
 import { ButtonLink } from "@/components/ui/button";
-import type { RoleName } from "@/lib/roles";
-
-const PORTAL_LABEL: Record<RoleName, string> = { STUDENT: "My dashboard", MENTOR: "Mentor portal", ADMIN: "Admin console" };
+import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
 
 const NAV = [
   { href: "/", label: "Home" },
