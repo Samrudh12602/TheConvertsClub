@@ -89,3 +89,21 @@ export async function saveProfileAction(input: unknown): Promise<Result> {
     return { ok: true, message: "Saved." };
   } catch (e) { return fail(e); }
 }
+
+const couponCode = z.string().trim().regex(/^[A-Za-z0-9]{4,16}$/, "4–16 letters and numbers, nothing else.");
+
+/** A mentor can only ever touch their own coupon — code shape and global uniqueness are re-checked
+ * server-side regardless of what the form already validated, the same as every other write here. */
+export async function updateMyCouponCodeAction(input: unknown): Promise<Result> {
+  try {
+    const { mentor } = await guard();
+    const parsed = couponCode.safeParse((input as { code?: unknown })?.code);
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your code." };
+    const code = parsed.data.toUpperCase();
+    const existing = await db.coupon.findUnique({ where: { code }, select: { mentorId: true } });
+    if (existing && existing.mentorId !== mentor.id) return { ok: false, error: "That code is already taken — try another." };
+    await db.coupon.update({ where: { mentorId: mentor.id }, data: { code } });
+    revalidatePath("/mentor/profile");
+    return { ok: true, message: "Code updated." };
+  } catch (e) { return fail(e); }
+}

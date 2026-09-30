@@ -26,7 +26,7 @@ async function seedReference() {
   for (const [i, p] of PRODUCTS.entries()) {
     const singleOrder = SINGLES_ORDER.indexOf(p.slug);
     const data = {
-      name: p.name, kind: p.kind, pricePaise: p.pricePaise, mrpPaise: p.mrpPaise, earlyBirdEndsAt: p.earlyBirdEndsAt,
+      name: p.name, kind: p.kind, pricePaise: p.pricePaise, mrpPaise: p.mrpPaise, mentorPricePaise: p.mentorPricePaise,
       enrolledOnly: p.enrolledOnly, summary: p.summary, includes: p.includes, badge: p.badge ?? null,
       sortOrder: i, singleOrder: singleOrder >= 0 ? singleOrder : null,
     };

@@ -24,7 +24,7 @@ function toCatalog(p: Row): CatalogProduct {
     kind: p.kind,
     pricePaise: p.pricePaise,
     mrpPaise: p.mrpPaise,
-    earlyBirdEndsAt: p.earlyBirdEndsAt,
+    mentorPricePaise: p.mentorPricePaise,
     enrolledOnly: p.enrolledOnly,
     credits: p.credits.map((c) => ({ kind: c.kind, quantity: c.quantity })),
     summary: p.summary,
@@ -40,9 +40,7 @@ const cachedAll = unstable_cache(async () => (await loadAll()).map(toCatalog), [
 });
 
 export async function getProducts(): Promise<CatalogProduct[]> {
-  const all = await cachedAll();
-  // unstable_cache serialises Dates to strings; restore them.
-  return all.map((p) => ({ ...p, earlyBirdEndsAt: p.earlyBirdEndsAt ? new Date(p.earlyBirdEndsAt) : null }));
+  return cachedAll();
 }
 
 export async function getProduct(slug: string): Promise<CatalogProduct | null> {

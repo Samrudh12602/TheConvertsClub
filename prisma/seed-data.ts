@@ -2,17 +2,14 @@ import type { CatalogProduct } from "../src/lib/pricing";
 import { rupeesToPaise as r } from "../src/lib/money";
 
 /** Seed source for Product + ProductCredit. All values are editable in Admin afterwards. */
-// 31 January 2027, end of day IST.
-export const EARLY_BIRD_END = new Date("2027-01-31T23:59:59+05:30");
-
 export const PRODUCTS: CatalogProduct[] = [
   {
     slug: "call-convert-plus",
     name: "Call Convert Plus",
     kind: "BUNDLE",
-    pricePaise: r(2999),
+    pricePaise: r(3999),
     mrpPaise: r(4999),
-    earlyBirdEndsAt: EARLY_BIRD_END,
+    mentorPricePaise: r(2999),
     enrolledOnly: false,
     credits: [
       { kind: "PI", quantity: 6 },
@@ -37,9 +34,9 @@ export const PRODUCTS: CatalogProduct[] = [
     slug: "call-convert",
     name: "Call Convert",
     kind: "BUNDLE",
-    pricePaise: r(2199),
+    pricePaise: r(2599),
     mrpPaise: r(2999),
-    earlyBirdEndsAt: EARLY_BIRD_END,
+    mentorPricePaise: r(2199),
     enrolledOnly: false,
     credits: [
       { kind: "PI", quantity: 4 },
@@ -65,7 +62,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(599),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "PI", quantity: 1 }],
     summary: "One hour, one focus area, written feedback in 24 hours.",
@@ -77,7 +74,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(449),
     mrpPaise: r(599),
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: true,
     credits: [{ kind: "PI", quantity: 1 }],
     summary: "For enrolled students who want one more.",
@@ -89,7 +86,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(199),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "GD", quantity: 1 }],
     summary: "Eight-person batch, live moderation, individual notes.",
@@ -101,7 +98,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(199),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "WAT", quantity: 1 }],
     summary: "Upload your essay, get it marked against the same rubric.",
@@ -113,7 +110,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(399),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "SOP_DETAILED", quantity: 1 }],
     summary: "Line edits plus a rewrite of your weakest paragraph.",
@@ -125,7 +122,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(99),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "SOP_BASIC", quantity: 1 }],
     summary: "Structure, tone and red flags. No line edits.",
@@ -137,7 +134,7 @@ export const PRODUCTS: CatalogProduct[] = [
     kind: "SINGLE",
     pricePaise: r(299),
     mrpPaise: null,
-    earlyBirdEndsAt: null,
+    mentorPricePaise: null,
     enrolledOnly: false,
     credits: [{ kind: "GUIDANCE", quantity: 1 }],
     summary: "A 45-minute call on what to prioritise before your date.",
@@ -155,4 +152,3 @@ export const SINGLES_ORDER = [
   "sop-detailed",
   "quick-guidance",
 ];
-

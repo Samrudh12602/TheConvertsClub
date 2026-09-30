@@ -7,8 +7,8 @@ const bySlug = (s: string) => PRODUCTS.find((p) => p.slug === s)!;
 describe("seed catalog matches the spec", () => {
   it("has the nine products at the specified prices", () => {
     expect(Object.fromEntries(PRODUCTS.map((p) => [p.slug, p.pricePaise / 100]))).toEqual({
-      "call-convert-plus": 2999,
-      "call-convert": 2199,
+      "call-convert-plus": 3999,
+      "call-convert": 2599,
       "mock-pi": 599,
       "additional-pi": 449,
       "mock-gd": 199,
@@ -48,13 +48,18 @@ describe("seed catalog matches the spec", () => {
 });
 
 describe("priceView", () => {
-  // Every product shows MRP, full stop — no automatic early-bird or enrolled-tier discount; see
-  // pricing.test.ts for the general rule. This just confirms the real seed catalog follows it too.
-  it("shows the real Call Convert MRP, not its early-bird pricePaise", () => {
-    expect(priceView(bySlug("call-convert"))).toMatchObject({ payablePaise: 299900, strikePaise: null, discountPaise: 0, earlyBirdActive: false });
+  // See pricing.test.ts for the general rule; this just confirms the real seed catalog follows it:
+  // MRP struck through, pricePaise shown/charged by default, mentorPricePaise lower still with a code.
+  it("shows Call Convert's public price with its real MRP struck through", () => {
+    expect(priceView(bySlug("call-convert"))).toEqual({ payablePaise: 259900, strikePaise: 299900 });
   });
-  it("shows the real Additional PI MRP, not its enrolled-tier pricePaise", () => {
-    expect(priceView(bySlug("additional-pi")).payablePaise).toBe(59900);
+  it("Call Convert's mentor price is lower than its public price, which is lower than MRP", () => {
+    const p = bySlug("call-convert");
+    expect(p.mentorPricePaise).toBeLessThan(p.pricePaise);
+    expect(p.pricePaise).toBeLessThan(p.mrpPaise!);
+  });
+  it("Additional PI keeps its real enrolled-tier price, not its MRP", () => {
+    expect(priceView(bySlug("additional-pi")).payablePaise).toBe(44900);
   });
   it("leaves products without an MRP alone", () => {
     expect(priceView(bySlug("mock-pi")).strikePaise).toBeNull();

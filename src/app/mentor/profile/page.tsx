@@ -2,6 +2,7 @@ import { Panel } from "@/components/portal/ui";
 import { PortalPage } from "@/components/portal/portal-page";
 import { SetPasswordForm } from "@/components/portal/set-password-form";
 import { ProfileForm } from "@/components/mentor/profile-form";
+import { CouponCodeForm } from "@/components/mentor/coupon-code-form";
 import { db } from "@/lib/db";
 import { decryptJson } from "@/server/crypto";
 import { requireMentor } from "@/server/session";
@@ -34,6 +35,7 @@ export default async function Profile() {
             <div>
               <p className="tnum font-display text-xl font-bold tracking-[0.08em] text-ink">{coupon.code}</p>
               <p className="mt-1.5 max-w-[46ch] text-[12.5px] leading-[1.5] text-ink-faint">Give this to a student — they enter it at checkout for {coupon.type === "PERCENT" ? `${coupon.value}% off` : "a discount"} on any purchase.</p>
+              <CouponCodeForm code={coupon.code} />
             </div>
             <div className="rounded-[10px] bg-ink px-4 py-3 text-center">
               <p className="tnum font-display text-2xl font-bold leading-none text-surface">{referrals}</p>

@@ -27,8 +27,9 @@ export interface CatalogProduct {
   kind: "BUNDLE" | "SINGLE";
   pricePaise: number;
   mrpPaise: number | null;
-  /** While now < earlyBirdEndsAt the price is pricePaise; afterwards it reverts to mrpPaise. */
-  earlyBirdEndsAt: Date | null;
+  /** Exact price a mentor's own coupon charges for this product, when set. Null means a mentor
+   * coupon just applies its normal discount (e.g. 10% off pricePaise) here, like anywhere else. */
+  mentorPricePaise: number | null;
   /** Only purchasable from inside the student portal by an enrolled student. */
   enrolledOnly: boolean;
   credits: Credit[];
@@ -42,23 +43,22 @@ export interface CatalogProduct {
 export const FEATURED_SLUG = "call-convert";
 
 export interface PriceView {
-  /** What the buyer pays. */
+  /** What the buyer pays with no coupon. */
   payablePaise: number;
-  /** The struck-through list price, when a discount is showing. */
+  /** The struck-through MRP, shown whenever it's higher than payablePaise. */
   strikePaise: number | null;
-  discountPaise: number;
-  earlyBirdActive: boolean;
-  earlyBirdEndsAt: Date | null;
 }
 
 /**
- * Every product shows at MRP, full stop — no automatic early-bird or enrolled-tier discount. The
- * only way a price ever comes down is a coupon entered at checkout (a mentor's own referral code,
- * or an admin-issued one); `now` and `earlyBirdEndsAt` no longer affect what's shown or charged.
+ * Three tiers, at most: MRP (struck through, if set and higher) -> pricePaise (what's shown and
+ * charged by default, no coupon needed) -> a mentor's own coupon, which can push the price down
+ * further still (see checkCoupon). Nothing here is time-limited or enrollment-gated — that's set
+ * per product by admin (pricePaise itself, e.g. Additional PI's enrolled price; enrolledOnly is a
+ * separate, unrelated gate on who can even buy it).
  */
 export function priceView(p: CatalogProduct): PriceView {
-  const payablePaise = p.mrpPaise ?? p.pricePaise;
-  return { payablePaise, strikePaise: null, discountPaise: 0, earlyBirdActive: false, earlyBirdEndsAt: null };
+  const strikePaise = p.mrpPaise !== null && p.mrpPaise > p.pricePaise ? p.mrpPaise : null;
+  return { payablePaise: p.pricePaise, strikePaise };
 }
 
 const LABELS: Record<CreditKind, { long: [string, string]; short: [string, string] }> = {
@@ -96,6 +96,8 @@ export interface CouponLite {
   maxUses: number | null;
   usedCount: number;
   active: boolean;
+  /** Set only for a mentor's own coupon — see `mentorPricePaise` below. */
+  mentorId?: string | null;
 }
 
 export type CouponCheck = { ok: true; discountPaise: number } | { ok: false; reason: string };
@@ -103,11 +105,19 @@ export type CouponCheck = { ok: true; discountPaise: number } | { ok: false; rea
 /** Razorpay's minimum charge is ₹1, so a coupon can never take an order below 100 paise. */
 export const MIN_CHARGE_PAISE = 100;
 
-export function checkCoupon(c: CouponLite | null, payablePaise: number, now: Date = new Date()): CouponCheck {
+/**
+ * `mentorPricePaise`: when this coupon belongs to a mentor AND the product being bought has one set,
+ * the discount is whatever gets the order to exactly that price — not the coupon's own percent/flat
+ * value. Lets one mentor coupon charge a specific target price on, say, Call Convert, while still
+ * applying its normal percent everywhere else.
+ */
+export function checkCoupon(c: CouponLite | null, payablePaise: number, now: Date = new Date(), mentorPricePaise: number | null = null): CouponCheck {
   if (!c || !c.active) return { ok: false, reason: "That code isn't valid." };
   if (c.expiresAt && c.expiresAt < now) return { ok: false, reason: "That code has expired." };
   if (c.maxUses !== null && c.usedCount >= c.maxUses) return { ok: false, reason: "That code has been fully used." };
-  const raw = c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100) : c.value;
+  const raw = c.mentorId && mentorPricePaise !== null
+    ? payablePaise - mentorPricePaise
+    : c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100) : c.value;
   const discountPaise = Math.max(0, Math.min(raw, payablePaise - MIN_CHARGE_PAISE));
   return discountPaise > 0 ? { ok: true, discountPaise } : { ok: false, reason: "That code doesn't apply to this order." };
 }

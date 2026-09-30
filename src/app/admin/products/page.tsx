@@ -18,8 +18,8 @@ export default async function ProductsPage() {
       <Panel title="Catalog" flush={false}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse text-left text-[12.5px]">
-            <thead><tr className="border-b border-line">{["Product", "Price ₹", "MRP ₹", "Active", ""].map((h) => <th key={h} className="type-label px-3.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
-            <tbody>{products.map((p) => <ProductRow key={p.id} id={p.id} name={`${p.name} · ${p._count.enrollments} sold`} pricePaise={p.pricePaise} mrpPaise={p.mrpPaise} active={p.active} />)}</tbody>
+            <thead><tr className="border-b border-line">{["Product", "Price ₹", "MRP ₹", "Mentor code ₹", "Active", ""].map((h) => <th key={h} className="type-label px-3.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
+            <tbody>{products.map((p) => <ProductRow key={p.id} id={p.id} name={`${p.name} · ${p._count.enrollments} sold`} pricePaise={p.pricePaise} mrpPaise={p.mrpPaise} mentorPricePaise={p.mentorPricePaise} active={p.active} />)}</tbody>
           </table>
         </div>
       </Panel>

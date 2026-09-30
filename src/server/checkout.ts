@@ -27,7 +27,7 @@ export async function quote(slug: string, couponCode?: string | null, now = new 
   let couponMessage: string | null = null;
   if (couponCode?.trim()) {
     const c = await db.coupon.findUnique({ where: { code: couponCode.trim().toUpperCase() } });
-    const r = checkCoupon(c, v.payablePaise, now);
+    const r = checkCoupon(c, v.payablePaise, now, product.mentorPricePaise);
     if (r.ok) {
       discountPaise = r.discountPaise;
       couponId = c!.id;

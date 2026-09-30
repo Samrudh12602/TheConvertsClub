@@ -19,9 +19,7 @@ export interface CheckoutSummary {
   items: string[];
   listPricePaise: number | null;
   discountPaise: number;
-  discountLabel: string;
   totalPaise: number;
-  earlyBirdNote: string | null;
   refundWindowHours: number;
   paymentsEnabled: boolean;
   prefill?: { name: string; email: string; phone: string };
@@ -47,7 +45,7 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
   const lines: { label: string; value: string; strong?: boolean; tone?: "discount" }[] = [];
   if (summary.listPricePaise !== null) {
     lines.push({ label: summary.name, value: formatPaise(summary.listPricePaise) });
-    lines.push({ label: summary.discountLabel, value: formatPaise(-summary.discountPaise), tone: "discount" });
+    lines.push({ label: "Discount", value: formatPaise(-summary.discountPaise), tone: "discount" });
   }
   if (couponOff > 0) lines.push({ label: "Coupon", value: formatPaise(-couponOff), tone: "discount" });
   lines.push({ label: "Total", value: formatPaise(total), strong: true });
@@ -109,7 +107,6 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
             <Button type="submit" variant="dark" className="px-[18px] text-[12.5px]">Apply</Button>
           </form>
           {couponMsg && <p role="status" className={clsx("mt-2.5 text-xs font-medium leading-normal", couponOff > 0 ? "text-green" : "text-ink-2")}>{couponMsg}</p>}
-          {summary.earlyBirdNote && <p className="mt-2.5 text-xs font-medium leading-normal text-green">{summary.earlyBirdNote}</p>}
         </Card>
       </div>
 

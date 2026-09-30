@@ -334,6 +334,10 @@ model Product {
   kind            ProductKind
   pricePaise      Int
   mrpPaise        Int?
+  /// Exact price when a mentor's own referral coupon is applied to this product — not a percent/flat
+  /// delta, a specific target price admin sets per product. Null means a mentor coupon just applies
+  /// its own normal discount (e.g. 10% off) to this product like it would anywhere else.
+  mentorPricePaise Int?
   earlyBirdEndsAt DateTime?
   enrolledOnly    Boolean     @default(false)
   active          Boolean     @default(true)

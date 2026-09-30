@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createCouponAction, toggleCouponAction, updateProductAction } from "@/app/admin/actions";
 
-export function ProductRow({ id, name, pricePaise, mrpPaise, active }: { id: string; name: string; pricePaise: number; mrpPaise: number | null; active: boolean }) {
+export function ProductRow({ id, name, pricePaise, mrpPaise, mentorPricePaise, active }: { id: string; name: string; pricePaise: number; mrpPaise: number | null; mentorPricePaise: number | null; active: boolean }) {
   const router = useRouter();
-  const [v, setV] = useState({ price: (pricePaise / 100).toString(), mrp: mrpPaise ? (mrpPaise / 100).toString() : "", active });
+  const [v, setV] = useState({ price: (pricePaise / 100).toString(), mrp: mrpPaise ? (mrpPaise / 100).toString() : "", mentorPrice: mentorPricePaise ? (mentorPricePaise / 100).toString() : "", active });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   return (
@@ -15,9 +15,10 @@ export function ProductRow({ id, name, pricePaise, mrpPaise, active }: { id: str
       <td className="px-3.5 py-2.5 text-ink-body">{name}</td>
       <td className="px-3.5 py-2"><input type="number" value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
       <td className="px-3.5 py-2"><input type="number" value={v.mrp} onChange={(e) => setV({ ...v, mrp: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
+      <td className="px-3.5 py-2"><input type="number" value={v.mentorPrice} onChange={(e) => setV({ ...v, mentorPrice: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
       <td className="px-3.5 py-2"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /></td>
       <td className="px-3.5 py-2">
-        <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { setBusy(true); const r = await updateProductAction({ id, pricePaise: Math.round(Number(v.price) * 100), mrpPaise: v.mrp ? Math.round(Number(v.mrp) * 100) : undefined, active: v.active }); setBusy(false); setMsg(r.ok ? "Saved" : r.error); if (r.ok) router.refresh(); }}>{busy ? "…" : "Save"}</Button>
+        <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { setBusy(true); const r = await updateProductAction({ id, pricePaise: Math.round(Number(v.price) * 100), mrpPaise: v.mrp ? Math.round(Number(v.mrp) * 100) : undefined, mentorPricePaise: v.mentorPrice ? Math.round(Number(v.mentorPrice) * 100) : undefined, active: v.active }); setBusy(false); setMsg(r.ok ? "Saved" : r.error); if (r.ok) router.refresh(); }}>{busy ? "…" : "Save"}</Button>
         {msg && <span className={`ml-2 text-[11px] ${msg === "Saved" ? "text-green" : "text-oxblood"}`}>{msg}</span>}
       </td>
     </tr>

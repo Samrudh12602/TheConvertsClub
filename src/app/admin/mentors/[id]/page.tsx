@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
-import { PublicVisibleToggle, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
+import { MentorCouponEditor, PublicVisibleToggle, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
 import { db } from "@/lib/db";
 import { fmtDate, fmtWhen } from "@/lib/format";
 import { ACCRUAL_STATUS, sessionTitle } from "@/lib/labels";
@@ -69,6 +69,10 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
                 <p className="type-label text-ink-faint">Discount</p>
                 <p className="tnum mt-1 text-[13px] font-semibold text-ink">{m.referralCoupon.type === "PERCENT" ? `${m.referralCoupon.value}%` : formatPaise(m.referralCoupon.value)}</p>
               </div>
+              <StatusPill tone={m.referralCoupon.active ? "green" : "oxblood"}>{m.referralCoupon.active ? "Active" : "Disabled"}</StatusPill>
+            </div>
+            <div className="mt-3.5 border-t border-line-soft pt-3.5">
+              <MentorCouponEditor mentorId={m.id} coupon={{ code: m.referralCoupon.code, type: m.referralCoupon.type, value: m.referralCoupon.value, maxUses: m.referralCoupon.maxUses, active: m.referralCoupon.active }} />
             </div>
             {referralOrders.length > 0 && (
               <div className="mt-3.5 overflow-x-auto border-t border-line-soft pt-3.5">

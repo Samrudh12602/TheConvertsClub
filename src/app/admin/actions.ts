@@ -168,6 +168,35 @@ export async function setMentorPublicVisibleAction(mentorId: string, publicVisib
   } catch (e) { return fail(e); }
 }
 
+const mentorCouponAdminSchema = z.object({
+  code: z.string().trim().regex(/^[A-Za-z0-9]{4,16}$/, "4–16 letters and numbers, nothing else."),
+  type: z.enum(["PERCENT", "FLAT"]),
+  value: z.coerce.number().int().min(1),
+  maxUses: z.preprocess(emptyToUndef, z.coerce.number().int().min(1).optional()),
+  active: z.boolean(),
+});
+
+/** Admin's complete control over one mentor's referral coupon — code, discount, a use cap, on/off.
+ * Same coupon row a mentor can nudge their own code on; admin can change anything about it. */
+export async function updateMentorCouponAction(mentorId: string, input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mentor-coupon");
+    assertConfigWritable(actor, "mentor coupons");
+    const m = await db.mentorProfile.findUnique({ where: { id: mentorId }, include: { user: true }, });
+    if (!m) throw new AdminError("Mentor not found.");
+    if (actor.isDemo && !m.user.isDemo) throw new AdminError("The demo admin can only work with demo data.");
+    const p = mentorCouponAdminSchema.parse(input);
+    const code = p.code.toUpperCase();
+    const existing = await db.coupon.findUnique({ where: { code }, select: { mentorId: true } });
+    if (existing && existing.mentorId !== mentorId) throw new AdminError("That code is already in use by another coupon.");
+    await db.coupon.update({ where: { mentorId }, data: { code, type: p.type, value: p.value, maxUses: p.maxUses || null, active: p.active } });
+    await audit({ actorId: actor.id, action: "mentor.coupon_update", entity: "MentorProfile", entityId: mentorId, after: p });
+    revalidatePath(`/admin/mentors/${mentorId}`);
+    revalidatePath("/admin/mentors");
+    return { ok: true, message: "Saved." };
+  } catch (e) { return fail(e); }
+}
+
 export async function setStudentStatusAction(userId: string, status: unknown): Promise<Result> {
   try {
     const actor = await guard("student-status");
@@ -252,13 +281,13 @@ export async function refundOrderAction(input: unknown): Promise<Result> {
 
 // ───────────── Products & coupons ─────────────
 
-const productSchema = z.object({ id: z.string(), pricePaise: z.coerce.number().int().min(100), mrpPaise: z.coerce.number().int().min(0).optional(), active: z.boolean() });
+const productSchema = z.object({ id: z.string(), pricePaise: z.coerce.number().int().min(100), mrpPaise: z.coerce.number().int().min(0).optional(), mentorPricePaise: z.coerce.number().int().min(0).optional(), active: z.boolean() });
 export async function updateProductAction(input: unknown): Promise<Result> {
   try {
     const actor = await guard("product");
     assertConfigWritable(actor, "products");
     const p = productSchema.parse(input);
-    await db.product.update({ where: { id: p.id }, data: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise || null, active: p.active } });
+    await db.product.update({ where: { id: p.id }, data: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise || null, mentorPricePaise: p.mentorPricePaise || null, active: p.active } });
     await audit({ actorId: actor.id, action: "product.update", entity: "Product", entityId: p.id, after: p });
     revalidatePath("/", "layout"); revalidatePath("/admin/products");
     return { ok: true, message: "Saved." };

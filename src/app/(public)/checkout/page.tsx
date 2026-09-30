@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { CheckoutView, type CheckoutSummary } from "@/components/site/checkout-view";
 import { getProduct } from "@/lib/catalog";
 import { describeCredit, priceView } from "@/lib/pricing";
-import { formatIstDayMonth } from "@/lib/datetime";
-import { formatPaise } from "@/lib/money";
 import { getPolicy } from "@/lib/settings-db";
 import { paymentsConfigured } from "@/server/razorpay";
 import { currentUser } from "@/server/session";
@@ -30,13 +28,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     name: product.name,
     items: product.credits.map((c) => describeCredit(c)),
     listPricePaise: v.strikePaise,
-    discountPaise: v.discountPaise,
-    discountLabel: v.earlyBirdActive ? "Early bird" : "Discount",
+    discountPaise: v.strikePaise !== null ? v.strikePaise - v.payablePaise : 0,
     totalPaise: v.payablePaise,
-    earlyBirdNote:
-      v.earlyBirdActive && v.earlyBirdEndsAt
-        ? `Early-bird applied · ${formatPaise(v.discountPaise)} off until ${formatIstDayMonth(v.earlyBirdEndsAt)}`
-        : null,
     refundWindowHours: policy.refundWindowHours,
     paymentsEnabled: paymentsConfigured(),
     prefill: user ? { name: user.name?.replace(/\s*\(demo\)\s*/, "") ?? "", email: user.email, phone: user.phone ?? "" } : undefined,

@@ -231,6 +231,36 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       exists yet in this deployment to test through. Covered instead by unit tests on the exact
       generation logic plus the backfill script running the identical algorithm successfully against
       the live database.
+28. **Pricing is now genuinely three-tier — this reverses part of item 26 above, on purpose, per a
+    direct follow-up request.** Item 26 made every price default to MRP; this walks that back to a
+    richer model: MRP (struck through) -> `pricePaise` (shown/charged by default, no coupon) ->
+    `Product.mentorPricePaise` (new column, nullable) — an exact target price a mentor's own coupon
+    charges for that specific product, overriding the coupon's own percent/flat math. `checkCoupon()`
+    takes an optional `mentorPricePaise` now: if the coupon being used belongs to a mentor AND the
+    product has one set, the discount is whatever reaches that exact price; otherwise every coupon
+    (mentor or not) behaves exactly as before. This is opt-in per product, not special-cased to the
+    two bundles — any product can get a `mentorPricePaise` from Admin > Products, which is also where
+    `pricePaise`/`mrpPaise` are edited, so all three tiers live in one place.
+    - **The two bundles, set to the requested numbers**: Call Convert Plus 4999 -> 3999 -> 2999 (with
+      a mentor code); Call Convert 2999 -> 2599 -> 2199. Updated on the live `Product` rows directly
+      (not just seed-data.ts, which only seeds a fresh database) and in seed-data.ts for consistency.
+    - **Additional PI reverts fully to its original, correct behaviour**: 449 automatic for any
+      enrolled student (pricePaise), 599 otherwise (mrpPaise) — restored by the priceView() revert
+      alone, no special-casing needed. This was never a promotional discount; flattening it in item 26
+      was a mistake, caught and corrected here.
+    - **Mentors can edit their own coupon's code** (4-16 alphanumeric characters, checked against the
+      live database for a collision — not assumed unique) from `/mentor/profile`. Verified live: a
+      real code change persisted, and trying to steal another mentor's existing code was correctly
+      rejected with "That code is already taken."
+    - **Admin has complete control over any mentor's coupon** — code, type, value, a use cap, and
+      active/inactive — from that mentor's own `/admin/mentors/[id]` page, the same place admin
+      already views everything else about them. Reuses the identical `assertConfigWritable` guard
+      every other config-mutating admin action already has; confirmed the demo admin is correctly
+      blocked from it, same as from creating a mentor or editing a product.
+    - Verified live end-to-end: Call Convert with a real mentor code computed to exactly 2199 (not a
+      generic percent off 2599); the same code on a product with no `mentorPricePaise` set (Mock
+      GD/GE) correctly fell back to the mentor's own 10%; the admin Products page shows all three
+      price columns pre-filled with the real values for every product.
 
 ## Assumptions
 
