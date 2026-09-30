@@ -261,6 +261,15 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       generic percent off 2599); the same code on a product with no `mentorPricePaise` set (Mock
       GD/GE) correctly fell back to the mentor's own 10%; the admin Products page shows all three
       price columns pre-filled with the real values for every product.
+29. **Coupon list cleaned up: removed `WELCOME10` (unused — zero orders ever referenced it, confirmed
+    before deleting), added one generic `TEST90` (90% off, for your own testing).** The Admin >
+    Products "Coupons" panel now lists every coupon, generic and mentor-owned, in one place —
+    previously mentor coupons were deliberately kept off this page; that turned out to be the wrong
+    call once there was a real "where do I see all of this" need. Sorted by how much each has
+    actually been used, each mentor row links straight to their own page. Admin's full per-mentor
+    view (`/admin/mentors/[id]`'s "Referrals" panel: code, total referred, an itemized student/
+    service/date/amount table) and the quick per-mentor count on the `/admin/mentors` list were
+    already built — this was about making the aggregate view discoverable, not adding new tracking.
 
 ## Assumptions
 
