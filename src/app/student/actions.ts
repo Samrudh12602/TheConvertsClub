@@ -139,14 +139,14 @@ const onboardingSchema = z.object({
 export async function saveOnboardingAction(step: number, data: unknown): Promise<Ok> {
   try {
     const user = await guard("onboarding");
-    const d = onboardingSchema.parse(data);
+    const { phone, ...d } = onboardingSchema.parse(data);
     const finished = step >= 4;
     await db.studentProfile.upsert({
       where: { userId: user.id },
       update: { ...d, onboardingStep: Math.max(step, 0), onboardedAt: finished ? new Date() : undefined },
       create: { userId: user.id, ...d, onboardingStep: step, onboardedAt: finished ? new Date() : null },
     });
-    if (d.phone) await db.user.update({ where: { id: user.id }, data: { phone: d.phone } });
+    if (phone) await db.user.update({ where: { id: user.id }, data: { phone } });
     if (d.targetInstitutes.length) {
       const have = new Set((await db.callTracker.findMany({ where: { studentId: user.id }, select: { institute: true } })).map((c) => c.institute));
       const fresh = d.targetInstitutes.filter((i) => !have.has(i));
