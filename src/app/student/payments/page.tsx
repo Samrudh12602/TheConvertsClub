@@ -27,7 +27,10 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   const enrolled = enrollments.filter((e) => e.status === "ACTIVE").length;
   const me = { name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" };
   const canPay = paymentsConfigured();
-  const extra = products.filter((p) => p.kind === "SINGLE" && (!p.enrolledOnly || enrolled > 0));
+  // Top up is the enrolled-student discount shop, not the public a-la-carte catalog — only truly
+  // enrolled-only products belong here, and only once actually enrolled. Everyone else buys singles
+  // at full price from /services, same as a public visitor.
+  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && p.enrolledOnly && p.slug !== "additional-pi") : [];
   const addl = products.find((p) => p.slug === "additional-pi");
   const pi = products.find((p) => p.slug === "mock-pi");
 
@@ -44,17 +47,19 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
           {canPay ? <PortalBuy slug="additional-pi" me={me} label={`Buy additional PI · ${formatPaise(priceView(addl).payablePaise)}`} /> : <span className="text-xs text-ink-faint">Payments aren&apos;t enabled yet.</span>}
         </div>
       )}
-      <Panel title="Top up">
-        <div className="grid gap-px bg-line-soft" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
-          {extra.filter((p) => p.slug !== "additional-pi").map((p) => (
-            <div key={p.slug} className="flex flex-col gap-2 bg-card p-3.5">
-              <p className="text-[13px] font-semibold leading-[1.3] text-ink">{p.name}</p>
-              <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}</p>
-              {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" /> : null}
-            </div>
-          ))}
-        </div>
-      </Panel>
+      {extra.length > 0 && (
+        <Panel title="Top up">
+          <div className="grid gap-px bg-line-soft" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
+            {extra.map((p) => (
+              <div key={p.slug} className="flex flex-col gap-2 bg-card p-3.5">
+                <p className="text-[13px] font-semibold leading-[1.3] text-ink">{p.name}</p>
+                <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}</p>
+                {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" /> : null}
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
       <Panel title="Payment history">
         {orders.length === 0 ? <Empty>No payments yet.</Empty> : orders.map((o) => (
           <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-[15px] py-[13px] last:border-b-0">

@@ -5,6 +5,7 @@ import { TopPill, UserChip } from "@/components/portal/user-chip";
 import { db } from "@/lib/db";
 import { firstName, fmtFull } from "@/lib/format";
 import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
+import { studentPortal } from "@/lib/portal-nav";
 import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
 
@@ -25,11 +26,14 @@ export default async function StudentLayout({ children }: { children: React.Reac
     return `${s.available} ${CREDIT_LABEL[k]}${s.reserved > 0 ? ` (+${s.reserved} held)` : ""}`;
   });
   const days = nextCall?.interviewDate ? Math.ceil((nextCall.interviewDate.getTime() - nowMs()) / 86_400_000) : null;
+  const onboarded = Boolean(user.studentProfile?.onboardedAt);
+  const navGroups = onboarded ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => i.href !== "/student/onboarding") })) : studentPortal.groups;
 
   return (
     <PortalFrame
       role="student"
       credits={credits}
+      navGroups={navGroups}
       titleOverrides={{ "/student": { title: `Hi ${firstName(user.name)}`, sub: `${fmtFull(new Date())} · everything in IST` } }}
       topRight={
         <>

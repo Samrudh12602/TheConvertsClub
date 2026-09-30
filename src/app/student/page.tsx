@@ -18,9 +18,10 @@ export default async function StudentDashboard() {
     if (bought) redirect("/student/onboarding");
   }
   const now = new Date();
-  const [upcoming, feedbackRows] = await Promise.all([
+  const [upcoming, feedbackRows, enrolledCount] = await Promise.all([
     db.session.findMany({ where: { studentId: user.id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 5, include: { mentor: { include: { user: { select: { name: true } } } } } }),
     db.feedback.findMany({ where: { session: { studentId: user.id } }, orderBy: { submittedAt: "desc" }, take: 3, include: { session: true } }),
+    db.enrollment.count({ where: { userId: user.id, status: "ACTIVE" } }),
   ]);
   const next = upcoming[0];
   const rest = upcoming.slice(1, 5);
@@ -47,6 +48,13 @@ export default async function StudentDashboard() {
             <p className="type-eyebrow text-dark-muted">Prepare</p>
             {[...prep, "Keep your resume open in another tab."].slice(0, 3).map((p) => <p key={p} className="mt-2 text-[12.5px] leading-normal text-[#D5CEC5]">{p}</p>)}
           </div>
+        </div>
+      ) : enrolledCount === 0 ? (
+        <div className="rounded-xl bg-ink p-5">
+          <p className="type-eyebrow text-dark-muted">Not enrolled yet</p>
+          <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2] text-surface">Pick a plan to get started</h2>
+          <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">Mock PIs, GDs, WAT and SOP review — credits show up here the moment you enrol.</p>
+          <ButtonLink href="/packages" variant="onDark" className="mt-3.5">See packages</ButtonLink>
         </div>
       ) : (
         <div className="rounded-xl bg-ink p-5">
