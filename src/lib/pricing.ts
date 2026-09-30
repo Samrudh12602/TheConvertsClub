@@ -51,18 +51,14 @@ export interface PriceView {
   earlyBirdEndsAt: Date | null;
 }
 
-export function priceView(p: CatalogProduct, now: Date = new Date()): PriceView {
-  const earlyBirdActive = p.earlyBirdEndsAt !== null && now < p.earlyBirdEndsAt;
-  const expired = p.earlyBirdEndsAt !== null && !earlyBirdActive;
-  const payablePaise = expired && p.mrpPaise !== null ? p.mrpPaise : p.pricePaise;
-  const strikePaise = p.mrpPaise !== null && payablePaise < p.mrpPaise ? p.mrpPaise : null;
-  return {
-    payablePaise,
-    strikePaise,
-    discountPaise: strikePaise !== null ? strikePaise - payablePaise : 0,
-    earlyBirdActive,
-    earlyBirdEndsAt: earlyBirdActive ? p.earlyBirdEndsAt : null,
-  };
+/**
+ * Every product shows at MRP, full stop — no automatic early-bird or enrolled-tier discount. The
+ * only way a price ever comes down is a coupon entered at checkout (a mentor's own referral code,
+ * or an admin-issued one); `now` and `earlyBirdEndsAt` no longer affect what's shown or charged.
+ */
+export function priceView(p: CatalogProduct): PriceView {
+  const payablePaise = p.mrpPaise ?? p.pricePaise;
+  return { payablePaise, strikePaise: null, discountPaise: 0, earlyBirdActive: false, earlyBirdEndsAt: null };
 }
 
 const LABELS: Record<CreditKind, { long: [string, string]; short: [string, string] }> = {
@@ -86,9 +82,9 @@ export function describeCredit(c: Credit, style: "long" | "short" = "long"): str
 }
 
 /** "From ₹99" style label for a set of products, or the single price. */
-export function priceRangeLabel(products: CatalogProduct[], now: Date = new Date()): string {
+export function priceRangeLabel(products: CatalogProduct[]): string {
   if (products.length === 0) return "—";
-  const prices = products.map((p) => priceView(p, now).payablePaise).sort((a, b) => a - b);
+  const prices = products.map((p) => priceView(p).payablePaise).sort((a, b) => a - b);
   return prices.length > 1 ? prices.map(formatPaise).join(" / ") : formatPaise(prices[0]);
 }
 

@@ -24,9 +24,9 @@ function maskPayout(enc: string | null): string {
 
 export default async function MentorDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const m = await db.mentorProfile.findUnique({ where: { id }, include: { user: true } });
+  const m = await db.mentorProfile.findUnique({ where: { id }, include: { user: true, referralCoupon: true } });
   if (!m) notFound();
-  const [rates, bonusRules, awards, accruals, sessions, ratings, mocks] = await Promise.all([
+  const [rates, bonusRules, awards, accruals, sessions, ratings, mocks, referralOrders] = await Promise.all([
     db.payRate.findMany({ where: { tier: m.tier }, orderBy: { service: "asc" } }),
     db.bonusRule.findMany({ where: { tier: m.tier, active: true }, orderBy: { threshold: "asc" } }),
     db.bonusAward.findMany({ where: { mentorId: id } }),
@@ -34,6 +34,9 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
     db.session.findMany({ where: { mentorId: id }, orderBy: { startsAt: "desc" }, take: 10, include: { student: { select: { name: true } } } }),
     db.sessionRating.aggregate({ where: { session: { mentorId: id } }, _avg: { rating: true }, _count: true }),
     countMocks(id, (await import("@/lib/settings")).DEFAULT_SETTINGS.mockCounts),
+    m.referralCoupon
+      ? db.order.findMany({ where: { couponId: m.referralCoupon.id, status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" }, include: { product: { select: { name: true } } } })
+      : Promise.resolve([]),
   ]);
   const ruleLite = bonusRules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
   const next = nextThreshold(m.tier, mocks, ruleLite);
@@ -49,6 +52,46 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
         </div>
         <div className="flex flex-wrap items-center gap-2"><Link href={`/admin/messages?u=${m.userId}`} className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink no-underline hover:no-underline">Message</Link><TierSelect mentorId={m.id} tier={m.tier} /><StatusSelect mentorId={m.id} status={m.status} /><PublicVisibleToggle mentorId={m.id} publicVisible={m.publicVisible} /></div>
       </div>
+
+      <Panel title="Referrals" flush={false}>
+        {m.referralCoupon ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="type-label text-ink-faint">Referral code</p>
+                <p className="tnum mt-1 font-display text-lg font-bold tracking-[0.08em] text-ink">{m.referralCoupon.code}</p>
+              </div>
+              <div className="text-right">
+                <p className="type-label text-ink-faint">Students referred</p>
+                <p className="tnum mt-1 font-display text-2xl font-bold text-oxblood">{referralOrders.length}</p>
+              </div>
+              <div className="text-right">
+                <p className="type-label text-ink-faint">Discount</p>
+                <p className="tnum mt-1 text-[13px] font-semibold text-ink">{m.referralCoupon.type === "PERCENT" ? `${m.referralCoupon.value}%` : formatPaise(m.referralCoupon.value)}</p>
+              </div>
+            </div>
+            {referralOrders.length > 0 && (
+              <div className="mt-3.5 overflow-x-auto border-t border-line-soft pt-3.5">
+                <table className="w-full min-w-[480px] border-collapse text-left text-[12.5px]">
+                  <thead><tr className="border-b border-line">{["Student", "Service", "Date", "Paid"].map((h) => <th key={h} className="type-label px-2.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
+                  <tbody>
+                    {referralOrders.map((o) => (
+                      <tr key={o.id} className="border-b border-line-soft last:border-b-0">
+                        <td className="px-2.5 py-2 text-ink-body">{nm(o.guestName)}</td>
+                        <td className="px-2.5 py-2 text-ink-2">{o.product.name}</td>
+                        <td className="tnum px-2.5 py-2 text-ink-faint">{fmtDate(o.createdAt)}</td>
+                        <td className="tnum px-2.5 py-2 font-semibold text-ink">{formatPaise(o.amountPaise)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-[12.5px] text-ink-faint">No referral code on file — it&apos;s created automatically for new mentors; older ones won&apos;t have one until they&apos;re re-added.</p>
+        )}
+      </Panel>
 
       <Section cols={280}>
         <Panel title={`Pay structure · ${m.tier}`} flush={false}>

@@ -48,13 +48,13 @@ describe("seed catalog matches the spec", () => {
 });
 
 describe("priceView", () => {
-  it("shows the early-bird price before the deadline", () => {
-    const v = priceView(bySlug("call-convert"), new Date("2026-12-01T00:00:00Z"));
-    expect(v).toMatchObject({ payablePaise: 219900, strikePaise: 299900, discountPaise: 80000, earlyBirdActive: true });
+  // Every product shows MRP, full stop — no automatic early-bird or enrolled-tier discount; see
+  // pricing.test.ts for the general rule. This just confirms the real seed catalog follows it too.
+  it("shows the real Call Convert MRP, not its early-bird pricePaise", () => {
+    expect(priceView(bySlug("call-convert"))).toMatchObject({ payablePaise: 299900, strikePaise: null, discountPaise: 0, earlyBirdActive: false });
   });
-  it("reverts to MRP once early bird has ended", () => {
-    const v = priceView(bySlug("call-convert"), new Date("2027-02-01T00:00:00Z"));
-    expect(v).toMatchObject({ payablePaise: 299900, strikePaise: null, earlyBirdActive: false });
+  it("shows the real Additional PI MRP, not its enrolled-tier pricePaise", () => {
+    expect(priceView(bySlug("additional-pi")).payablePaise).toBe(59900);
   });
   it("leaves products without an MRP alone", () => {
     expect(priceView(bySlug("mock-pi")).strikePaise).toBeNull();

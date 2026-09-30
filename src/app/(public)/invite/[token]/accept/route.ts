@@ -3,6 +3,7 @@ import { auth, refreshSession } from "@/auth";
 import { db } from "@/lib/db";
 import { sha256 } from "@/server/crypto";
 import { audit } from "@/server/audit";
+import { createMentorCoupon } from "@/server/mentor-coupon";
 
 /** Accepting an invite requires being signed in as the invited email. Sets role MENTOR and creates the profile. */
 export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
@@ -20,11 +21,16 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
 
   await db.$transaction(async (tx) => {
     if (user.role !== "ADMIN") await tx.user.update({ where: { id: user.id }, data: { role: "MENTOR" } });
-    await tx.mentorProfile.upsert({
+    const isAdminMentor = user.role === "ADMIN";
+    const existingProfile = await tx.mentorProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
+    const mentor = await tx.mentorProfile.upsert({
       where: { userId: user.id },
       update: { tier: invite.tier, status: "ACTIVE" },
-      create: { userId: user.id, tier: invite.tier, status: "ACTIVE", isAdminMentor: user.role === "ADMIN" },
+      create: { userId: user.id, tier: invite.tier, status: "ACTIVE", isAdminMentor },
     });
+    // Only a brand-new, real (non-admin-mode) mentor profile gets a referral code — never on a
+    // re-accept, and admin's own mentor mode has nothing to refer.
+    if (!existingProfile && !isAdminMentor) await createMentorCoupon(tx, mentor.id, user.name ?? user.email);
     await tx.mentorInvite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } });
   });
   await audit({ actorId: user.id, action: "mentor.invite_accepted", entity: "MentorInvite", entityId: invite.id });

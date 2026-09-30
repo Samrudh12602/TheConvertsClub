@@ -180,6 +180,57 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     confirmed both the DB state and that a demo-admin safety guard correctly refused to touch a real
     (non-demo) mentor's data, and added a real season stat and watched it appear on `/results`
     alongside the still-placeholder testimonials with the demo notice correctly still showing.
+26. **Site-wide pricing is now MRP by default, everywhere — the only way a price ever comes down is
+    a coupon entered at checkout.** `priceView()` used to auto-apply a discount two ways: a
+    time-limited "early bird" price on the two bundles, and a permanent lower price on Additional PI
+    for enrolled students. Both are gone; `payablePaise` is now simply the product's MRP (or
+    `pricePaise` for the handful of singles that have no MRP at all). This was an explicit, repeated
+    instruction ("everything on site stays at MRP... make everything MRP basically"), confirmed to
+    cover Additional PI too even though that one wasn't a "discount," just a different mechanism
+    built on the same two fields — the site no longer distinguishes them. `pricePaise`/`mrpPaise`
+    themselves are untouched in the catalog; only what's displayed/charged by default changed. The
+    "Need another mock?" panel on `/student/payments` (which advertised the now-gone automatic
+    discount) was removed; Additional PI now just appears in the generic Top Up list at its MRP like
+    every other enrolled-only item.
+27. **Every mentor gets a unique, auto-generated referral coupon — the whole feature reuses the
+    existing Coupon/Order machinery, no new tracking table.** `Coupon` got one new nullable column,
+    `mentorId` (unique). A mentor's code is a completely ordinary coupon underneath: same discount
+    type/value, same `usedCount`, same `checkCoupon()` validation, same increment-on-payment in
+    `fulfilOrder` — so "which mentor referred which student for what" is just `Order.couponId ->
+    Coupon.mentorId`, nothing bespoke to maintain or get out of sync.
+    - **Code shape**: 8 characters, always — 5 letters from the mentor's own name (3 from first, 2
+      from last, padded with `X` for a short or single-word name) + 3 random digits, retried on a
+      real DB collision (checked, not assumed) up to 50 times. Two mentors named "Rohit Kulkarni"
+      get `ROHKU` + different digits, not a colliding code — verified with unit tests, including the
+      collision-retry path.
+    - **Created automatically** the moment a `MentorProfile` row is created — direct add, a promoted
+      application, and an accepted invite — inside the same transaction, so a mentor can never exist
+      without one. Admin's own "mentor mode" profile (`isAdminMentor`) deliberately doesn't get one;
+      there's no one for the owner to refer. Default discount: 10%, same as any other coupon — change
+      it per mentor from `/admin/products` like any other coupon if you ever need to.
+    - **Backfilled once for the 7 mentors that already existed** before this shipped, so the feature
+      works immediately across the whole current roster, not just future mentors.
+    - **Visibility, exactly as specified**: a mentor's own `/mentor/profile` shows their code and a
+      plain count ("3 students used it") — nothing about who. Admin sees everything: `/admin/mentors`
+      lists a referral count per mentor, and each mentor's own page (`/admin/mentors/[id]`) has a full
+      "Referrals" panel — code, total, and an itemized table of student, service, date and amount
+      paid. Mentor-owned coupons are deliberately left out of the generic `/admin/products` coupon
+      list (they live on the mentor pages instead) so that list doesn't fill up with one row per
+      mentor.
+    - **Where a coupon can be entered**: the public guest checkout already had a coupon field;
+      `PortalBuy` (in-portal purchases — Additional PI, top-ups) didn't, so one was added there too,
+      since the ask was explicitly "any purchase."
+    - Verified live end-to-end (not just unit tests): applied a real backfilled mentor code at
+      checkout and watched the 10% discount compute correctly against the new MRP base; inserted a
+      completed order using that code and confirmed it shows up correctly on both the admin mentor
+      detail page (itemized) and the mentor's own profile (count only); confirmed mentor coupons are
+      absent from the generic admin coupon list.
+    - **Not live-tested**: a brand-new mentor's coupon being created at the moment of "Add mentor
+      directly," because the demo admin account is correctly blocked from that config-writing action
+      (the same guard already protecting every other mentor-creation action) — no real admin account
+      exists yet in this deployment to test through. Covered instead by unit tests on the exact
+      generation logic plus the backfill script running the identical algorithm successfully against
+      the live database.
 
 ## Assumptions
 

@@ -6,6 +6,7 @@ import { audit } from "@/server/audit";
 import { assertConfigWritable, type Actor } from "@/server/admin";
 import { createLoginLink } from "@/server/magic-link";
 import { adminInbox, sendEmail } from "@/server/email";
+import { createMentorCoupon } from "@/server/mentor-coupon";
 import { MAX_PHOTO_BYTES, sniffImage, UploadError } from "@/server/upload-validation";
 
 export class MentorAdminError extends Error {}
@@ -76,6 +77,7 @@ export async function addMentorDirect(actor: Actor, input: AddMentorInput) {
         status: "ACTIVE",
       },
     });
+    await createMentorCoupon(tx, mentor.id, user.name ?? email);
     return { user, mentor };
   });
 
@@ -116,6 +118,7 @@ export async function promoteApplication(actor: Actor, applicationId: string, ti
       },
     });
     await tx.mentorApplication.update({ where: { id: applicationId }, data: { stage: "ACCEPTED", promotedMentorId: mentor.id } });
+    await createMentorCoupon(tx, mentor.id, app.name);
     return { user, mentor };
   });
 

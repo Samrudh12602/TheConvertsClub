@@ -285,6 +285,7 @@ model MentorProfile {
   payouts      Payout[]
   adjustments  Adjustment[]
   gdBatches    GdBatch[]
+  referralCoupon Coupon?
 
   @@index([tier, status])
 }
@@ -371,6 +372,11 @@ model Coupon {
   active    Boolean    @default(true)
   createdAt DateTime   @default(now())
   orders    Order[]
+  /// Set only for a mentor's own auto-generated referral code — every other field (discount type/value,
+  /// maxUses, active) works exactly like any other coupon, so referral tracking is just "which orders
+  /// used a coupon owned by a mentor", with no separate tracking table.
+  mentorId  String?        @unique
+  mentor    MentorProfile? @relation(fields: [mentorId], references: [id])
 }
 
 model Order {

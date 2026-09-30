@@ -10,7 +10,8 @@ export const metadata = { title: "Products" };
 export default async function ProductsPage() {
   const [products, coupons] = await Promise.all([
     db.product.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { enrollments: true } } } }),
-    db.coupon.findMany({ orderBy: { createdAt: "desc" } }),
+    // Mentor referral codes live on their own mentor pages (People > Mentors), not mixed in here.
+    db.coupon.findMany({ where: { mentorId: null }, orderBy: { createdAt: "desc" } }),
   ]);
   return (
     <PortalPage width="max-w-[1000px]">

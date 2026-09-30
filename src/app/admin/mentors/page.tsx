@@ -18,12 +18,13 @@ export default async function MentorsPage() {
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 86_400_000);
   const stats = await Promise.all(mentors.map(async (m) => {
-    const [open, booked, accrued] = await Promise.all([
+    const [open, booked, accrued, referrals] = await Promise.all([
       db.slot.count({ where: { mentorId: m.id, startsAt: { gte: now, lt: weekEnd }, status: { in: ["OPEN", "HELD"] } } }),
       db.slot.count({ where: { mentorId: m.id, startsAt: { gte: now, lt: weekEnd }, status: "BOOKED" } }),
       db.payoutAccrual.aggregate({ where: { mentorId: m.id, status: { in: ["ACCRUED", "APPROVED"] } }, _sum: { amountPaise: true } }),
+      db.order.count({ where: { coupon: { mentorId: m.id }, status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } } }),
     ]);
-    return { open, booked, accrued: accrued._sum.amountPaise ?? 0 };
+    return { open, booked, accrued: accrued._sum.amountPaise ?? 0, referrals };
   }));
 
   return (
@@ -31,7 +32,7 @@ export default async function MentorsPage() {
       <AddMentorTabs />
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
         {mentors.map((m, i) => {
-          const { open, booked, accrued } = stats[i];
+          const { open, booked, accrued, referrals } = stats[i];
           const total = open + booked;
           const hasPhoto = m.photoKey || m.photoUrl;
           return (
@@ -50,6 +51,7 @@ export default async function MentorsPage() {
               </div>
               <Meter label="This week" note={`${booked} / ${total || 0} booked`} pct={total ? (booked / total) * 100 : 0} tone="oxblood" />
               <div className="flex items-center justify-between border-t border-line-soft pt-2.5 text-[11.5px]"><span className="text-ink-faint">{m._count.sessions} upcoming</span><span className="tnum font-semibold text-ink">{formatPaise(accrued)} pending</span></div>
+              {referrals > 0 && <p className="text-[11px] font-semibold text-oxblood">{referrals} referred via coupon</p>}
             </Link>
           );
         })}

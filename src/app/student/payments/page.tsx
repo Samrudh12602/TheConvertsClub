@@ -27,26 +27,16 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   const enrolled = enrollments.filter((e) => e.status === "ACTIVE").length;
   const me = { name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" };
   const canPay = paymentsConfigured();
-  // Top up is the enrolled-student discount shop, not the public a-la-carte catalog — only truly
-  // enrolled-only products belong here, and only once actually enrolled. Everyone else buys singles
-  // at full price from /services, same as a public visitor.
-  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && p.enrolledOnly && p.slug !== "additional-pi") : [];
-  const addl = products.find((p) => p.slug === "additional-pi");
-  const pi = products.find((p) => p.slug === "mock-pi");
+  // Top up is the enrolled-student shop, not the public a-la-carte catalog — only truly enrolled-only
+  // products belong here, and only once actually enrolled. Everyone else buys singles at full price
+  // from /services, same as a public visitor. Everything shows at MRP; a mentor's referral code (or
+  // any other coupon) is what brings the price down, entered on the buy button below.
+  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && p.enrolledOnly) : [];
 
   return (
     <PortalPage width="max-w-[820px]">
       {sp.paid && <Flash tone="green">Payment received. Your credits are on the way and will appear in the sidebar in a moment.</Flash>}
       <CreditBreakdown summary={creditSummary} enrollments={enrollments} />
-      {addl && enrolled > 0 && (
-        <div className="flex flex-wrap items-center gap-3.5 rounded-[11px] border border-line bg-card p-4">
-          <div className="min-w-[240px] flex-1">
-            <h2 className="font-display text-sm font-bold leading-[1.3] text-ink">Need another mock?</h2>
-            <p className="mt-1 text-[12.5px] leading-normal text-ink-faint">Enrolled students pay {formatPaise(priceView(addl).payablePaise)} for an additional PI{pi ? ` instead of ${formatPaise(pi.pricePaise)}` : ""}.</p>
-          </div>
-          {canPay ? <PortalBuy slug="additional-pi" me={me} label={`Buy additional PI · ${formatPaise(priceView(addl).payablePaise)}`} /> : <span className="text-xs text-ink-faint">Payments aren&apos;t enabled yet.</span>}
-        </div>
-      )}
       {extra.length > 0 && (
         <Panel title="Top up">
           <div className="grid gap-px bg-line-soft" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>

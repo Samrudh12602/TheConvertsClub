@@ -21,7 +21,7 @@ export class CheckoutError extends Error {}
 export async function quote(slug: string, couponCode?: string | null, now = new Date()) {
   const product = await getProduct(slug);
   if (!product) throw new CheckoutError("That product isn't available.");
-  const v = priceView(product, now);
+  const v = priceView(product);
   let discountPaise = 0;
   let couponId: string | null = null;
   let couponMessage: string | null = null;
