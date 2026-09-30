@@ -9,7 +9,11 @@ export const metadata: Metadata = { title: { default: "Admin console", template:
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
-  const overdueCount = await db.session.count({ where: { status: "CONFIRMED", startsAt: { lt: new Date() }, feedback: null } });
+  const now = new Date();
+  const [overdueCount, overdueReviewCount] = await Promise.all([
+    db.session.count({ where: { status: "CONFIRMED", startsAt: { lt: now }, feedback: null } }),
+    db.review.count({ where: { status: { not: "COMPLETED" }, dueAt: { lt: now } } }),
+  ]);
 
   return (
     <PortalFrame
@@ -21,6 +25,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/sessions?filter=overdue" className="inline-flex items-center gap-[7px] rounded-lg border border-oxblood-line bg-oxblood-tint px-2.5 py-[7px] text-[11.5px] font-semibold leading-none text-oxblood no-underline hover:no-underline">
               <span aria-hidden className="size-1.5 rounded-full bg-oxblood" />
               {overdueCount} feedback overdue
+            </Link>
+          )}
+          {overdueReviewCount > 0 && (
+            <Link href="/admin/reviews?filter=overdue" className="inline-flex items-center gap-[7px] rounded-lg border border-oxblood-line bg-oxblood-tint px-2.5 py-[7px] text-[11.5px] font-semibold leading-none text-oxblood no-underline hover:no-underline">
+              <span aria-hidden className="size-1.5 rounded-full bg-oxblood" />
+              {overdueReviewCount} review{overdueReviewCount === 1 ? "" : "s"} overdue
             </Link>
           )}
           <UserChip name={user.name} />

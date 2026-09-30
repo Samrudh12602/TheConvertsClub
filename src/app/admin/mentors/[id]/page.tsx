@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
-import { StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
+import { PublicVisibleToggle, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
 import { db } from "@/lib/db";
 import { fmtDate, fmtWhen } from "@/lib/format";
 import { ACCRUAL_STATUS, sessionTitle } from "@/lib/labels";
@@ -47,7 +47,7 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
           <h2 className="font-display text-lg font-bold leading-[1.25] text-ink">{nm(m.user.name)}{m.user.isDemo && <span className="ml-2 rounded bg-line-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase text-ink-faint">demo</span>}</h2>
           <p className="mt-1 text-[12.5px] text-ink-faint">{m.user.email}{m.college ? ` · ${m.college}${m.batchYear ? `, ${m.batchYear}` : ""}` : ""}</p>
         </div>
-        <div className="flex items-center gap-2"><Link href={`/admin/messages?u=${m.userId}`} className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink no-underline hover:no-underline">Message</Link><TierSelect mentorId={m.id} tier={m.tier} /><StatusSelect mentorId={m.id} status={m.status} /></div>
+        <div className="flex flex-wrap items-center gap-2"><Link href={`/admin/messages?u=${m.userId}`} className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink no-underline hover:no-underline">Message</Link><TierSelect mentorId={m.id} tier={m.tier} /><StatusSelect mentorId={m.id} status={m.status} /><PublicVisibleToggle mentorId={m.id} publicVisible={m.publicVisible} /></div>
       </div>
 
       <Section cols={280}>

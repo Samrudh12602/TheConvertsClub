@@ -25,10 +25,10 @@ meaningful numbers) and Archivo (everything else) via `next/font`.
 | `/mentors` | Who takes your mock | Built (demo data outside production) | `.../mentors/page.tsx` |
 | `/results` | Results | Built (placeholders outside production) | `.../results/page.tsx` |
 | `/faq` | Questions | Built | `.../faq/page.tsx` |
-| `/become-a-mentor` | Recruitment + application form | UI + validation built; **not persisted** (needs DB) | `.../become-a-mentor/page.tsx` |
-| `/checkout` | Guest details, coupon, sticky order panel | UI + validation built; **no payment yet** (needs Razorpay) | `.../checkout/page.tsx` |
-| `/checkout/success` | You're in | Presentational; **demo-only** until real orders exist | `.../checkout/success/page.tsx` |
-| `/login` | One login for all roles | UI + validation built; **not wired** (Phase 1) | `.../login/page.tsx` |
+| `/become-a-mentor` | Recruitment + application form | Built and persisted — submits a real `MentorApplication`, reviewed at `/admin/applications` | `.../become-a-mentor/page.tsx` |
+| `/checkout` | Guest details, coupon, sticky order panel | Built, real Razorpay payments | `.../checkout/page.tsx` |
+| `/checkout/success` | You're in | Reads the real order; shows a PDF receipt download once paid | `.../checkout/success/page.tsx` |
+| `/login` | One login for all roles | Built and wired — password, Google, magic link and demo access all route to it | `.../login/page.tsx` |
 | `/invite/[token]` | Not drawn: login card, mentor heading | Built as specified in handoff | `.../invite/[token]/page.tsx` |
 | `/terms` `/privacy` `/refunds` | Legal | Built, one route each | `.../terms|privacy|refunds` |
 

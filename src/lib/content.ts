@@ -123,35 +123,43 @@ export async function getPublicMentors(): Promise<PublicMentor[]> {
 }
 
 export interface ResultsContent {
-  /** Season stat tiles: no verified-numbers source exists yet, so these only ever show as demo placeholders. */
   stats: { value: string; label: string }[] | null;
   testimonials: { quote: string; who: string }[];
-  /** True when the content is demo/placeholder and the "replace before launch" notice should show. */
+  /** True when any part of what's shown is still demo/placeholder, so the "replace before launch" notice should show. */
   isDemo: boolean;
 }
 
+const DEMO_STATS = [
+  { value: "[ xx ]", label: "students prepared last season" },
+  { value: "[ xx ]", label: "converts across IIMs, XLRI, FMS" },
+  { value: "[ x.x ]", label: "average session rating out of 5" },
+  { value: "[ xxx ]", label: "mocks run between Dec and Mar" },
+];
+const DEMO_TESTIMONIALS = [
+  { quote: "Placeholder. Use a real student's words, with their permission, naming the institute they converted.", who: "— Name, converted [institute]" },
+  { quote: "Placeholder. The most useful testimonials name a specific thing that changed between mock one and the real interview.", who: "— Name, converted [institute]" },
+  { quote: "Placeholder. Keep them short. Two sentences beats a paragraph.", who: "— Name, converted [institute]" },
+  { quote: "Placeholder. One from someone who bought a single mock, not a package, balances the page.", who: "— Name, converted [institute]" },
+];
+
 /**
- * Testimonials come from the Testimonial table (Admin > Content) once any are published — real content,
- * shown in every environment. With none published yet: null in production (honest empty state), or
- * placeholder demo content outside production so the page isn't blank while building.
+ * Stats (SeasonStat) and testimonials (Testimonial, Admin > Content) are independent: each shows real
+ * content the moment any exists, and falls back to demo placeholders outside production only until
+ * then — one being real doesn't require the other to be. In production with neither yet: null (honest
+ * empty state) rather than a blank-looking page.
  */
 export async function getResults(): Promise<ResultsContent | null> {
-  const real = await db.testimonial.findMany({ where: { published: true }, orderBy: { createdAt: "desc" } });
-  if (real.length > 0) return { stats: null, testimonials: real.map((t) => ({ quote: t.quote, who: t.who })), isDemo: false };
-  if (!showDemoContent()) return null;
+  const [realTestimonials, realStats] = await Promise.all([
+    db.testimonial.findMany({ where: { published: true }, orderBy: { createdAt: "desc" } }),
+    db.seasonStat.findMany({ orderBy: { sortOrder: "asc" } }),
+  ]);
+  const testimonialsAreReal = realTestimonials.length > 0;
+  const statsAreReal = realStats.length > 0;
+  if (!testimonialsAreReal && !statsAreReal && !showDemoContent()) return null;
+
   return {
-    stats: [
-      { value: "[ xx ]", label: "students prepared last season" },
-      { value: "[ xx ]", label: "converts across IIMs, XLRI, FMS" },
-      { value: "[ x.x ]", label: "average session rating out of 5" },
-      { value: "[ xxx ]", label: "mocks run between Dec and Mar" },
-    ],
-    testimonials: [
-      { quote: "Placeholder. Use a real student's words, with their permission, naming the institute they converted.", who: "— Name, converted [institute]" },
-      { quote: "Placeholder. The most useful testimonials name a specific thing that changed between mock one and the real interview.", who: "— Name, converted [institute]" },
-      { quote: "Placeholder. Keep them short. Two sentences beats a paragraph.", who: "— Name, converted [institute]" },
-      { quote: "Placeholder. One from someone who bought a single mock, not a package, balances the page.", who: "— Name, converted [institute]" },
-    ],
-    isDemo: true,
+    stats: statsAreReal ? realStats.map((s) => ({ value: s.value, label: s.label })) : showDemoContent() ? DEMO_STATS : null,
+    testimonials: testimonialsAreReal ? realTestimonials.map((t) => ({ quote: t.quote, who: t.who })) : showDemoContent() ? DEMO_TESTIMONIALS : [],
+    isDemo: (!testimonialsAreReal || !statsAreReal) && showDemoContent(),
   };
 }

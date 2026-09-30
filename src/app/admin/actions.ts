@@ -151,6 +151,23 @@ export async function setMentorStatusAction(mentorId: string, status: unknown): 
   } catch (e) { return fail(e); }
 }
 
+/** Hides a mentor from /mentors without touching their status — they keep working, sessions keep
+ * assigning to them, they just don't show on the public roster (e.g. still on trial, or asked to be left off). */
+export async function setMentorPublicVisibleAction(mentorId: string, publicVisible: boolean): Promise<Result> {
+  try {
+    const actor = await guard("mentor-visibility");
+    const m = await db.mentorProfile.findUnique({ where: { id: mentorId }, include: { user: true } });
+    if (!m) throw new AdminError("Mentor not found.");
+    if (actor.isDemo && !m.user.isDemo) throw new AdminError("The demo admin can only work with demo data.");
+    await db.mentorProfile.update({ where: { id: mentorId }, data: { publicVisible } });
+    await audit({ actorId: actor.id, action: "mentor.visibility_change", entity: "MentorProfile", entityId: mentorId, after: { publicVisible } });
+    revalidatePath("/admin/mentors");
+    revalidatePath(`/admin/mentors/${mentorId}`);
+    revalidatePath("/mentors");
+    return { ok: true, message: publicVisible ? "Now visible on the public site." : "Hidden from the public site." };
+  } catch (e) { return fail(e); }
+}
+
 export async function setStudentStatusAction(userId: string, status: unknown): Promise<Result> {
   try {
     const actor = await guard("student-status");
@@ -297,12 +314,68 @@ export async function addTestimonialAction(input: unknown): Promise<Result> {
 export async function toggleTestimonialAction(id: string, published: boolean): Promise<Result> {
   try { await guard("content"); await db.testimonial.update({ where: { id }, data: { published } }); revalidatePath("/admin/content"); revalidatePath("/results"); return { ok: true }; } catch (e) { return fail(e); }
 }
+
+const seasonStatSchema = z.object({ value: z.string().trim().min(1).max(20), label: z.string().trim().min(3).max(80) });
+export async function addSeasonStatAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("content");
+    const p = seasonStatSchema.parse(input);
+    const sortOrder = await db.seasonStat.count();
+    await db.seasonStat.create({ data: { ...p, sortOrder } });
+    await audit({ actorId: actor.id, action: "content.season_stat_add", entity: "SeasonStat" });
+    revalidatePath("/admin/content");
+    revalidatePath("/results");
+    return { ok: true, message: "Added." };
+  } catch (e) { return fail(e); }
+}
+export async function deleteSeasonStatAction(id: string): Promise<Result> {
+  try {
+    const actor = await guard("content");
+    await db.seasonStat.delete({ where: { id } });
+    await audit({ actorId: actor.id, action: "content.season_stat_delete", entity: "SeasonStat", entityId: id });
+    revalidatePath("/admin/content");
+    revalidatePath("/results");
+    return { ok: true };
+  } catch (e) { return fail(e); }
+}
 const faqSchema = z.object({ question: z.string().trim().min(5).max(200), answer: z.string().trim().min(5).max(1000) });
 export async function addFaqAction(input: unknown): Promise<Result> {
   try { const actor = await guard("content"); const p = faqSchema.parse(input); await db.faqItem.create({ data: { ...p, published: true, sortOrder: 999 } }); await audit({ actorId: actor.id, action: "content.faq_add", entity: "FaqItem" }); revalidatePath("/admin/content"); revalidatePath("/faq"); return { ok: true, message: "Added." }; } catch (e) { return fail(e); }
 }
 export async function toggleFaqAction(id: string, published: boolean): Promise<Result> {
   try { await guard("content"); await db.faqItem.update({ where: { id }, data: { published } }); revalidatePath("/admin/content"); revalidatePath("/faq"); return { ok: true }; } catch (e) { return fail(e); }
+}
+
+const resourceSchema = z.object({
+  audience: z.enum(["STUDENT", "MENTOR"]),
+  kind: z.string().trim().min(2).max(30),
+  title: z.string().trim().min(3).max(150),
+  meta: z.string().trim().max(150).optional(),
+  url: z.union([z.url(), z.literal("")]).optional(),
+});
+export async function addResourceAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("content");
+    const p = resourceSchema.parse(input);
+    const sortOrder = await db.resource.count({ where: { audience: p.audience } });
+    await db.resource.create({ data: { audience: p.audience, kind: p.kind.toUpperCase(), title: p.title, meta: p.meta || null, url: p.url || null, sortOrder } });
+    await audit({ actorId: actor.id, action: "content.resource_add", entity: "Resource", after: { audience: p.audience, title: p.title } });
+    revalidatePath("/admin/content");
+    revalidatePath("/student/library");
+    revalidatePath("/mentor/resources");
+    return { ok: true, message: "Added." };
+  } catch (e) { return fail(e); }
+}
+export async function deleteResourceAction(id: string): Promise<Result> {
+  try {
+    const actor = await guard("content");
+    await db.resource.delete({ where: { id } });
+    await audit({ actorId: actor.id, action: "content.resource_delete", entity: "Resource", entityId: id });
+    revalidatePath("/admin/content");
+    revalidatePath("/student/library");
+    revalidatePath("/mentor/resources");
+    return { ok: true };
+  } catch (e) { return fail(e); }
 }
 
 // ───────────── Communications ─────────────

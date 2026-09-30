@@ -797,6 +797,16 @@ model Testimonial {
   createdAt DateTime @default(now())
 }
 
+/// Stat tiles on /results (e.g. "240 students prepared last season"). Shown once any exist; until
+/// then the page falls back to bracketed placeholder numbers outside production only.
+model SeasonStat {
+  id        String   @id @default(cuid())
+  value     String
+  label     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model FaqItem {
   id        String  @id @default(cuid())
   question  String

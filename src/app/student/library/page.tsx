@@ -18,6 +18,7 @@ export default async function LibraryPage() {
               <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.1em] text-oxblood">{l.kind}</p>
               <p className="mt-[9px] text-pretty font-display text-sm font-bold leading-[1.35] text-ink">{l.title}</p>
               {l.meta && <p className="mt-1.5 text-xs leading-normal text-ink-faint">{l.meta}</p>}
+              {l.url && <a href={l.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] font-semibold leading-none text-oxblood no-underline hover:underline">Open &rarr;</a>}
             </div>
           ))}
         </div>

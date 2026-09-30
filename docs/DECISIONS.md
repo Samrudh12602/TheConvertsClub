@@ -146,6 +146,40 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     peer resolution (`npm ls` reports an invalid tree). v8.0.11 has several disclosed advisories
     (`npm audit`) with no clean fix available while on this next-auth version. Revisit when next-auth
     bumps its own pin, or when this stops depending on next-auth's Credentials/Google/Resend providers.
+25. **A full platform audit found one real dead feature and a few real blind spots; fixed all of
+    them.** Traced every page, not guessed:
+    - **Resources/Library was structurally dead.** Both `/student/library` and `/mentor/resources`
+      read from the `Resource` table, but nothing anywhere could ever write to it — it only ever
+      showed the seed data. Admin > Content now has a real add/remove panel for it (scoped per
+      audience), and both portal pages now render a resource's `url` as an actual "Open" link, which
+      they silently dropped before even when a resource had one.
+    - **You had zero visibility into whether payments/email were actually live.** `paymentsConfigured()`
+      and `emailProvider()` existed and worked but were only ever checked on the student/checkout
+      side. Admin > Settings now opens with a "System status" panel reading the exact same functions
+      the real checkout/email code paths use — Razorpay, the webhook secret, which email provider
+      (and which Gmail address), Google sign-in, and the live URL — so nothing can drift from reality.
+    - **WAT/SOP reviews had no overdue tracking**, unlike session feedback (which has a dashboard KPI,
+      a red topbar badge, and a filtered view). Reviews now have the same: a topbar badge counting
+      reviews past `dueAt`, an "Overdue" status pill, and an `/admin/reviews?filter=overdue` view.
+    - **A mentor couldn't be hidden from `/mentors` without suspending them.** The `publicVisible`
+      column existed on `MentorProfile` since the mentor-pipeline build but no form ever set it.
+      Added a toggle on the mentor detail page; `getPublicMentors()` already filtered on it, so this
+      was a missing write path, not a missing read path.
+    - **Season-stat tiles on `/results` could never show real numbers — there was no field for them
+      at all**, only ever bracketed placeholders (`"[ xx ]"`). Added a `SeasonStat` table and an
+      Admin > Content panel for it. Deliberately independent of testimonials (a different table,
+      already real/admin-editable) — either can be real while the other is still demo; the page's
+      placeholder notice reflects whichever part, if any, still is.
+    - Fixed two stale claims in `docs/DESIGN_MAP.md` that contradicted what's actually built now
+      (login described as "not wired," mentor applications as "not persisted") — both have been real
+      since earlier this session; the docs just hadn't caught up.
+
+    Verified every item live against the real database (not just "it builds"): added and removed a
+    real resource end-to-end including its link rendering on the student side, drove the review
+    overdue filter against real seeded data, round-tripped a mentor's `publicVisible` flag and
+    confirmed both the DB state and that a demo-admin safety guard correctly refused to touch a real
+    (non-demo) mentor's data, and added a real season stat and watched it appear on `/results`
+    alongside the still-placeholder testimonials with the demo notice correctly still showing.
 
 ## Assumptions
 
