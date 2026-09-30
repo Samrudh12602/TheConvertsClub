@@ -1,7 +1,11 @@
+import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { roleHome } from "@/lib/roles";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  const account = session?.user ? { role: session.user.role, home: roleHome(session.user.role) } : null;
   return (
     <div className="min-h-screen bg-paper text-ink">
       <a
@@ -10,7 +14,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       >
         Skip to content
       </a>
-      <SiteHeader />
+      <SiteHeader account={account} />
       <main id="main">{children}</main>
       <SiteFooter />
     </div>

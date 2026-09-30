@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
 import { ButtonLink } from "@/components/ui/button";
+import type { RoleName } from "@/lib/roles";
+
+const PORTAL_LABEL: Record<RoleName, string> = { STUDENT: "My dashboard", MENTOR: "Mentor portal", ADMIN: "Admin console" };
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -17,7 +20,7 @@ const NAV = [
   { href: "/become-a-mentor", label: "Become a mentor" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ account }: { account: { role: RoleName; home: string } | null }) {
   const pathname = usePathname();
   // The menu is "open" only for the page it was opened on, so navigating closes it without an effect.
   const [openAt, setOpenAt] = useState<string | null>(null);
@@ -55,8 +58,8 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex gap-2 md:ml-0">
-          <ButtonLink href="/login" variant="secondary" size="sm" className="hidden sm:inline-flex">
-            Log in
+          <ButtonLink href={account ? account.home : "/login"} variant="secondary" size="sm" className="hidden sm:inline-flex">
+            {account ? PORTAL_LABEL[account.role] : "Log in"}
           </ButtonLink>
           <ButtonLink href="/packages" size="sm">
             See packages
@@ -76,8 +79,8 @@ export function SiteHeader() {
       {open && (
         <nav id="mobile-nav" aria-label="Main" className="flex flex-col gap-0.5 border-t border-line px-5 py-3 md:hidden">
           {links}
-          <Link href="/login" className="rounded-[7px] px-[11px] py-2.5 text-[12.5px] leading-none text-ink-muted no-underline sm:hidden">
-            Log in
+          <Link href={account ? account.home : "/login"} className="rounded-[7px] px-[11px] py-2.5 text-[12.5px] leading-none text-ink-muted no-underline sm:hidden">
+            {account ? PORTAL_LABEL[account.role] : "Log in"}
           </Link>
         </nav>
       )}
