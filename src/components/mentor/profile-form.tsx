@@ -16,7 +16,7 @@ export function ProfileForm({ initial, payoutMasked }: { initial: { bio: string;
       <div className="rounded-[10px] border border-line bg-card p-4">
         <label htmlFor="bio" className="type-label mb-1.5 block text-ink-faint">Bio (two lines on the public mentors page)</label>
         <textarea id="bio" maxLength={300} rows={3} value={v.bio} onChange={(e) => setV({ ...v, bio: e.target.value })} className="w-full rounded-lg border border-line-strong bg-white p-3 text-base leading-normal md:text-[13px]" />
-        <div className="mt-3"><Field label="Meeting link (used for every session assigned to you)" type="url" value={v.meetingUrl} onChange={(e) => setV({ ...v, meetingUrl: e.target.value })} placeholder="https://meet.google.com/…" /></div>
+        <div className="mt-3"><Field label="Meeting link (optional — leave blank and we create a private video room for each session)" type="url" value={v.meetingUrl} onChange={(e) => setV({ ...v, meetingUrl: e.target.value })} placeholder="https://meet.google.com/…" /></div>
         <div className="mt-3">
           <label htmlFor="status" className="type-label mb-1.5 block text-ink-faint">Status</label>
           <select id="status" value={v.status} onChange={(e) => setV({ ...v, status: e.target.value as "ACTIVE" | "PAUSED" })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-base md:text-[13px]"><option value="ACTIVE">Active</option><option value="PAUSED">Paused (no new assignments)</option></select>

@@ -7,6 +7,7 @@ import { formatPaise } from "@/lib/money";
 import { bonusesDue, type BonusRuleLite } from "@/server/payroll";
 import { HOUR, needsSenior, pickCandidate } from "@/server/scheduling";
 import { icsAttachment } from "@/server/ics";
+import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
@@ -57,6 +58,7 @@ export async function assignSession(actor: Actor, sessionId: string, mentorId: s
     const old = oldMentorId && oldMentorId !== mentorId ? await tx.mentorProfile.findUnique({ where: { id: oldMentorId }, include: { user: true } }) : null;
     return { s, mentor, old };
   });
+  await ensureMeetingUrl(out.s.id);
   const title = sessionTitle(out.s.type, out.s.focus);
   const when = fmtWhen(out.s.startsAt!);
   await sendEmail({ template: "mentor_assignment", to: out.mentor.user.email, vars: { student: out.s.student?.name ?? "A student", when, detail: `${title} with ${out.s.student?.name ?? "a student"}, ${when} IST.` }, url: `/mentor/sessions/${out.s.id}` });
@@ -75,9 +77,10 @@ export async function confirmRequested(actor: Actor, sessionId: string) {
   if (!s || s.status !== "REQUESTED") throw new AdminError("That request was already handled.");
   if (actor.isDemo && !s.student?.isDemo) throw new AdminError("The demo admin can only work with demo data.");
   await db.session.update({ where: { id: sessionId }, data: { status: "CONFIRMED" } });
+  const meetingUrl = await ensureMeetingUrl(s.id);
   if (s.student && s.startsAt) {
     await sendEmail({ template: "booking_confirmed", to: s.student.email, vars: { session: sessionTitle(s.type, s.focus), when: fmtWhen(s.startsAt), deadline: "" }, url: `/student/sessions/${s.id}`,
-      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${sessionTitle(s.type, s.focus)} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${sessionTitle(s.type, s.focus)} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, url: meetingUrl })] : undefined });
     await notify(s.student.id, { title: `Confirmed: ${sessionTitle(s.type, s.focus)}, ${fmtWhen(s.startsAt)}`, href: `/student/sessions/${s.id}` });
   }
   if (s.mentor) await notify(s.mentor.userId, { title: "A session was confirmed for you", href: `/mentor/sessions/${s.id}` });

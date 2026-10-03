@@ -6,6 +6,7 @@ import { sessionTitle } from "@/lib/labels";
 import { getBalances, InsufficientCreditsError, lockUser, releaseCredit, consumeCredit, reserveCredit, sessionCreditKind } from "@/server/credits";
 import { canReschedule, cancelOutcome, HOUR, istDayRange, needsSenior, pickCandidate, type Candidate } from "@/server/scheduling";
 import { icsAttachment } from "@/server/ics";
+import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
@@ -127,6 +128,7 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
 
 /** Emails and in-app notices after a booking or move. Never affects the booking itself. */
 async function afterBooked(sessionId: string, kind: "new" | "moved") {
+  await ensureMeetingUrl(sessionId); // so the Join button and the calendar invite always have a link
   const s = await db.session.findUnique({ where: { id: sessionId }, include: { student: true, mentor: { include: { user: true } } } });
   if (!s || !s.startsAt || !s.student) return;
   const settings = await getSettings();

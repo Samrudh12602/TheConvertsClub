@@ -271,6 +271,22 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     service/date/amount table) and the quick per-mentor count on the `/admin/mentors` list were
     already built — this was about making the aggregate view discoverable, not adding new tracking.
 
+30. **Receipt download links fixed; contact page, calendar invites, welcome email, guaranteed video room.**
+    - *Receipt links broke for two reasons:* they were `next/link` (prefetch / client navigation is the
+      wrong tool for a file), and every render of the success page deleted the order's previous
+      download token, so any refresh or router refresh invalidated the link already on screen. They are
+      now plain `<a download>` (`ButtonAnchor`), and issuing a token only prunes *expired* ones.
+    - */contact* (+ `/api/contact`): rate-limited (5/hour/IP), honeypot field, emails the owner with
+      reply-to = the sender and sends the sender an acknowledgement. Nothing is stored beyond `EmailLog`.
+    - Booking confirmations (student + mentor) carry an `.ics` calendar invite (`src/server/ics.ts`,
+      hand-written RFC 5545, no dependency).
+    - `welcome_account` email now actually sends, once, when a student verifies their email.
+    - Every session gets a working Join link: if a mentor hasn't pasted one, `ensureMeetingUrl` creates
+      a private Jitsi room named after the session id (free, no account, no API key).
+    - Reminder windows now overlap (24h = anything not yet reminded in the next 25h) because GitHub's
+      free `*/5` timer actually fires only every few hours; Vercel Hobby also runs daily backstop crons
+      (reminders 18:00 IST, hold-expiry 08:30 IST). CI build now supplies placeholder env so it passes.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

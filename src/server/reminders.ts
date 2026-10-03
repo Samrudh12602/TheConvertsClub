@@ -4,6 +4,7 @@ import { fmtTime, fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { HOUR } from "@/server/scheduling";
 import { sendEmail } from "@/server/email";
+import { ensureMeetingUrl } from "@/server/meeting";
 import { notify } from "@/server/notify";
 
 /**
@@ -29,7 +30,7 @@ export async function sendReminders(now = new Date()) {
       const claimed = await db.session.updateMany({ where: { id: s.id, [w.flag]: false }, data: { [w.flag]: true } });
       if (claimed.count !== 1) continue; // another run got it
       const title = sessionTitle(s.type, s.focus);
-      await sendEmail({ template: w.template, to: s.student.email, url: s.meetingUrl ?? `/student/sessions/${s.id}`, vars: { session: title, when: fmtWhen(s.startsAt), time: fmtTime(s.startsAt), deadline: fmtWhen(new Date(s.startsAt.getTime() - settings.cancelNoticeHours * HOUR)) } });
+      await sendEmail({ template: w.template, to: s.student.email, url: (await ensureMeetingUrl(s.id)) ?? `/student/sessions/${s.id}`, vars: { session: title, when: fmtWhen(s.startsAt), time: fmtTime(s.startsAt), deadline: fmtWhen(new Date(s.startsAt.getTime() - settings.cancelNoticeHours * HOUR)) } });
       await notify(s.student.id, { title: `${w.key === "r24" ? "Tomorrow" : "In an hour"}: ${title} at ${fmtTime(s.startsAt)}`, href: `/student/sessions/${s.id}` });
       out[w.key]++;
     }
