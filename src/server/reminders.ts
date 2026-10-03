@@ -6,13 +6,18 @@ import { HOUR } from "@/server/scheduling";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
-/** 24-hour and 1-hour reminders for confirmed sessions. Each is sent once (flags on the session). */
+/**
+ * 24-hour and 1-hour reminders for confirmed sessions. Each is sent once (flags on the session).
+ * The windows overlap their neighbours on purpose: the frequent GitHub timer can run hours apart and the
+ * Vercel cron only runs daily, so "the 24h reminder" means "any not-yet-reminded session starting within
+ * the next 25 hours (beyond the 1h window)". A late run sends a late reminder rather than none.
+ */
 export async function sendReminders(now = new Date()) {
   const settings = await getSettings();
   const out = { r24: 0, r1: 0 };
   const windows = [
-    { flag: "reminder24Sent" as const, template: "reminder_24h" as const, from: 23 * HOUR, to: 25 * HOUR, key: "r24" as const },
-    { flag: "reminder1Sent" as const, template: "reminder_1h" as const, from: 0.5 * HOUR, to: 1.5 * HOUR, key: "r1" as const },
+    { flag: "reminder24Sent" as const, template: "reminder_24h" as const, from: 1.5 * HOUR, to: 25 * HOUR, key: "r24" as const },
+    { flag: "reminder1Sent" as const, template: "reminder_1h" as const, from: 0.15 * HOUR, to: 1.5 * HOUR, key: "r1" as const },
   ];
   for (const w of windows) {
     const due = await db.session.findMany({
