@@ -4,8 +4,9 @@ type Row = { identifier: string; token: string; expires: Date };
 const rows: Row[] = [];
 
 vi.mock("@/lib/db", () => {
-  const match = (r: Row, w: { identifier: string; token?: string; expires?: { gt: Date } }) =>
-    r.identifier === w.identifier && (w.token === undefined || r.token === w.token) && (w.expires === undefined || r.expires > w.expires.gt);
+  const match = (r: Row, w: { identifier: string; token?: string; expires?: { gt?: Date; lt?: Date } }) =>
+    r.identifier === w.identifier && (w.token === undefined || r.token === w.token) &&
+    (w.expires?.gt === undefined || r.expires > w.expires.gt) && (w.expires?.lt === undefined || r.expires < w.expires.lt);
   return {
     db: {
       verificationToken: {
@@ -52,11 +53,16 @@ describe("receipt access tokens", () => {
     await createReceiptToken("order1");
     expect(await verifyReceiptToken("order1", "")).toBe(false);
   });
-  it("a newer token invalidates the older one", async () => {
+  it("issuing a new token does not break the older one (email link vs success page)", async () => {
     const old = await createReceiptToken("order1");
     const fresh = await createReceiptToken("order1");
-    expect(await verifyReceiptToken("order1", old)).toBe(false);
+    expect(await verifyReceiptToken("order1", old)).toBe(true);
     expect(await verifyReceiptToken("order1", fresh)).toBe(true);
+  });
+  it("prunes expired tokens when issuing a new one", async () => {
+    await createReceiptToken("order1", -1);
+    await createReceiptToken("order1");
+    expect(rows.length).toBe(1);
   });
   it("builds a link carrying the order id and token", async () => {
     const link = await createReceiptLink("order1");

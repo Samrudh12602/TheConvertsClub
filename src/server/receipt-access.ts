@@ -17,7 +17,9 @@ const ident = (orderId: string) => `${PURPOSE}:${orderId}`;
 export async function createReceiptToken(orderId: string, ttlHours = 72): Promise<string> {
   const identifier = ident(orderId);
   const token = randomBytes(32).toString("hex");
-  await db.verificationToken.deleteMany({ where: { identifier } });
+  // Never delete the order's other live tokens: the one in the receipt email and the one on the success
+  // page must both keep working, and a page refresh or prefetch must not break either. Only expired ones go.
+  await db.verificationToken.deleteMany({ where: { identifier, expires: { lt: new Date() } } });
   await db.verificationToken.create({ data: { identifier, token: hash(token), expires: new Date(Date.now() + ttlHours * 3_600_000) } });
   return token;
 }

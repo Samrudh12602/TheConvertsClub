@@ -5,6 +5,7 @@ import { fmtDay, fmtTime, fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { getBalances, InsufficientCreditsError, lockUser, releaseCredit, consumeCredit, reserveCredit, sessionCreditKind } from "@/server/credits";
 import { canReschedule, cancelOutcome, HOUR, istDayRange, needsSenior, pickCandidate, type Candidate } from "@/server/scheduling";
+import { icsAttachment } from "@/server/ics";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
@@ -134,13 +135,15 @@ async function afterBooked(sessionId: string, kind: "new" | "moved") {
   const vars = { session: title, when: fmtWhen(s.startsAt), time: fmtTime(s.startsAt), deadline };
   if (s.status === "CONFIRMED") {
     await sendEmail({ template: kind === "new" ? "booking_confirmed" : "session_rescheduled", to: s.student.email, vars: { ...vars, detail: `Your ${title} is now ${vars.when} IST.` }, url: `/student/sessions/${s.id}`,
-      details: [{ k: "Session", v: title }, { k: "When", v: `${vars.when} IST` }] });
+      details: [{ k: "Session", v: title }, { k: "When", v: `${vars.when} IST` }],
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, description: "Mock interview session booked on The Convert Club.", url: s.meetingUrl })] : undefined });
   } else {
     await sendEmail({ template: "booking_requested", to: s.student.email, vars, url: "/student/sessions" });
   }
   await notify(s.student.id, { title: s.status === "CONFIRMED" ? `${title} confirmed — ${vars.when}` : `Request received — ${title}, ${vars.when}`, href: `/student/sessions/${s.id}` });
   if (s.mentor && s.status === "CONFIRMED") {
-    await sendEmail({ template: "mentor_assignment", to: s.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `${title} with ${s.student.name ?? "a student"}, ${vars.when} IST. Feedback is due ${settings.feedbackDueHours} hours after the session.` }, url: `/mentor/sessions/${s.id}` });
+    await sendEmail({ template: "mentor_assignment", to: s.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `${title} with ${s.student.name ?? "a student"}, ${vars.when} IST. Feedback is due ${settings.feedbackDueHours} hours after the session.` }, url: `/mentor/sessions/${s.id}`,
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} with ${s.student.name ?? "a student"}`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
     await notify(s.mentor.userId, { title: `New session: ${s.student.name ?? "Student"}, ${vars.when}`, href: `/mentor/sessions/${s.id}` });
   }
 }

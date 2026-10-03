@@ -6,6 +6,7 @@ import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { bonusesDue, type BonusRuleLite } from "@/server/payroll";
 import { HOUR, needsSenior, pickCandidate } from "@/server/scheduling";
+import { icsAttachment } from "@/server/ics";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
@@ -75,7 +76,8 @@ export async function confirmRequested(actor: Actor, sessionId: string) {
   if (actor.isDemo && !s.student?.isDemo) throw new AdminError("The demo admin can only work with demo data.");
   await db.session.update({ where: { id: sessionId }, data: { status: "CONFIRMED" } });
   if (s.student && s.startsAt) {
-    await sendEmail({ template: "booking_confirmed", to: s.student.email, vars: { session: sessionTitle(s.type, s.focus), when: fmtWhen(s.startsAt), deadline: "" }, url: `/student/sessions/${s.id}` });
+    await sendEmail({ template: "booking_confirmed", to: s.student.email, vars: { session: sessionTitle(s.type, s.focus), when: fmtWhen(s.startsAt), deadline: "" }, url: `/student/sessions/${s.id}`,
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${sessionTitle(s.type, s.focus)} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
     await notify(s.student.id, { title: `Confirmed: ${sessionTitle(s.type, s.focus)}, ${fmtWhen(s.startsAt)}`, href: `/student/sessions/${s.id}` });
   }
   if (s.mentor) await notify(s.mentor.userId, { title: "A session was confirmed for you", href: `/mentor/sessions/${s.id}` });

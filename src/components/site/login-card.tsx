@@ -71,7 +71,7 @@ export function LoginCard({ heading, sub, next, googleEnabled, emailEnabled, dem
             {emailEnabled && (
               <>
                 {" "}
-                · <button type="button" onClick={() => setMode("link")} className="text-oxblood underline">No password? Email me a link</button>
+                · <button type="button" onClick={() => setMode("link")} className="text-oxblood underline">Forgot password? Email me a link</button>
               </>
             )}
           </p>

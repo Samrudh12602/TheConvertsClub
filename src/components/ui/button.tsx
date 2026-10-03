@@ -40,3 +40,8 @@ export function Button({ variant, size, block, className, type = "button", ...re
 export function ButtonLink({ variant, size, block, className, ...rest }: CommonProps & React.ComponentProps<typeof Link>) {
   return <Link className={buttonClasses({ variant, size, block, className })} {...rest} />;
 }
+
+/** A plain anchor styled as a button — for file downloads and API routes, where next/link's prefetch and client-side navigation are the wrong tool. */
+export function ButtonAnchor({ variant, size, block, className, ...rest }: CommonProps & React.ComponentProps<"a">) {
+  return <a className={buttonClasses({ variant, size, block, className })} {...rest} />;
+}

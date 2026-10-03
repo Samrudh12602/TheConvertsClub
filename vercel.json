@@ -1,5 +1,7 @@
 {
   "crons": [
-    { "path": "/api/cron/period-close", "schedule": "0 2 * * *" }
+    { "path": "/api/cron/period-close", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/reminders", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/expire-holds", "schedule": "*/10 * * * *" }
   ]
 }

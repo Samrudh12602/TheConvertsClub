@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonAnchor, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AutoRefresh } from "@/components/site/auto-refresh";
 import { db } from "@/lib/db";
@@ -70,7 +70,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
           ) : (
             <ButtonLink href="/login" size="lg" className="rounded-[9px] px-[22px]">Log in</ButtonLink>
           )}
-          <ButtonLink href={receiptHref} variant="secondary" size="lg" className="rounded-[9px] px-[22px]">Download receipt (PDF)</ButtonLink>
+          <ButtonAnchor href={receiptHref} download variant="secondary" size="lg" className="rounded-[9px] px-[22px]">Download receipt (PDF)</ButtonAnchor>
         </div>
         {!alreadyTheirs && <p className="mt-4 text-xs text-ink-faint">Didn&apos;t get the email? Check spam, then use “Email me a login link” on the login page with the same address.</p>}
       </Card>

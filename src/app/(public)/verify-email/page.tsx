@@ -5,6 +5,7 @@ import { ResendVerifyForm } from "@/components/site/resend-verify-form";
 import { db } from "@/lib/db";
 import { roleHome } from "@/lib/roles";
 import { consumeVerifyEmailToken } from "@/server/auth-tokens";
+import { sendEmail } from "@/server/email";
 
 export const metadata: Metadata = { title: "Verify your email", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -25,7 +26,9 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
 
   const ok = await consumeVerifyEmailToken(email, token);
   if (ok) {
-    const user = await db.user.update({ where: { email: email.toLowerCase() }, data: { emailVerified: new Date() }, select: { role: true } }).catch(() => null);
+    const user = await db.user.update({ where: { email: email.toLowerCase() }, data: { emailVerified: new Date() }, select: { role: true, name: true } }).catch(() => null);
+    // The token is single-use, so this runs once per verification: a friendly "you're in" for new students.
+    if (user?.role === "STUDENT") await sendEmail({ template: "welcome_account", to: email.toLowerCase(), vars: { name: user.name?.split(" ")[0] ?? "there" }, url: "/packages" });
     return (
       <div className="mx-auto max-w-[520px] px-5 py-14">
         <Card className="rounded-[14px] p-8 text-center">

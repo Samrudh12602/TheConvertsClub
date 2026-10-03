@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonAnchor } from "@/components/ui/button";
 import { PortalPage } from "@/components/portal/portal-page";
 import { db } from "@/lib/db";
 import { fmtWhen } from "@/lib/format";
@@ -23,7 +23,7 @@ export default async function Receipt({ params }: { params: Promise<{ orderId: s
       <div className="rounded-xl border border-line bg-card p-6 print:border-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-display text-lg font-bold text-ink">The Convert Club · Receipt</p>
-          {hasReceipt && <ButtonLink href={`/api/receipts/${o.id}`} variant="secondary" className="print:hidden">Download PDF</ButtonLink>}
+          {hasReceipt && <ButtonAnchor href={`/api/receipts/${o.id}`} download variant="secondary" className="print:hidden">Download PDF</ButtonAnchor>}
         </div>
         <dl className="mt-4 flex flex-col gap-2">
           {rows.map(([k, v]) => <div key={k} className="flex justify-between gap-4 border-b border-line-soft py-2 text-[13px] last:border-0"><dt className="text-ink-muted">{k}</dt><dd className="tnum text-right font-medium text-ink">{v}</dd></div>)}

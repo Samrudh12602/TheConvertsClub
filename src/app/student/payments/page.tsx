@@ -60,7 +60,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
             <div className="flex items-center gap-3">
               <span className="tnum text-[13px] font-semibold text-ink">{formatPaise(o.amountPaise)}</span>
               <Link href={`/student/payments/${o.id}`} className="text-xs font-semibold">Receipt</Link>
-              <Link href={`/api/receipts/${o.id}`} className="text-xs font-semibold">PDF</Link>
+              <a href={`/api/receipts/${o.id}`} download className="text-xs font-semibold">PDF</a>
             </div>
           </div>
         ))}

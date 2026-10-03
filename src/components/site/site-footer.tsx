@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/mentors", label: "Mentors" },
   { href: "/become-a-mentor", label: "Become a mentor" },
   { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: "/refunds", label: "Refunds" },
