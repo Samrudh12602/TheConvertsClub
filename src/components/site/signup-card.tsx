@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { signupAction, type SignupState } from "@/app/(public)/signup/actions";
 
 export function SignupCard({ next }: { next?: string }) {
-  const [state, action, pending] = useActionState<SignupState, FormData>(signupAction, {});
+  const [state, action, actionPending] = useActionState<SignupState, FormData>(signupAction, {});
+  const [, startTransition] = useTransition();
+  const pending = actionPending;
   return (
     <div className="rounded-[14px] border border-line bg-card p-7">
       <h1 className="font-display text-[21px] font-bold leading-[1.25] text-ink">Create your account</h1>
@@ -15,7 +17,13 @@ export function SignupCard({ next }: { next?: string }) {
         For students. Mentors join by invite or by applying — see{" "}
         <Link href="/become-a-mentor">Become a mentor</Link>.
       </p>
-      <form action={action} className="mt-5 flex flex-col gap-3" noValidate>
+      {/* Submitted through a transition rather than the form's `action` attribute: React resets a form after
+          an action, which would wipe everything the person typed whenever there is a validation error. */}
+      <form
+        onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startTransition(() => action(fd)); }}
+        className="mt-5 flex flex-col gap-3"
+        noValidate
+      >
         <input type="hidden" name="next" value={next ?? ""} />
         <Field label="Full name" name="name" required autoComplete="name" placeholder="Your full name" />
         <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" />
