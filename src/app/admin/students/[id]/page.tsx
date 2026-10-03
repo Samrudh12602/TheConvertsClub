@@ -4,6 +4,7 @@ import { PortalPage } from "@/components/portal/portal-page";
 import { CreditBreakdown } from "@/components/portal/credit-breakdown";
 import { Empty, Panel, StatusPill } from "@/components/portal/ui";
 import { CreditAdjustForm, StudentStatusToggle } from "@/components/admin/student-controls";
+import { LegalRecord } from "@/components/admin/legal-record";
 import { db } from "@/lib/db";
 import { fmtDate, fmtWhen } from "@/lib/format";
 import { CALL_OUTCOME, SESSION_STATUS, sessionTitle } from "@/lib/labels";
@@ -44,6 +45,8 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
           {([["College", p?.college], ["Degree", p?.degree], ["Work-ex", p?.workExMonths != null ? `${p.workExMonths} mo` : null], ["Targets", p?.targetInstitutes.join(", ")], ["Weak areas", p?.weakAreas.join(", ")]] as [string, string | null | undefined][]).map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v || "—"}</dd></div>)}
         </dl>
       </Panel>
+
+      <Panel title="Terms accepted" flush={false}><LegalRecord userId={student.id} role="STUDENT" /></Panel>
 
       <CreditBreakdown summary={creditSummary} enrollments={enrollments} />
       <Panel title="Adjust a credit" flush={false}><CreditAdjustForm userId={student.id} /></Panel>

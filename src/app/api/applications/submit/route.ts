@@ -13,6 +13,7 @@ const schema = z.object({
   callsConverted: z.string().trim().min(3).max(500),
   linkedinUrl: z.url().refine((u) => /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//i.test(u), "Enter your LinkedIn profile URL"),
   hoursPerWeek: z.coerce.number().int().min(1).max(40),
+  acceptTerms: z.literal("true", { error: "Please confirm and accept the Mentor Agreement to apply." }),
 });
 
 /** Public mentor application (no auth). Requires a real LinkedIn URL and a professional photo. */
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (!(file instanceof File) || file.size === 0) return NextResponse.json({ error: "Attach a professional photo." }, { status: 400 });
 
   try {
-    await submitApplication({ ...parsed.data, photo: { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) } });
+    await submitApplication({ ...parsed.data, termsIp: ip, photo: { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) } });
     return NextResponse.json({ ok: true });
   } catch (e) {
     if (e instanceof MentorAdminError) return NextResponse.json({ error: e.message }, { status: 400 });

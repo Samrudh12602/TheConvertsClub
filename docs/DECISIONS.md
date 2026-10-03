@@ -301,6 +301,27 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       after. Runs daily via `/api/cron/credit-expiry`; the ledger row reads "Credit expiry: ...".
       **Before turning it on, add a validity line to Terms and the FAQ.**
 
+32. **Real legal documents, and nobody gets in without agreeing to them.**
+    - *Four documents*, drafted for Indian law: Terms of Use, Privacy Policy (DPDP Act 2023), Refund
+      Policy, and a new Mentor Agreement. Numbers that Admin can change (refund window, notice period,
+      feedback deadline, recording retention) are filled in from Settings, so the text can't contradict
+      the product. Source: `src/lib/legal-text.ts`.
+    - *Where agreement is collected* (all recorded with document, version, time, IP, user agent in
+      `LegalAcceptance`, append-only): student signup checkbox; checkout checkbox (stored on the Order as
+      the contract record, then copied onto the account when the guest becomes a student); mentor
+      application checkbox; and a **gate** (`requireRole` -> `/accept-terms`) that catches every other
+      way in (Google, login link, invite, existing users) and re-asks everyone when `LEGAL_VERSION`
+      changes in `src/lib/legal.ts`. Mentors must additionally confirm their background is true.
+    - *Existing real users* (current students and mentors) have no record, so they are asked once at
+      their next sign-in. Demo accounts and admins are never asked.
+    - *Admin sees proof* on each student's and mentor's page ("Terms accepted").
+    - **ASSUMPTIONS TO CONFIRM** in `src/lib/business.ts`: the operator is "Samrudh Dhaimodkar, trading
+      as The Convert Club" (a sole proprietorship), and disputes are seated in Pune. If you register a
+      company/LLP or are elsewhere, change those two lines and bump `LEGAL_VERSION`.
+    - **This is a thorough draft, not legal advice.** Have an Indian advocate review it before taking
+      real money, especially the liability cap, the non-solicit (12 months), the arbitration clause and
+      the mentor "independent contractor" classification.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

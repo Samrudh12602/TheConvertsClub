@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: "/refunds", label: "Refunds" },
+  { href: "/mentor-agreement", label: "Mentor Agreement" },
 ];
 
 export function SiteFooter({ account }: { account: { role: RoleName; home: string } | null }) {

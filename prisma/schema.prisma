@@ -194,6 +194,7 @@ model User {
   gdParticipants GdParticipant[]
   ratings        SessionRating[]
   auditLogs      AuditLog[]
+  legalAcceptances LegalAcceptance[]
 
   @@index([role])
 }
@@ -321,8 +322,30 @@ model MentorApplication {
   createdAt       DateTime         @default(now())
   /// Set once this application has been turned into a mentor account.
   promotedMentorId String?
+  /// The Mentor Agreement version the applicant ticked when applying.
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+  termsIp         String?
 
   @@index([stage])
+}
+
+/// Append-only proof that a person accepted a legal document at a given version (who, what, when, from where).
+model LegalAcceptance {
+  id         String   @id @default(cuid())
+  userId     String
+  /// "terms" | "privacy" | "refunds" | "mentor-agreement"
+  document   String
+  version    String
+  /// signup | checkout | gate (the accept-terms screen) | invite
+  source     String
+  ip         String?
+  userAgent  String?
+  acceptedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, document, version])
+  @@index([userId])
 }
 
 // ───────────── Catalog, orders, credits ─────────────
@@ -396,6 +419,10 @@ model Order {
   guestName       String
   guestEmail      String
   guestPhone      String
+  /// The legal version the buyer ticked at checkout, with when and from where (the contract record).
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+  termsIp         String?
   createdAt       DateTime    @default(now())
   user            User?       @relation(fields: [userId], references: [id])
   product         Product     @relation(fields: [productId], references: [id])

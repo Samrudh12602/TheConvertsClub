@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,7 @@ export function ApplyForm() {
     setBusy(true);
     setResult(null);
     const fd = new FormData();
-    Object.entries(data).forEach(([k, v]) => fd.set(k, v));
+    Object.entries(data).forEach(([k, v]) => fd.set(k, String(v)));
     fd.set("photo", file);
     const res = await fetch("/api/applications/submit", { method: "POST", body: fd });
     const j = (await res.json().catch(() => ({}))) as { error?: string };
@@ -81,6 +82,15 @@ export function ApplyForm() {
               </p>
             )}
           </div>
+        </div>
+        <div className="mt-4">
+          <label className="flex items-start gap-2.5 text-[12.5px] leading-[1.55] text-ink-2">
+            <input type="checkbox" className="mt-0.5 size-4 flex-none" {...register("acceptTerms")} />
+            <span>
+              I confirm the details above are true, and I have read the <Link href="/mentor-agreement" target="_blank">Mentor Agreement</Link> and <Link href="/privacy" target="_blank">Privacy Policy</Link>. If I am accepted I will be asked to agree to them formally before I start.
+            </span>
+          </label>
+          {errors.acceptTerms && <p role="alert" className="mt-1.5 text-xs text-oxblood">{errors.acceptTerms.message}</p>}
         </div>
         <Button type="submit" size="lg" disabled={busy} className="mt-[18px] rounded-[9px]">
           {busy ? "Sending…" : "Send application"}

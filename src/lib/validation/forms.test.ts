@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestDetailsSchema, mentorApplicationSchema, normalizeIndianPhone, setPasswordSchema, signupSchema } from "./forms";
+import { checkoutDetailsSchema, guestDetailsSchema, mentorApplicationSchema, normalizeIndianPhone, setPasswordSchema, signupSchema } from "./forms";
 
 describe("normalizeIndianPhone", () => {
   it.each([
@@ -25,9 +25,22 @@ describe("guestDetailsSchema", () => {
   });
 });
 
+describe("checkoutDetailsSchema", () => {
+  const good = { name: "Ananya Nair", email: "a@b.co", phone: "9876543210" };
+  it("accepts good details once the terms are accepted", () => expect(checkoutDetailsSchema.safeParse({ ...good, acceptTerms: true }).success).toBe(true));
+  it("refuses a purchase with the terms unticked", () => {
+    expect(checkoutDetailsSchema.safeParse({ ...good, acceptTerms: false }).success).toBe(false);
+    expect(checkoutDetailsSchema.safeParse(good).success).toBe(false);
+  });
+});
+
 describe("mentorApplicationSchema", () => {
-  const base = { name: "Rohit K", email: "r@x.in", phone: "9876543210", institute: "IIM L, 2026", callsConverted: "IIM A, 2025", linkedinUrl: "https://linkedin.com/in/rohitk", hoursPerWeek: "4" };
+  const base = { name: "Rohit K", email: "r@x.in", phone: "9876543210", institute: "IIM L, 2026", callsConverted: "IIM A, 2025", linkedinUrl: "https://linkedin.com/in/rohitk", hoursPerWeek: "4", acceptTerms: true };
   it("accepts a complete application", () => expect(mentorApplicationSchema.safeParse(base).success).toBe(true));
+  it("will not take an application without the agreement ticked", () => {
+    expect(mentorApplicationSchema.safeParse({ ...base, acceptTerms: false }).success).toBe(false);
+    expect(mentorApplicationSchema.safeParse({ ...base, acceptTerms: undefined }).success).toBe(false);
+  });
   it.each(["0", "41", "abc", "", "4.5"])("rejects hours %s", (h) =>
     expect(mentorApplicationSchema.safeParse({ ...base, hoursPerWeek: h }).success).toBe(false),
   );

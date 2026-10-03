@@ -20,6 +20,11 @@ export const guestDetailsSchema = z.object({
 });
 export type GuestDetails = z.infer<typeof guestDetailsSchema>;
 
+const mustAccept = z.boolean().refine((v) => v === true, "Please accept the terms to continue");
+/** Checkout asks for the same details plus an explicit "I agree" — no purchase without it. */
+export const checkoutDetailsSchema = guestDetailsSchema.extend({ acceptTerms: mustAccept });
+export type CheckoutDetails = z.infer<typeof checkoutDetailsSchema>;
+
 export const loginEmailSchema = z.object({ email });
 export type LoginEmail = z.infer<typeof loginEmailSchema>;
 
@@ -60,5 +65,6 @@ export const mentorApplicationSchema = z.object({
     .string()
     .trim()
     .refine((v) => /^\d{1,2}$/.test(v) && Number(v) >= 1 && Number(v) <= 40, "Enter a number of hours between 1 and 40"),
+  acceptTerms: mustAccept,
 });
 export type MentorApplicationInput = z.infer<typeof mentorApplicationSchema>;

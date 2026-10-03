@@ -11,6 +11,8 @@ import { createLoginLink } from "@/server/magic-link";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
+import { hasAcceptedCurrent } from "@/server/legal-acceptance";
+import { LEGAL_VERSION, REQUIRED_DOCS } from "@/lib/legal";
 import { loadReceiptData } from "@/server/receipt";
 import { renderReceiptPdf } from "@/server/receipt-pdf";
 import type { CreditKind } from "@/generated/prisma/client";
@@ -48,10 +50,15 @@ export interface CheckoutStart {
 }
 
 /** Guest (or signed-in) checkout: creates our Order row and the Razorpay order. */
-export async function startCheckout(input: { slug: string; name: string; email: string; phone: string; coupon?: string | null; userId?: string | null }): Promise<CheckoutStart> {
+export async function startCheckout(input: { slug: string; name: string; email: string; phone: string; coupon?: string | null; userId?: string | null; acceptTerms?: boolean; ip?: string | null }): Promise<CheckoutStart> {
   if (!paymentsConfigured()) throw new CheckoutError("Payments aren't enabled yet.");
   const parsed = guestDetailsSchema.safeParse({ name: input.name, email: input.email, phone: input.phone });
   if (!parsed.success) throw new CheckoutError(parsed.error.issues[0]?.message ?? "Check your details.");
+  // No purchase without agreement: either ticked now, or a signed-in student who has already accepted the current terms.
+  if (!input.acceptTerms) {
+    const me = input.userId ? await db.user.findUnique({ where: { id: input.userId }, select: { id: true, role: true, isDemo: true } }) : null;
+    if (!me || !(await hasAcceptedCurrent(me))) throw new CheckoutError("Please accept the Terms of Use, Privacy Policy and Refund Policy to continue.");
+  }
   const q = await quote(input.slug, input.coupon);
   if (q.product.enrolledOnly) {
     // Additional PI: only for enrolled students, bought from inside the portal.
@@ -61,7 +68,7 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   const phone = normalizeIndianPhone(parsed.data.phone)!;
   const row = await db.product.findUnique({ where: { slug: q.product.slug }, select: { id: true } });
   const order = await db.order.create({
-    data: { productId: row!.id, userId: input.userId ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone },
+    data: { productId: row!.id, userId: input.userId ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date(), termsIp: input.ip ?? null },
   });
   const rz = await rzp().orders.create({ amount: q.totalPaise, currency: "INR", receipt: order.id.slice(0, 40), notes: { orderId: order.id, product: q.product.slug } });
   await db.order.update({ where: { id: order.id }, data: { razorpayOrderId: rz.id } });
@@ -100,6 +107,13 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
     const created = !user;
     if (!user) user = await tx.user.create({ data: { email: order.guestEmail, name: order.guestName, phone: order.guestPhone, role: "STUDENT" } });
     else if (!user.phone) await tx.user.update({ where: { id: user.id }, data: { phone: order.guestPhone } });
+    // The buyer agreed at checkout; carry that proof onto their account so they aren't asked again.
+    if (order.termsVersion && user.role === "STUDENT") {
+      await tx.legalAcceptance.createMany({
+        data: REQUIRED_DOCS.STUDENT.map((document) => ({ userId: user!.id, document, version: order.termsVersion!, source: "checkout", ip: order.termsIp, acceptedAt: order.termsAcceptedAt ?? new Date() })),
+        skipDuplicates: true,
+      });
+    }
     await lockUser(tx, user.id);
     await tx.payment.upsert({
       where: { razorpayPaymentId: pay.id },

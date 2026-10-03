@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, DarkPanel } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { formatPaise } from "@/lib/money";
-import { guestDetailsSchema, type GuestDetails } from "@/lib/validation/forms";
+import Link from "next/link";
+import { checkoutDetailsSchema, type CheckoutDetails } from "@/lib/validation/forms";
 import { openRazorpay } from "@/lib/razorpay-client";
 import { applyCouponAction, startCheckoutAction } from "@/app/(public)/checkout/actions";
 
@@ -37,8 +38,8 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
   const [couponOff, setCouponOff] = useState(0);
   const [paying, setPaying] = useState(false);
   const [, startTransition] = useTransition();
-  const { register, handleSubmit, formState: { errors } } = useForm<GuestDetails>({
-    resolver: zodResolver(guestDetailsSchema), mode: "onTouched", defaultValues: summary.prefill,
+  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutDetails>({
+    resolver: zodResolver(checkoutDetailsSchema), mode: "onTouched", defaultValues: summary.prefill,
   });
 
   const total = summary.totalPaise - couponOff;
@@ -50,7 +51,7 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
   if (couponOff > 0) lines.push({ label: "Coupon", value: formatPaise(-couponOff), tone: "discount" });
   lines.push({ label: "Total", value: formatPaise(total), strong: true });
 
-  async function pay(details: GuestDetails) {
+  async function pay(details: CheckoutDetails) {
     setNotice(null);
     setPaying(true);
     const r = await startCheckoutAction({ slug: summary.slug, ...details, coupon });
@@ -84,6 +85,15 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
             <Field label="Name" autoComplete="name" placeholder="Your full name" error={errors.name?.message} {...register("name")} />
             <Field label="Email" type="email" autoComplete="email" inputMode="email" placeholder="Receipts and login link go here" error={errors.email?.message} {...register("email")} />
             <Field label="Phone" type="tel" autoComplete="tel" placeholder="+91 · for session reminders" error={errors.phone?.message} {...register("phone")} />
+            <div>
+              <label className="flex items-start gap-2.5 text-[12.5px] leading-[1.55] text-ink-2">
+                <input type="checkbox" className="mt-0.5 size-4 flex-none" aria-invalid={errors.acceptTerms ? true : undefined} {...register("acceptTerms")} />
+                <span>
+                  I am 18 or older and I agree to the <Link href="/terms" target="_blank">Terms of Use</Link>, <Link href="/privacy" target="_blank">Privacy Policy</Link> and <Link href="/refunds" target="_blank">Refund Policy</Link>.
+                </span>
+              </label>
+              {errors.acceptTerms && <p role="alert" className="mt-1.5 text-xs text-oxblood">{errors.acceptTerms.message}</p>}
+            </div>
           </form>
         </Card>
 

@@ -6,6 +6,7 @@ import { audit } from "@/server/audit";
 import { assertConfigWritable, type Actor } from "@/server/admin";
 import { createLoginLink } from "@/server/magic-link";
 import { adminInbox, sendEmail } from "@/server/email";
+import { LEGAL_VERSION } from "@/lib/legal";
 import { createMentorCoupon } from "@/server/mentor-coupon";
 import { MAX_PHOTO_BYTES, sniffImage, UploadError } from "@/server/upload-validation";
 
@@ -140,6 +141,7 @@ export interface SubmitApplicationInput {
   callsConverted: string;
   hoursPerWeek: number;
   linkedinUrl: string;
+  termsIp?: string | null;
   photo: PhotoFile;
 }
 
@@ -156,6 +158,9 @@ export async function submitApplication(input: SubmitApplicationInput) {
       callsConverted: input.callsConverted.trim(),
       hoursPerWeek: input.hoursPerWeek,
       linkedinUrl: input.linkedinUrl.trim(),
+      termsVersion: LEGAL_VERSION,
+      termsAcceptedAt: new Date(),
+      termsIp: input.termsIp ?? null,
       photoKey,
       photoFileName: input.photo.name.replace(/[^\w.\- ]+/g, "_").slice(0, 120),
     },

@@ -8,6 +8,7 @@ const ORDER: { slug: LegalSlug; label: string }[] = [
   { slug: "terms", label: "Terms" },
   { slug: "privacy", label: "Privacy" },
   { slug: "refunds", label: "Refunds" },
+  { slug: "mentor-agreement", label: "Mentor Agreement" },
 ];
 
 export async function LegalPage({ slug }: { slug: LegalSlug }) {
@@ -15,9 +16,9 @@ export async function LegalPage({ slug }: { slug: LegalSlug }) {
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-3.5 px-5 py-[26px]">
       {showDemoContent() && (
-        <Notice>Structure only. A lawyer and a CA should write and review the final text, particularly refunds, GST and DPDP obligations.</Notice>
+        <Notice>Draft shown outside production. Have an Indian advocate review the final text, and a CA review anything about tax, before launch.</Notice>
       )}
-      <nav aria-label="Legal" className="flex gap-1.5">
+      <nav aria-label="Legal" className="flex flex-wrap gap-1.5">
         {ORDER.map((o) => (
           <Link
             key={o.slug}
@@ -33,15 +34,24 @@ export async function LegalPage({ slug }: { slug: LegalSlug }) {
           </Link>
         ))}
       </nav>
-      <Card className="p-[22px]">
-        <h1 className="font-display text-[18px] font-bold leading-[1.25] text-ink">{doc.title}</h1>
-        <ul className="mt-[13px] flex flex-col gap-[9px]">
-          {doc.sections.map((s) => (
-            <li key={s} className="text-pretty text-[13.5px] leading-[1.65] text-ink-muted">
-              {s}
-            </li>
+      <Card className="p-[22px] sm:p-7">
+        <h1 className="font-display text-[22px] font-bold leading-[1.25] text-ink">{doc.title}</h1>
+        <p className="mt-2 text-pretty text-[13px] leading-[1.65] text-ink-faint">{doc.summary}</p>
+        <div className="mt-6 flex flex-col gap-6">
+          {doc.sections.map((sec, i) => (
+            <section key={sec.heading} aria-labelledby={`s${i + 1}`}>
+              <h2 id={`s${i + 1}`} className="font-display text-[15px] font-bold leading-[1.35] text-ink">{i + 1}. {sec.heading}</h2>
+              <ol className="mt-2.5 flex flex-col gap-2.5">
+                {sec.items.map((item, j) => (
+                  <li key={j} className="flex gap-2.5 text-pretty text-[13.5px] leading-[1.7] text-ink-muted">
+                    <span className="tnum w-9 flex-none text-ink-faint">{i + 1}.{j + 1}</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           ))}
-        </ul>
+        </div>
       </Card>
     </div>
   );

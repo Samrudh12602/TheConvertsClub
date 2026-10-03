@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { roleHome } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
+import { outstandingDocs } from "@/server/legal-acceptance";
 
 /** The signed-in user, re-read from the database (so suspensions and role changes apply immediately). */
 export const currentUser = cache(async () => {
@@ -26,6 +27,9 @@ export async function requireRole(...roles: Role[]) {
   if (!user) redirect("/login");
   const allowed = roles.includes(user.role) || (user.role === "ADMIN" && roles.includes("MENTOR") && !!user.mentorProfile);
   if (!allowed) redirect(roleHome(user.role));
+  // Every student and mentor must have accepted the current legal documents. This catches every way in
+  // (password, Google, login link, invite, a guest checkout) and re-asks everyone when the text changes.
+  if ((await outstandingDocs(user)).length > 0) redirect("/accept-terms");
   return user;
 }
 

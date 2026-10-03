@@ -19,13 +19,13 @@ export async function applyCouponAction(slug: string, code: string) {
 
 export type StartResult = { ok: true; start: CheckoutStart } | { ok: false; error: string };
 
-export async function startCheckoutAction(input: { slug: string; name: string; email: string; phone: string; coupon?: string }): Promise<StartResult> {
+export async function startCheckoutAction(input: { slug: string; name: string; email: string; phone: string; coupon?: string; acceptTerms?: boolean }): Promise<StartResult> {
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!(await rateLimit(`checkout:${ip}`, 10, 600)).ok) return { ok: false, error: "Too many attempts. Wait a few minutes and try again." };
   if (!paymentsConfigured()) return { ok: false, error: "Payments aren't enabled in this environment yet, so nothing was charged." };
   try {
     const session = await auth();
-    return { ok: true, start: await startCheckout({ ...input, userId: session?.user?.id ?? null }) };
+    return { ok: true, start: await startCheckout({ ...input, userId: session?.user?.id ?? null, ip }) };
   } catch (e) {
     if (e instanceof CheckoutError) return { ok: false, error: e.message };
     if (e instanceof PaymentsNotConfigured) return { ok: false, error: "Payments aren't enabled in this environment yet." };

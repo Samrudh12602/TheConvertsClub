@@ -21,6 +21,12 @@ export function SignupCard({ next }: { next?: string }) {
         <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" />
         <Field label="Password" name="password" type="password" required autoComplete="new-password" hint="At least 8 characters." />
         <Field label="Confirm password" name="confirmPassword" type="password" required autoComplete="new-password" />
+        <label className="flex items-start gap-2.5 text-[12.5px] leading-[1.55] text-ink-2">
+          <input type="checkbox" name="acceptTerms" className="mt-0.5 size-4 flex-none" />
+          <span>
+            I am 18 or older and I agree to the <Link href="/terms" target="_blank">Terms of Use</Link>, <Link href="/privacy" target="_blank">Privacy Policy</Link> and <Link href="/refunds" target="_blank">Refund Policy</Link>.
+          </span>
+        </label>
         {state.error && (
           <p role="alert" className="text-xs text-oxblood">
             {state.error}

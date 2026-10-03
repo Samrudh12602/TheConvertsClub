@@ -4,6 +4,8 @@ import { times } from "@/lib/settings";
 import { getPolicy } from "@/lib/settings-db";
 import { showDemoContent } from "@/lib/env";
 import { db } from "@/lib/db";
+import { buildLegalDocs } from "@/lib/legal-text";
+import type { LegalDocKey } from "@/lib/legal";
 
 /**
  * Public marketing copy, taken from the Claude Design "Public Site" file.
@@ -63,32 +65,9 @@ export const mentorPerks = [
   { title: "Bonuses at volume", body: "Milestone bonuses through the season on top of per-session pay." },
 ];
 
-export const legalDocs = async () => {
-  const p = await getPolicy();
-  return {
-    terms: { title: "Terms of use", sections: [
-      "What we provide: preparation sessions and written feedback. No guarantee of admission.",
-      "Booking, rescheduling and no-show rules, matching the settings in Admin.",
-      "Conduct expected of students and mentors during sessions.",
-      "Recordings: how long they're kept and who can access them.",
-    ] },
-    privacy: { title: "Privacy", sections: [
-      "What we collect: contact details, academic profile, uploads, session feedback and recordings.",
-      "Why: to run sessions, match mentors, and process payments.",
-      "Who sees it: your assigned mentor and the admin. Payment data stays with Razorpay.",
-      "Your rights under the DPDP Act: access, correction, and deletion, with the request flow in your settings.",
-      "Retention: uploads deleted within 30 days of an account deletion request.",
-    ] },
-    refunds: { title: "Refunds", sections: [
-      `Full refund within ${p.refundWindowHours} hours of purchase if no credit has been used.`,
-      "After a credit is used, the remainder is not refundable but unused credits may be transferred between session types at the admin's discretion.",
-      "Refunds are returned to the original payment method within 5 to 7 working days.",
-      "Cancellation by us — if no mentor can be found for a booked slot, the credit is returned in full.",
-    ] },
-  };
-};
+export const legalDocs = async () => buildLegalDocs(await getPolicy());
 
-export type LegalSlug = "terms" | "privacy" | "refunds";
+export type LegalSlug = LegalDocKey;
 
 export interface PublicMentor { id: string; name: string; college: string; bio: string; photoSrc: string | null; demo?: boolean;
   /** Only set once enough students have rated, so one rating never defines a mentor. */

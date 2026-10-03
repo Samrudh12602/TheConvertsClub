@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { MentorCouponEditor, PublicVisibleToggle, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
+import { LegalRecord } from "@/components/admin/legal-record";
 import { db } from "@/lib/db";
 import { fmtDate, fmtWhen } from "@/lib/format";
 import { ACCRUAL_STATUS, sessionTitle } from "@/lib/labels";
@@ -96,6 +97,8 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
           <p className="text-[12.5px] text-ink-faint">No referral code on file — it&apos;s created automatically for new mentors; older ones won&apos;t have one until they&apos;re re-added.</p>
         )}
       </Panel>
+
+      <Panel title="Terms accepted" flush={false}><LegalRecord userId={m.userId} role="MENTOR" /></Panel>
 
       <Section cols={280}>
         <Panel title={`Pay structure · ${m.tier}`} flush={false}>

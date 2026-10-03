@@ -11,6 +11,8 @@ import { rateLimit } from "@/server/ratelimit";
 import { sendEmail } from "@/server/email";
 import { createVerifyEmailLink } from "@/server/auth-tokens";
 import { audit } from "@/server/audit";
+import { REQUIRED_DOCS } from "@/lib/legal";
+import { recordAcceptance, requestMeta } from "@/server/legal-acceptance";
 
 export interface SignupState {
   error?: string;
@@ -22,6 +24,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!(await rateLimit(`signup:${ip}`, 8, 3600)).ok) return { error: "Too many attempts. Wait a while and try again." };
 
+  if (formData.get("acceptTerms") !== "on") return { error: "Please accept the Terms of Use, Privacy Policy and Refund Policy to create an account." };
   const parsed = signupSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check your details." };
   const { name, password } = parsed.data;
@@ -39,6 +42,8 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
 
   const user = await db.user.create({ data: { email, name: name.trim(), role: "STUDENT", passwordHash } });
   await db.studentProfile.create({ data: { userId: user.id } });
+  const meta = await requestMeta();
+  await recordAcceptance({ userId: user.id, docs: REQUIRED_DOCS.STUDENT, source: "signup", ...meta });
   await audit({ actorId: user.id, action: "auth.signup", entity: "User", entityId: user.id, ip });
   const verifyLink = await createVerifyEmailLink(email);
   await sendEmail({ template: "verify_email", to: email, url: verifyLink });
