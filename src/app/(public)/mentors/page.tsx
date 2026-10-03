@@ -19,7 +19,7 @@ export default async function MentorsPage() {
           Everyone here converted a call in the last two seasons. We assign based on what you&apos;re preparing for and who is free.
         </p>
       </div>
-      {demo && <Notice>Demo profiles, shown outside production only. Real profiles come from the mentors table and expose photo, name, college and a short bio, nothing else.</Notice>}
+      {demo && <Notice>Demo profiles, shown outside production only. Real profiles come from the mentors table and expose photo, name, college, a short bio and, once earned, a rating and session count.</Notice>}
       {mentors.length === 0 ? (
         <Card className="text-sm leading-[1.6] text-ink-muted">Mentor profiles will be published here before the season opens.</Card>
       ) : (
@@ -41,6 +41,13 @@ export default async function MentorsPage() {
                 <h2 className="mt-[13px] font-display text-[15px] font-bold leading-tight text-ink">{m.name}</h2>
                 <p className="mt-1 text-[11.5px] font-semibold leading-[1.3] text-oxblood">{m.college}</p>
                 <p className="mt-2 text-pretty text-[12.5px] leading-[1.6] text-ink-muted">{m.bio}</p>
+                {(m.rating || (m.sessions ?? 0) > 0) && (
+                  <p className="tnum mt-3 border-t border-line-soft pt-2.5 text-[11.5px] font-semibold text-ink-2">
+                    {m.rating && <span>★ {m.rating.avg.toFixed(1)} <span className="font-normal text-ink-faint">({m.rating.count} ratings)</span></span>}
+                    {m.rating && (m.sessions ?? 0) > 0 && <span className="text-ink-faint"> · </span>}
+                    {(m.sessions ?? 0) > 0 && <span>{m.sessions} {m.sessions === 1 ? "session" : "sessions"} run</span>}
+                  </p>
+                )}
               </Card>
             </li>
           ))}

@@ -90,7 +90,12 @@ export const legalDocs = async () => {
 
 export type LegalSlug = "terms" | "privacy" | "refunds";
 
-export interface PublicMentor { id: string; name: string; college: string; bio: string; photoSrc: string | null; demo?: boolean }
+export interface PublicMentor { id: string; name: string; college: string; bio: string; photoSrc: string | null; demo?: boolean;
+  /** Only set once enough students have rated, so one rating never defines a mentor. */
+  rating?: { avg: number; count: number } | null; sessions?: number }
+
+/** Fewest ratings before an average is shown publicly. */
+export const MIN_PUBLIC_RATINGS = 3;
 
 /* ---------- DEMO content: never shown in production ---------- */
 
@@ -111,7 +116,17 @@ export async function getPublicMentors(): Promise<PublicMentor[]> {
     include: { user: { select: { name: true } } },
   });
   if (rows.length > 0) {
+    const ids = rows.map((m) => m.id);
+    const [done, rated] = await Promise.all([
+      db.session.groupBy({ by: ["mentorId"], where: { mentorId: { in: ids }, status: "COMPLETED" }, _count: true }),
+      db.sessionRating.findMany({ where: { session: { mentorId: { in: ids } } }, select: { rating: true, session: { select: { mentorId: true } } } }),
+    ]);
+    const sessions = new Map(done.map((d) => [d.mentorId, d._count]));
+    const agg = new Map<string, { sum: number; n: number }>();
+    for (const r of rated) { const id = r.session.mentorId; if (id) { const a = agg.get(id) ?? { sum: 0, n: 0 }; a.sum += r.rating; a.n++; agg.set(id, a); } }
     return rows.map((m) => ({
+      sessions: sessions.get(m.id) ?? 0,
+      rating: (() => { const a = agg.get(m.id); return a && a.n >= MIN_PUBLIC_RATINGS ? { avg: a.sum / a.n, count: a.n } : null; })(),
       id: m.id,
       name: m.user.name ?? "Mentor",
       college: m.college ?? "",

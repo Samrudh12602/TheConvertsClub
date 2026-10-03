@@ -12,6 +12,10 @@ export const DEFAULT_SETTINGS = {
   maxReschedules: 2,
   refundWindowHours: 48,
   recordingRetentionDays: 90,
+  /** Unused credits expire this many days after being granted. 0 = never expire (the default). */
+  creditValidityDays: 0,
+  /** Students are warned this many days before credits expire. */
+  creditExpiryWarnDays: 14,
   gdCapacity: 8,
   feedbackDueHours: 24,
   gstEnabled: false,

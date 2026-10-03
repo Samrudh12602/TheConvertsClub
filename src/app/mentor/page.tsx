@@ -7,16 +7,17 @@ import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { getSettings } from "@/lib/settings-db";
 import { nextThreshold } from "@/server/payroll";
+import { mentorBoard } from "@/server/leaderboard";
 import { requireMentor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function MentorDashboard() {
-  const { mentor } = await requireMentor();
+  const { user, mentor } = await requireMentor();
   const settings = await getSettings();
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 86_400_000);
-  const [openWeek, bookedWeek, assigned, accrued, rules, awards, ratings, mocks] = await Promise.all([
+  const [openWeek, bookedWeek, assigned, accrued, rules, awards, ratings, mocks, board] = await Promise.all([
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: { in: ["OPEN", "HELD"] } } }),
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: "BOOKED" } }),
     db.session.findMany({ where: { mentorId: mentor.id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 6, include: { student: { select: { name: true, studentProfile: true } } } }),
@@ -25,6 +26,7 @@ export default async function MentorDashboard() {
     db.bonusAward.findMany({ where: { mentorId: mentor.id } }),
     db.sessionRating.aggregate({ where: { session: { mentorId: mentor.id } }, _avg: { rating: true }, _count: true }),
     countMocks(mentor.id, settings.mockCounts),
+    mentorBoard(user.isDemo),
   ]);
   const ruleLite = rules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
   const next = nextThreshold(mentor.tier, mocks, ruleLite);
@@ -74,7 +76,28 @@ export default async function MentorDashboard() {
           </div>
         </Panel>
       </Section>
+
+      <Panel title="Leaderboard · last 30 days" flush={false}>
+        {board.length === 0 || board.every((b) => b.mocks === 0) ? <Empty>No completed sessions yet this month. Be the first on the board.</Empty> : (
+          <ol className="flex flex-col">
+            {board.slice(0, 5).map((b) => <BoardRow key={b.mentorId} b={b} me={b.mentorId === mentor.id} />)}
+            {(() => { const mine = board.find((b) => b.mentorId === mentor.id); return mine && mine.rank > 5 ? <><li aria-hidden className="py-1 text-center text-xs text-ink-faint">···</li><BoardRow b={mine} me /></> : null; })()}
+          </ol>
+        )}
+        <p className="mt-2.5 text-[11.5px] text-ink-faint">Ranked by completed sessions, then average rating. Only names and counts are shown — never pay or tier.</p>
+      </Panel>
     </PortalPage>
+  );
+}
+
+function BoardRow({ b, me }: { b: Awaited<ReturnType<typeof mentorBoard>>[number]; me: boolean }) {
+  return (
+    <li className={`flex items-center gap-3 border-b border-line-soft py-2.5 text-[13px] last:border-b-0 ${me ? "font-semibold text-oxblood" : "text-ink-body"}`}>
+      <span className="tnum w-6 flex-none text-ink-faint">#{b.rank}</span>
+      <span className="min-w-0 flex-1 truncate">{b.name}{me ? " (you)" : ""}</span>
+      <span className="tnum flex-none text-ink-2">{b.mocks} {b.mocks === 1 ? "session" : "sessions"}</span>
+      <span className="tnum w-10 flex-none text-right text-ink-faint">{b.rating ? `★ ${b.rating.toFixed(1)}` : "—"}</span>
+    </li>
   );
 }
 

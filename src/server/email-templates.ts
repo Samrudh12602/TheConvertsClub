@@ -10,7 +10,7 @@ export type TemplateKey =
   | "session_cancelled" | "session_rescheduled" | "feedback_published" | "review_completed"
   | "mentor_invite" | "mentor_added" | "mentor_assignment" | "mentor_availability_change"
   | "application_received" | "application_admin_alert"
-  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received";
+  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received" | "credits_expiring" | "credits_expired";
 
 export interface TemplateDef {
   subject: string;
@@ -43,6 +43,8 @@ export const TEMPLATES: Record<TemplateKey, TemplateDef> = {
   refund_processed: { subject: "Your refund of {amount} is on its way", head: "Refund processed", body: "We've refunded {amount} to your original payment method. It usually lands in 5 to 7 working days.", footer: "Questions? Reply to this email." },
   broadcast: { subject: "{subject}", head: "{subject}", body: "{body}" },
   contact_message: { subject: "Contact form: {topic} — {name}", head: "New message from {name}", body: "{message}", footer: "Reply to this email to answer them directly." },
+  credits_expiring: { subject: "Your unused credits expire on {date}", head: "{credits} expire on {date}", body: "Hi {name}, you still have unspent credits that will expire on {date}. Book a session before then and they're yours to use.", cta: "Book a session", footer: "Credits already attached to a booked session are never affected." },
+  credits_expired: { subject: "Some of your credits have expired", head: "{credits} expired", body: "Hi {name}, these credits went unused for over {days} days and have now expired. Sessions you've already booked are unaffected. If you think this is a mistake, write to us and we'll look at it.", cta: "Contact us" },
   contact_received: { subject: "We got your message", head: "Thanks, {name} — we've got it", body: "We read every message and usually reply within a day. If it's about a session that's about to start, email us again with the session time in the subject.", footer: "You don't need to do anything else." },
 };
 

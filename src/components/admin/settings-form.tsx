@@ -54,7 +54,10 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
           <Field label="Refund window (hours)" type="number" {...num("refundWindowHours")} />
           <Field label="Recording retention (days)" type="number" {...num("recordingRetentionDays")} />
+          <Field label="Credit validity (days, 0 = never expire)" type="number" {...num("creditValidityDays")} />
+          <Field label="Warn students (days before)" type="number" {...num("creditExpiryWarnDays")} />
         </div>
+        <p className="mt-2 text-[11.5px] text-ink-faint">Leave validity at 0 unless your Terms say credits expire — it removes unused paid credits. Booked sessions are never affected, and students get a warning email first.</p>
         <label className="mt-3 flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" checked={v.gstEnabled} onChange={(e) => setV({ ...v, gstEnabled: e.target.checked })} />GST enabled (confirm with a CA before turning on)</label>
       </fieldset>
 

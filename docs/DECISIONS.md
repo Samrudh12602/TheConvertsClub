@@ -287,6 +287,20 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       free `*/5` timer actually fires only every few hours; Vercel Hobby also runs daily backstop crons
       (reminders 18:00 IST, hold-expiry 08:30 IST). CI build now supplies placeholder env so it passes.
 
+31. **Mentor ratings on the public page, a mentor leaderboard, and opt-in credit expiry.**
+    - *Public mentor cards* show an average rating (only once a mentor has 3+ ratings, so one review
+      never defines them) and the number of sessions run. Never tier or pay. Student comments are not
+      shown publicly (they didn't consent to that).
+    - *Mentor leaderboard* on the mentor dashboard: last 30 days, ranked by completed sessions then
+      rating; shows first name + last initial only, never earnings or tier. Demo and real mentors never
+      appear on the same board.
+    - *Credit expiry exists but is OFF* (`creditValidityDays: 0`). It removes paid value from
+      customers, and the Terms say nothing about expiry, so switching it on is a legal/policy call for
+      you, not a default. When on (Admin > Settings): oldest unspent credits expire first, booked
+      sessions are never touched, students get a warning email N days before (default 14) and a notice
+      after. Runs daily via `/api/cron/credit-expiry`; the ledger row reads "Credit expiry: ...".
+      **Before turning it on, add a validity line to Terms and the FAQ.**
+
 ## Assumptions
 
 | # | Topic | Default | Where |
@@ -304,7 +318,7 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 | 11 | `/checkout/success` | Redirects to `/packages` unless non-production with `?demo=1`. Phase 2 reads the paid order. | `checkout/success/page.tsx` |
 | 12 | Phone validation | Indian mobile: 10 digits starting 6-9, optional `+91`/`91`/`0` prefix. International numbers are not accepted yet. | `lib/validation/forms.ts` |
 | 13 | Mentor "hours a week" | Whole number 1 to 40 (the design showed free text). | `forms.ts` |
-| 14 | Mentors page contents | Photo, name, college, two-line bio only. Never tier. | `getPublicMentors` |
+| 14 | Mentors page contents | Photo, name, college, bio, plus (once earned) a rating average and session count. Never tier or pay. | `getPublicMentors` |
 | 15 | GST | Off by default (`gstEnabled: false`). Needs a CA decision before it is switched on. | `settings.ts` |
 | 16 | `middleware.ts` | Next.js 16 renamed it `proxy.ts`. Route guards will use `proxy.ts`. | Phase 1 |
 | 17 | Recording / refund claims in copy | Copied from the design ("recording available 90 days", "refundable within 48 hours if no credit used"). Recordings are not in the build spec; confirm you offer them. | `content.ts` |
