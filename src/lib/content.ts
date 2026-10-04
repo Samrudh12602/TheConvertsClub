@@ -46,7 +46,7 @@ const defaultFaqs = async () => {
     { q: "How soon can I book after paying?", a: "Immediately. Credits land as soon as payment is confirmed, and slots for the coming week open every Sunday evening." },
     { q: "What if I need to reschedule?", a: `Free up to ${p.cancelNoticeHours} hours before the session, ${times(p.maxReschedules)}. After that the credit is used.` },
     { q: "How long is a mock?", a: "The slot is one hour. The interview usually runs twenty to thirty minutes, and the rest is debrief — that's where the value is." },
-    { q: "Do I get a recording?", a: `Yes, available for ${p.recordingRetentionDays} days in your library.` },
+    { q: "Are sessions recorded?", a: `Not by default. If a session is recorded we tell you before it starts, and the recording stays in your library for ${p.recordingRetentionDays} days.` },
     { q: "Is there a refund?", a: `Within ${p.refundWindowHours} hours of purchase, if you haven't used a credit. After that, unused credits can be converted but not refunded.` },
     { q: "Who can see my SOP, marks and feedback?", a: "Your assigned mentor and Samrudh. Files are stored privately and download links expire." },
   ];

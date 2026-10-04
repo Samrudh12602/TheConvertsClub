@@ -353,7 +353,7 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 | 14 | Mentors page contents | Photo, name, college, bio, plus (once earned) a rating average and session count. Never tier or pay. | `getPublicMentors` |
 | 15 | GST | Off by default (`gstEnabled: false`). Needs a CA decision before it is switched on. | `settings.ts` |
 | 16 | `middleware.ts` | Next.js 16 renamed it `proxy.ts`. Route guards will use `proxy.ts`. | Phase 1 |
-| 17 | Recording / refund claims in copy | Copied from the design ("recording available 90 days", "refundable within 48 hours if no credit used"). Recordings are not in the build spec; confirm you offer them. | `content.ts` |
+| 17 | Recording / refund claims in copy | **Recording is NOT built** (no recording feature exists), so the FAQ now says sessions are not recorded by default. Refund window is a real setting. If you add recording, restore the promise and keep the consent clause in the Terms. | `content.ts` |
 | 19 | Vercel env vars | `AUTH_SECRET`, `CRON_SECRET`, `ADMIN_EMAIL` (Sensitive, generated/set) on Production+Preview. `NEXT_PUBLIC_APP_URL` deliberately left **unset** — `appUrl()` auto-resolves to the real live URL instead (see item 3). Third-party keys are added with `scripts/set-vercel-env.sh`, never through chat. | Vercel |
 | 18 | Copy claims about mentors | "Converted in 2024 or 2025", "screened and trial mock" are design copy. Confirm they are true or the FAQ overstates. | `content.ts` |
 
