@@ -7,7 +7,7 @@ import { demoMode } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; sent?: string; error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; sent?: string; error?: string; email?: string }> }) {
   const sp = await searchParams;
   const session = await auth();
   if (session?.user) redirect(safeNext(sp.next) ?? roleHome(session.user.role));
@@ -22,6 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         emailEnabled={emailLoginEnabled()}
         demoAccounts={demoMode() ? DEMO_ACCOUNTS.map((a) => ({ role: a.role, email: a.email })) : undefined}
         notice={sp.sent ? "sent" : sp.error ? "error" : null}
+        defaultEmail={sp.email && sp.email.length <= 254 ? sp.email : undefined}
       />
     </div>
   );

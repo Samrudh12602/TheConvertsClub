@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
@@ -15,13 +15,16 @@ interface Props {
   emailEnabled: boolean;
   demoAccounts?: { role: string; email: string }[];
   notice?: "sent" | "error" | null;
+  /** Pre-fills the email box, e.g. from the button in a mentor's welcome email. */
+  defaultEmail?: string;
 }
 
 /** One login for students, mentors and admin. We route to the right portal after sign-in.
  * Email + password works unconditionally (no external service needed); Google and the magic-link
  * option only appear once those are configured. */
-export function LoginCard({ heading, sub, next, googleEnabled, emailEnabled, demoAccounts, notice }: Props) {
+export function LoginCard({ heading, sub, next, googleEnabled, emailEnabled, demoAccounts, notice, defaultEmail }: Props) {
   const [mode, setMode] = useState<"password" | "link">("password");
+  const [, startTransition] = useTransition();
   const [pwState, pwAction, pwPending] = useActionState<LoginState, FormData>(passwordSignIn, {});
   const [emailState, emailAction, emailPending] = useActionState<LoginState, FormData>(emailSignIn, {});
   const [demoState, demoAction, demoPending] = useActionState<LoginState, FormData>(demoSignIn, {});
@@ -52,10 +55,11 @@ export function LoginCard({ heading, sub, next, googleEnabled, emailEnabled, dem
       )}
 
       {mode === "password" ? (
-        <form action={pwAction} className={googleEnabled ? "" : "mt-5"}>
+        // Submitted through a transition rather than `action=`, so a wrong password does not wipe the email field.
+        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startTransition(() => pwAction(fd)); }} className={googleEnabled ? "" : "mt-5"}>
           <input type="hidden" name="next" value={next ?? ""} />
           <div className="flex flex-col gap-3">
-            <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" />
+            <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" defaultValue={defaultEmail} />
             <Field label="Password" name="password" type="password" required autoComplete="current-password" />
           </div>
           {pwState.error && (

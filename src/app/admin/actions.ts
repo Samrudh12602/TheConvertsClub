@@ -15,7 +15,7 @@ import { appUrl } from "@/lib/env";
 import { AdminError, approveAccruals, approveBonuses, assertConfigWritable, assignSession, confirmRequested, createPayoutRun, markPayoutPaid, previewBonuses, type Actor } from "@/server/admin";
 import { cancelSession, BookingError } from "@/server/booking";
 import { refundOrder, CheckoutError } from "@/server/checkout";
-import { addMentorDirect, MentorAdminError, promoteApplication } from "@/server/mentors";
+import { addMentorDirect, MentorAdminError, promoteApplication, resendMentorLogin } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
@@ -118,6 +118,15 @@ export async function promoteApplicationAction(applicationId: string, tier: unkn
     revalidatePath("/admin/mentors");
     revalidatePath("/mentors");
     return { ok: true, message: "Promoted to mentor. A login link has been emailed to them." };
+  } catch (e) { return fail(e); }
+}
+
+export async function resendMentorLoginAction(mentorId: string): Promise<Result> {
+  try {
+    const actor = await guard("mentor-login");
+    const r = await resendMentorLogin(actor, mentorId);
+    revalidatePath(`/admin/mentors/${mentorId}`);
+    return { ok: true, message: `Login details sent to ${r.email}.` };
   } catch (e) { return fail(e); }
 }
 

@@ -27,6 +27,8 @@ export async function requireRole(...roles: Role[]) {
   if (!user) redirect("/login");
   const allowed = roles.includes(user.role) || (user.role === "ADMIN" && roles.includes("MENTOR") && !!user.mentorProfile);
   if (!allowed) redirect(roleHome(user.role));
+  // A temporary password (emailed by an admin) must be replaced before anything else is reachable.
+  if (user.mustChangePassword) redirect("/set-password");
   // Every student and mentor must have accepted the current legal documents. This catches every way in
   // (password, Google, login link, invite, a guest checkout) and re-asks everyone when the text changes.
   if ((await outstandingDocs(user)).length > 0) redirect("/accept-terms");

@@ -12,6 +12,7 @@ import { rateLimit } from "@/server/ratelimit";
 import { sendEmail } from "@/server/email";
 import { audit } from "@/server/audit";
 import { verifyPassword } from "@/server/password";
+import { tempPasswordExpired } from "@/server/temp-password";
 
 const adminEmail = () => process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
@@ -79,6 +80,7 @@ export const { handlers, auth, signIn, signOut, unstable_update: refreshSession 
         const user = await db.user.findUnique({ where: { email } });
         if (!user || !user.passwordHash || user.status !== "ACTIVE" || user.deletedAt) return null;
         if (!(await verifyPassword(password, user.passwordHash))) return null;
+        if (tempPasswordExpired(user)) return null; // a week-old temporary password no longer works; an admin can send a new one
         await audit({ actorId: user.id, action: "auth.password_login", entity: "User", entityId: user.id, ip });
         return { id: user.id, email: user.email, name: user.name, role: user.role } as never;
       },

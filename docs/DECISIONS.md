@@ -365,6 +365,20 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     browser pop-up (pop-ups are suppressed in some browsers and made the old button look dead). Stage
     changes now show their errors, and ACCEPTED is set only by approving.
 
+36. **Mentors get a login button plus a temporary password, and must choose their own on first sign-in.**
+    The old welcome email linked to a one-time login with no credentials, and (because the site address had
+    been the removed domain) the link was dead. Now `mentor_added` carries: a Log in button to the login page
+    (email pre-filled), their email, and a random 12-character temporary password (unambiguous letters,
+    stored only as a hash, valid 7 days). Signing in with it sends them to `/set-password` before anything
+    else (enforced in `requireRole`, so no portal page is reachable); choosing a permanent password overwrites
+    the hash, so the temporary one can never be used again, and it can't be reused as the new one. Expired
+    temporary passwords are refused at login. Mentors can change their password any time (Profile).
+    Admin > Mentor > **Resend login details** issues a fresh temporary password (it replaces the mentor's
+    current password). `/api/cron/resend-mentor-login` + the manual "Resend mentor login" GitHub workflow do
+    the same without opening the portal, behind the existing CRON_SECRET. Login and signup forms no longer
+    wipe what you typed after an error. Email may still land in spam while it is sent from a personal Gmail;
+    ask recipients to mark "Not spam", and move to a domain-authenticated sender (SPF/DKIM) when you have a domain.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

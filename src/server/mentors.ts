@@ -4,9 +4,9 @@ import type { MentorTier } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { audit } from "@/server/audit";
 import { assertConfigWritable, type Actor } from "@/server/admin";
-import { createLoginLink } from "@/server/magic-link";
 import { adminInbox, sendEmail } from "@/server/email";
 import { LEGAL_VERSION } from "@/lib/legal";
+import { issueTempPassword, TEMP_PASSWORD_DAYS } from "@/server/temp-password";
 import { createMentorCoupon } from "@/server/mentor-coupon";
 import { MAX_PHOTO_BYTES, sniffImage, UploadError } from "@/server/upload-validation";
 
@@ -82,12 +82,7 @@ export async function addMentorDirect(actor: Actor, input: AddMentorInput) {
     return { user, mentor };
   });
 
-  try {
-    const link = await createLoginLink(email, "/mentor");
-    await sendEmail({ template: "mentor_added", to: email, url: link });
-  } catch (e) {
-    console.error("mentor_added email failed", e);
-  }
+  await sendMentorCredentials(user.id, email);
   await audit({ actorId: actor.id, action: "mentor.added_direct", entity: "MentorProfile", entityId: mentor.id, after: { email, tier: input.tier } });
   return { userId: user.id, mentorId: mentor.id };
 }
@@ -123,14 +118,36 @@ export async function promoteApplication(actor: Actor, applicationId: string, ti
     return { user, mentor };
   });
 
-  try {
-    const link = await createLoginLink(email, "/mentor");
-    await sendEmail({ template: "mentor_added", to: email, url: link });
-  } catch (e) {
-    console.error("mentor_added email failed", e);
-  }
+  await sendMentorCredentials(user.id, email);
   await audit({ actorId: actor.id, action: "application.promoted", entity: "MentorApplication", entityId: applicationId, after: { mentorId: mentor.id, tier } });
   return { userId: user.id, mentorId: mentor.id };
+}
+
+/**
+ * Emails a mentor their login: a button to the login page (email pre-filled) plus a temporary password.
+ * The first sign-in forces them to choose their own; the temporary one then stops working. Returns whether
+ * the email actually went out, so callers can tell the admin instead of pretending.
+ */
+export async function sendMentorCredentials(userId: string, email: string): Promise<"SENT" | "FAILED" | "SKIPPED"> {
+  const { password } = await issueTempPassword(userId);
+  const url = `/login?${new URLSearchParams({ email, next: "/mentor" })}`;
+  const r = await sendEmail({
+    template: "mentor_added", to: email, url,
+    details: [{ k: "Email", v: email }, { k: "Temporary password", v: password }, { k: "Valid for", v: `${TEMP_PASSWORD_DAYS} days, or until you set your own` }],
+  });
+  return r.status;
+}
+
+/** Admin "Resend login details": a fresh temporary password, replacing whatever password they had. */
+export async function resendMentorLogin(actor: Actor, mentorId: string) {
+  assertConfigWritable(actor, "sending login details");
+  const m = await db.mentorProfile.findUnique({ where: { id: mentorId }, include: { user: true } });
+  if (!m) throw new MentorAdminError("Mentor not found.");
+  if (m.user.isDemo) throw new MentorAdminError("That's a demo mentor — demo accounts use the demo passcode.");
+  const status = await sendMentorCredentials(m.userId, m.user.email);
+  await audit({ actorId: actor.id, action: "mentor.login_resent", entity: "MentorProfile", entityId: mentorId, after: { status } });
+  if (status !== "SENT") throw new MentorAdminError("The email couldn't be sent. Check the email settings, then try again.");
+  return { email: m.user.email };
 }
 
 export interface SubmitApplicationInput {

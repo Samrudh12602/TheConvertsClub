@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { setMentorPublicVisibleAction, setMentorStatusAction, setMentorTierAction, updateMentorCouponAction } from "@/app/admin/actions";
+import { resendMentorLoginAction, setMentorPublicVisibleAction, setMentorStatusAction, setMentorTierAction, updateMentorCouponAction } from "@/app/admin/actions";
 
 export function TierSelect({ mentorId, tier }: { mentorId: string; tier: string }) {
   const router = useRouter();
@@ -67,6 +67,30 @@ export function MentorCouponEditor({ mentorId, coupon }: { mentorId: string; cou
       <label className="flex min-h-10 items-center gap-1.5 text-[12.5px] text-ink-2"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> Active</label>
       <Button size="sm" disabled={busy} onClick={save}>{busy ? "…" : "Save"}</Button>
       {msg && <p role={msg.ok ? "status" : "alert"} className={`w-full text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
+    </div>
+  );
+}
+
+/** Sends the mentor a fresh temporary password and a login button. Replaces whatever password they had. */
+export function ResendLoginButton({ mentorId }: { mentorId: string }) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  if (confirming) {
+    return (
+      <div className="flex flex-col gap-1.5 rounded-lg border border-line-strong bg-surface p-2.5">
+        <p className="max-w-[240px] text-[12px] leading-[1.4] text-ink-2">Email a new temporary password? It replaces their current password; they&apos;ll be asked to choose a new one at sign-in.</p>
+        <div className="flex gap-1.5">
+          <Button size="sm" variant="secondary" disabled={busy} onClick={() => setConfirming(false)}>Cancel</Button>
+          <Button size="sm" disabled={busy} onClick={async () => { setBusy(true); const r = await resendMentorLoginAction(mentorId); setBusy(false); setMsg({ ok: r.ok, text: r.ok ? (r.message ?? "Sent.") : r.error }); setConfirming(false); }}>{busy ? "Sending…" : "Yes, send"}</Button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Button size="sm" variant="secondary" onClick={() => { setMsg(null); setConfirming(true); }}>Resend login details</Button>
+      {msg && <p role={msg.ok ? "status" : "alert"} className={`max-w-[240px] text-[11.5px] leading-[1.35] ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
     </div>
   );
 }

@@ -175,6 +175,10 @@ model User {
   isDemo        Boolean    @default(false)
   /// bcrypt hash. Null until the account sets a password (self-signup, or "Set a password" in settings).
   passwordHash  String?
+  /// True while the password is a temporary one emailed by an admin: the person must choose their own before anything else.
+  mustChangePassword Boolean @default(false)
+  /// A temporary password stops working at this time if unused.
+  tempPasswordExpiresAt DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   deletedAt     DateTime?

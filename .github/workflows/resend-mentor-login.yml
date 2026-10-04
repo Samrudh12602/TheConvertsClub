@@ -1,0 +1,24 @@
+name: Resend mentor login
+
+# Manual only. Emails a mentor a fresh temporary password + login button (their old password is replaced).
+# Uses the same CRON_SECRET as the scheduled jobs, so nothing sensitive is ever typed or shown here.
+on:
+  workflow_dispatch:
+    inputs:
+      mentor_id:
+        description: "Mentor profile id (the last part of /admin/mentors/<id>)"
+        required: true
+
+jobs:
+  resend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send login details
+        env:
+          MENTOR_ID: ${{ inputs.mentor_id }}
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://the-converts-club.vercel.app' }}/api/cron/resend-mentor-login?mentorId=${MENTOR_ID}")
+          echo "HTTP $code"; cat /tmp/out.json; echo
+          test "$code" = "200"
