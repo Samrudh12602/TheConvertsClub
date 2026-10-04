@@ -13,11 +13,11 @@ import { MAX_BYTES, ReviewError, sniff } from "@/server/upload-validation";
 export { ReviewError };
 
 /** Least-loaded eligible mentor: must have a pay rate for the service (so SOPs go to Seniors), never the Admin's own mentor mode. */
-async function pickReviewer(kind: ReviewKind) {
+async function pickReviewer(kind: ReviewKind, studentIsDemo: boolean) {
   const service = serviceForReview(kind);
   const rates = await db.payRate.findMany({ where: { service } });
   const tiers = rates.map((r) => r.tier);
-  const mentors = await db.mentorProfile.findMany({ where: { status: "ACTIVE", isAdminMentor: false, tier: { in: tiers } }, select: { id: true } });
+  const mentors = await db.mentorProfile.findMany({ where: { status: "ACTIVE", isAdminMentor: false, user: { isDemo: studentIsDemo }, tier: { in: tiers } }, select: { id: true } });
   if (!mentors.length) return null;
   const load = await db.review.groupBy({ by: ["assignedMentorId"], where: { assignedMentorId: { in: mentors.map((m) => m.id) }, status: "ASSIGNED" }, _count: true });
   const l = new Map(load.map((x) => [x.assignedMentorId, x._count]));
@@ -39,7 +39,8 @@ export async function createReview(studentId: string, kind: ReviewKind, input: {
   } else if (!input.text || input.text.trim().length < 50) {
     throw new ReviewError("Paste at least a few sentences, or attach a file.");
   }
-  const mentorId = await pickReviewer(kind);
+  const studentIsDemo = Boolean((await db.user.findUnique({ where: { id: studentId }, select: { isDemo: true } }))?.isDemo);
+  const mentorId = await pickReviewer(kind, studentIsDemo);
   try {
     const review = await db.$transaction(async (tx) => {
       await lockUser(tx, studentId);

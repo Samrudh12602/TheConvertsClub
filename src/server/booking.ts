@@ -20,12 +20,15 @@ const now = () => new Date();
 const openOrExpiredHold = (t: Date) => ({ OR: [{ status: "OPEN" as const }, { status: "HELD" as const, heldUntil: { lt: t } }] });
 
 /** Mentors whose slots can serve this session type. Strategy calls are Samrudh's; everything else any active mentor. */
-const mentorFilter = (type: SessionType) => ({ status: "ACTIVE" as const, ...(type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) });
+const mentorFilter = (type: SessionType, demo: boolean) => ({ status: "ACTIVE" as const, user: { isDemo: demo }, ...(type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) });
 
-async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date): Promise<Candidate[]> {
+/** Real students are only ever matched to real mentors, and demo students to demo mentors, so a fake demo mentor can never get a real booking. */
+const isDemoStudent = async (client: Pick<typeof db, "user">, studentId: string) => Boolean((await client.user.findUnique({ where: { id: studentId }, select: { isDemo: true } }))?.isDemo);
+
+async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean): Promise<Candidate[]> {
   const t = now();
   const slots = await tx.slot.findMany({
-    where: { startsAt, ...openOrExpiredHold(t), mentor: mentorFilter(type) },
+    where: { startsAt, ...openOrExpiredHold(t), mentor: mentorFilter(type, demo) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
   });
   if (!slots.length) return [];
@@ -45,7 +48,7 @@ export async function availableTimesRange(studentId: string, type: SessionType, 
   const earliest = new Date(Math.max(rangeFrom.getTime(), t.getTime() + s.minLeadHours * HOUR));
   if (earliest >= rangeTo) return [];
   const slots = await db.slot.findMany({
-    where: { startsAt: { gte: earliest, lt: rangeTo }, ...openOrExpiredHold(t), mentor: mentorFilter(type) },
+    where: { startsAt: { gte: earliest, lt: rangeTo }, ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId)) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
     orderBy: { startsAt: "asc" },
   });
@@ -78,7 +81,7 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
 
     await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
 
-    let cands = await candidatesAt(tx, type, startsAt);
+    let cands = await candidatesAt(tx, type, startsAt, await isDemoStudent(tx, studentId));
     const seniorRequired = needsSenior(type, focus, s.seniorRequiredFocuses);
     const heldUntil = new Date(now().getTime() + s.holdMinutes * 60_000);
     while (cands.length) {

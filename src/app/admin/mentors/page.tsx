@@ -7,6 +7,7 @@ import { formatPaise } from "@/lib/money";
 import { getSettings } from "@/lib/settings-db";
 import { mentorQuality, qualityFlags } from "@/server/mentor-quality";
 import { currentUser } from "@/server/session";
+import { MentorModeCard } from "@/components/admin/admin-schedule";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mentors" };
@@ -36,6 +37,11 @@ export default async function MentorsPage() {
   return (
     <PortalPage>
       <AddMentorTabs />
+      {viewer && !viewer.isDemo && (
+        <Panel title="Your mentor mode" flush={false}>
+          <MentorModeCard state={viewer.mentorProfile?.isAdminMentor ? (viewer.mentorProfile.status === "ACTIVE" ? "on" : "paused") : "off"} />
+        </Panel>
+      )}
       {quality.length > 0 && (
         <Panel title="Mentor quality · last 30 days">
           <div className="overflow-x-auto">

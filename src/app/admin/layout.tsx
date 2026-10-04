@@ -22,6 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       titleOverrides={{ "/admin": { title: `Good ${greeting()}, ${user.name?.split(" ")[0]?.replace(/\(.*\)/, "").trim() || "Samrudh"}` } }}
       topRight={
         <>
+          {user.mentorProfile?.isAdminMentor && user.mentorProfile.status === "ACTIVE" && (
+            <Link href="/mentor" className="inline-flex items-center rounded-lg border border-line-strong bg-white px-2.5 py-[7px] text-[11.5px] font-semibold text-ink no-underline hover:border-ink hover:no-underline">Mentor mode →</Link>
+          )}
           {overdueCount > 0 && (
             <Link href="/admin/sessions?filter=overdue" className="inline-flex items-center gap-[7px] rounded-lg border border-oxblood-line bg-oxblood-tint px-2.5 py-[7px] text-[11.5px] font-semibold leading-none text-oxblood no-underline hover:no-underline">
               <span aria-hidden className="size-1.5 rounded-full bg-oxblood" />

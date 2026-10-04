@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { CreditBreakdown } from "@/components/portal/credit-breakdown";
 import { Empty, Panel, StatusPill } from "@/components/portal/ui";
+import { BookForStudent } from "@/components/admin/admin-schedule";
 import { CreditAdjustForm, StudentStatusToggle } from "@/components/admin/student-controls";
 import { LegalRecord } from "@/components/admin/legal-record";
 import { db } from "@/lib/db";
@@ -49,6 +50,10 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       <Panel title="Terms accepted" flush={false}><LegalRecord userId={student.id} role="STUDENT" /></Panel>
 
       <CreditBreakdown summary={creditSummary} enrollments={enrollments} />
+      <Panel title="Book a session for this student" flush={false}>
+        <p className="mb-3 text-[12.5px] leading-[1.5] text-ink-faint">Uses their own credit and the normal matching rules, and emails them the confirmation. No credit? Add one below first.</p>
+        <BookForStudent studentId={student.id} />
+      </Panel>
       <Panel title="Adjust a credit" flush={false}><CreditAdjustForm userId={student.id} /></Panel>
 
       <Panel title="Calls" flush={false}>

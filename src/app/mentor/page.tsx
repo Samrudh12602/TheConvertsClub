@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Kpi, KpiGrid, Meter, Panel, Row, Section } from "@/components/portal/ui";
+import { Empty, Flash, Kpi, KpiGrid, Meter, Panel, Row, Section } from "@/components/portal/ui";
 import { db } from "@/lib/db";
 import { fmtWhen, relative } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
@@ -30,7 +30,8 @@ export default async function MentorDashboard() {
     mentorBoard(user.isDemo),
     db.slot.count({ where: { mentorId: mentor.id, status: "OPEN", startsAt: { gt: now } } }),
   ]);
-  const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots });
+  // The owner's own mentor mode earns no pay and isn't listed publicly, so only 'publish your hours' applies.
+  const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots }).filter((i) => !mentor.isAdminMentor || i.key === "availability");
   const progress = checklistProgress(checklist);
   const ruleLite = rules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
   const next = nextThreshold(mentor.tier, mocks, ruleLite);
@@ -40,6 +41,7 @@ export default async function MentorDashboard() {
 
   return (
     <PortalPage>
+      {mentor.isAdminMentor && <Flash>You&apos;re in mentor mode. Sessions you take earn no mentor pay: the whole fee stays with you.</Flash>}
       {progress.done < progress.total && (
         <Panel title={`Get ready for students · ${progress.done} of ${progress.total} done`} flush={false}>
           <ul className="flex flex-col gap-2.5">

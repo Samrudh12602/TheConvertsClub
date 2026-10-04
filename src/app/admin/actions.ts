@@ -14,13 +14,15 @@ import { sha256 } from "@/server/crypto";
 import { appUrl } from "@/lib/env";
 import { AdminError, approveAccruals, approveBonuses, assertConfigWritable, assignSession, confirmRequested, createPayoutRun, markPayoutPaid, previewBonuses, type Actor } from "@/server/admin";
 import { cancelSession, BookingError } from "@/server/booking";
+import { AvailabilityError } from "@/server/availability";
+import { adminAddHours, adminBookFor, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
 import { refundOrder, CheckoutError } from "@/server/checkout";
 import { addMentorDirect, MentorAdminError, promoteApplication, resendMentorLogin } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 const fail = (e: unknown): Result => {
-  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError) return { ok: false, error: e.message };
+  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError || e instanceof AvailabilityError) return { ok: false, error: e.message };
   console.error(e);
   return { ok: false, error: "Something went wrong. Please try again." };
 };
@@ -448,5 +450,47 @@ export async function sendBroadcastAction(input: unknown): Promise<Result> {
     for (const r of recipients) { const res = await sendEmail({ template: "broadcast", to: r.email, vars: { subject: p.subject, body: p.body } }); if (res.status === "SENT") sent++; }
     await audit({ actorId: actor.id, action: "comms.broadcast", after: { audience: p.audience, subject: p.subject, recipients: recipients.length, sent } });
     return { ok: true, message: `Sent to ${sent} of ${recipients.length} recipients.` };
+  } catch (e) { return fail(e); }
+}
+
+// ───────────── Mentor mode, hours for others, booking for students ─────────────
+
+export async function setAdminMentorModeAction(on: boolean): Promise<Result> {
+  try {
+    const actor = await guard("mentor-mode");
+    if (on) await enableAdminMentor(actor); else await pauseAdminMentor(actor);
+    refreshAll();
+    return { ok: true, message: on ? "Mentor mode is on." : "Mentor mode is paused." };
+  } catch (e) { return fail(e); }
+}
+
+const hoursSchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), from: z.string().regex(/^\d{1,2}:\d{2}$/), to: z.string().regex(/^\d{1,2}:\d{2}$/), repeatUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")) });
+export async function adminAddHoursAction(mentorId: string, input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mentor-hours");
+    const p = hoursSchema.parse(input);
+    const n = await adminAddHours(actor, mentorId, p.date, p.from, p.to, p.repeatUntil || undefined);
+    refreshAll();
+    return { ok: true, message: `${n} slot${n === 1 ? "" : "s"} added.` };
+  } catch (e) { return fail(e); }
+}
+
+const bookTypeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE"]);
+const bookFocusSchema = z.enum(["HR_PROFILE", "ACADEMICS", "STRESS", "INSTITUTE_FINAL", "CURRENT_AFFAIRS", "CROSS_QUESTIONING"]).nullable();
+export async function adminTimesForStudentAction(studentId: string, type: unknown, focus: unknown): Promise<Result & { times?: string[] }> {
+  try {
+    const actor = await guard("book-times");
+    const t = bookTypeSchema.parse(type);
+    const times = await adminTimesFor(actor, studentId, t, t === "MOCK_PI" ? bookFocusSchema.parse(focus) : null);
+    return { ok: true, times };
+  } catch (e) { return fail(e); }
+}
+export async function adminBookForStudentAction(studentId: string, type: unknown, focus: unknown, startsAtIso: string): Promise<Result> {
+  try {
+    const actor = await guard("book-for");
+    const t = bookTypeSchema.parse(type);
+    await adminBookFor(actor, studentId, t, t === "MOCK_PI" ? bookFocusSchema.parse(focus) : null, z.string().min(10).parse(startsAtIso));
+    refreshAll();
+    return { ok: true, message: "Booked. The student has been emailed the confirmation." };
   } catch (e) { return fail(e); }
 }

@@ -401,6 +401,18 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     (d) Mentors added directly or promoted get the credentials email; mentors who accept an *invite* are
     forced to choose a password on first sign-in.
 
+39. **Admin mentor mode, scheduling for others, and a matching fix.** The real admin had no mentor profile,
+    so there was no "mentor mode" and (because Strategy calls can only be booked against the admin's own
+    profile) students could not book the "strategy call with Samrudh" that the packages include. Now:
+    Admin > Mentors > "Your mentor mode" turns the profile on/pauses it; a "Mentor mode ->" button in the
+    admin top bar and "<- Admin console" in the mentor portal switch between the two. Sessions the admin takes
+    accrue no mentor pay (the whole fee stays with the owner) unless "Admin's own sessions accrue pay" is on
+    in Settings. For others: on a mentor's admin page, "Set hours for this mentor" (same rules as them doing
+    it); on a student's admin page, "Book a session for this student" (their own credit, the normal
+    matching, the student is emailed; refuses when they have no credit). **Fix:** matching used to ignore
+    demo vs real, so a real student could have been matched to a fake demo mentor (and real WAT/SOP reviews
+    to a demo reviewer). Real students now match only real mentors, demo students only demo ones.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

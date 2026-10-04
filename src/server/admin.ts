@@ -25,11 +25,11 @@ export function assertConfigWritable(actor: Actor, what: string) {
 
 /** Best mentor for a session at its start time, using the same rules as booking. Returns a mentor profile id or null. */
 export async function suggestMentor(sessionId: string): Promise<{ mentorId: string; name: string } | null> {
-  const s = await db.session.findUnique({ where: { id: sessionId } });
+  const s = await db.session.findUnique({ where: { id: sessionId }, include: { student: { select: { isDemo: true } } } });
   if (!s?.startsAt) return null;
   const settings = await getSettings();
   const slots = await db.slot.findMany({
-    where: { startsAt: s.startsAt, status: "OPEN", mentor: { status: "ACTIVE", ...(s.type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) } },
+    where: { startsAt: s.startsAt, status: "OPEN", mentor: { status: "ACTIVE", user: { isDemo: Boolean(s.student?.isDemo) }, ...(s.type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) } },
     include: { mentor: { include: { user: { select: { name: true } } } } },
   });
   if (!slots.length) return null;

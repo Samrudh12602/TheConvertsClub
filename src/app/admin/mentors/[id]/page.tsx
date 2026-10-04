@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
+import { AdminHoursForm } from "@/components/admin/admin-schedule";
 import { MentorCouponEditor, PublicVisibleToggle, ResendLoginButton, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
 import { LegalRecord } from "@/components/admin/legal-record";
 import { db } from "@/lib/db";
@@ -97,6 +98,13 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
           <p className="text-[12.5px] text-ink-faint">No referral code on file — it&apos;s created automatically for new mentors; older ones won&apos;t have one until they&apos;re re-added.</p>
         )}
       </Panel>
+
+      {m.status === "ACTIVE" && !m.user.isDemo && (
+        <Panel title="Set hours for this mentor" flush={false}>
+          <p className="mb-3 text-[12.5px] leading-[1.5] text-ink-faint">Adds bookable hours for {nm(m.user.name)} exactly as if they had added them themselves. Whole hours, IST.</p>
+          <AdminHoursForm mentorId={m.id} />
+        </Panel>
+      )}
 
       <Panel title="Terms accepted" flush={false}><LegalRecord userId={m.userId} role="MENTOR" /></Panel>
 
