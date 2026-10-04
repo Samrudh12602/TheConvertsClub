@@ -333,6 +333,27 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     their own code (enforced in `startCheckout`). Percent discounts round down to whole rupees. Pages that
     show prices render per request because they read the cookie.
 
+34. **Seven free features, all built on what already existed.**
+    - *Mentor onboarding checklist* on the mentor dashboard (publish hours, bio, photo, payout details),
+      shown until complete. Plus a daily nudge (`/api/cron/nudges`) emailing any active mentor with no
+      open hours once a week, because nobody can book a mentor with no hours.
+    - *Student nudges*, same daily job: unspent credits with nothing booked (every 2 weeks, after 5 days),
+      and "finish your profile" for paid students who never onboarded (weekly, after 2 days). Each person
+      is nudged at most once per window; the in-app notification doubles as the "already sent" marker.
+    - *Share card* (`opengraph-image`), PWA `manifest` (Add to Home Screen), and `/api/health` (200 only if
+      the site and database both answer) for a free uptime monitor such as UptimeRobot.
+    - *Testimonial pipeline*: after rating, a student may leave a comment and tick "you may show this with
+      my first name and college". Admin > Content lists consenting 4-5 star comments (real students only) with
+      one-click Publish. No consent, no listing.
+    - *Free checklist* at `/free-guide`: email in, 10-step checklist out (emailed and shown). Stored in
+      `Lead` with an explicit, optional "tips" tick. Admin > Communications shows the count and a CSV. We
+      do NOT email anyone who didn't tick tips, and there is no tips mailer yet; build an unsubscribe before
+      adding one.
+    - *Mentor quality* table on Admin > Mentors (30 days): sessions, rating, on-time feedback, overdue now,
+      with flags (Low rating, Late feedback, Feedback overdue) that need a few data points before judging.
+    - Not built, on purpose: student-to-student referral rewards (needs a reward policy from you), and a
+      "tips" mailer.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

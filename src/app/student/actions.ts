@@ -95,13 +95,13 @@ export async function leaveGdAction(batchId: string): Promise<Ok> {
   try { const user = await guard("gd"); await leaveGd(user.id, batchId); revalidatePath("/student", "layout"); return { ok: true }; } catch (e) { return fail(e); }
 }
 
-export async function rateSessionAction(sessionId: string, rating: number, comment?: string): Promise<Ok> {
+export async function rateSessionAction(sessionId: string, rating: number, comment?: string, featureConsent = false): Promise<Ok> {
   try {
     const user = await guard("rate");
     const r = z.number().int().min(1).max(5).parse(rating);
     const s = await db.session.findUnique({ where: { id: sessionId } });
     if (!s || s.studentId !== user.id || s.status !== "COMPLETED") throw new BookingError("You can rate a completed session.", "NOT_ALLOWED");
-    await db.sessionRating.upsert({ where: { sessionId }, update: { rating: r, comment: comment?.slice(0, 500) }, create: { sessionId, studentId: user.id, rating: r, comment: comment?.slice(0, 500) } });
+    await db.sessionRating.upsert({ where: { sessionId }, update: { rating: r, ...(comment !== undefined ? { comment: comment.trim().slice(0, 500) || null, featureConsent: featureConsent && comment.trim().length > 0 } : {}) }, create: { sessionId, studentId: user.id, rating: r, comment: comment?.trim().slice(0, 500) || null, featureConsent: Boolean(featureConsent && comment?.trim()) } });
     revalidatePath(`/student/sessions/${sessionId}`);
     return { ok: true };
   } catch (e) { return fail(e); }

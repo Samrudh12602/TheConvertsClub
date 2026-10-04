@@ -10,7 +10,7 @@ export type TemplateKey =
   | "session_cancelled" | "session_rescheduled" | "feedback_published" | "review_completed"
   | "mentor_invite" | "mentor_added" | "mentor_assignment" | "mentor_availability_change"
   | "application_received" | "application_admin_alert"
-  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received" | "credits_expiring" | "credits_expired";
+  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received" | "credits_expiring" | "credits_expired" | "nudge_mentor_hours" | "nudge_credits" | "nudge_onboarding" | "free_guide";
 
 export interface TemplateDef {
   subject: string;
@@ -45,6 +45,10 @@ export const TEMPLATES: Record<TemplateKey, TemplateDef> = {
   contact_message: { subject: "Contact form: {topic} — {name}", head: "New message from {name}", body: "{message}", footer: "Reply to this email to answer them directly." },
   credits_expiring: { subject: "Your unused credits expire on {date}", head: "{credits} expire on {date}", body: "Hi {name}, you still have unspent credits that will expire on {date}. Book a session before then and they're yours to use.", cta: "Book a session", footer: "Credits already attached to a booked session are never affected." },
   credits_expired: { subject: "Some of your credits have expired", head: "{credits} expired", body: "Hi {name}, these credits went unused for over {days} days and have now expired. Sessions you've already booked are unaffected. If you think this is a mistake, write to us and we'll look at it.", cta: "Contact us" },
+  nudge_mentor_hours: { subject: "Students can't book you yet", head: "Publish your hours, {name}", body: "You don't have any open slots, so students can't book you. It takes two minutes: add the hours you're free this week and sessions will start coming in.", cta: "Add my hours", footer: "You'll only get this reminder once a week, and only while you have no open hours." },
+  nudge_credits: { subject: "You have credits waiting", head: "{credits} ready to use, {name}", body: "You've got unspent credits and nothing booked. Mocks work best when they're spread out before your calls, so pick a slot while good ones are open.", cta: "Book a session", footer: "We'll only remind you once every couple of weeks." },
+  nudge_onboarding: { subject: "Two minutes to finish your profile", head: "Finish your profile, {name}", body: "Your mentor reads your profile before every session, so the sharper it is, the better your mock. It takes about two minutes.", cta: "Finish my profile", footer: "We'll only remind you once a week." },
+  free_guide: { subject: "Your free 48-hour interview checklist", head: "The 48-hour interview checklist", body: "Ten things to do before your personal interview, in the order to do them. Written by people who sat the same panels last season.", cta: "See how our mocks work", footer: "You asked for this on convertsclub.in. We won't send you anything else unless you ticked the box for tips." },
   contact_received: { subject: "We got your message", head: "Thanks, {name} — we've got it", body: "We read every message and usually reply within a day. If it's about a session that's about to start, email us again with the session time in the subject.", footer: "You don't need to do anything else." },
 };
 

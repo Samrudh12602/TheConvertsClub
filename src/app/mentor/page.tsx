@@ -7,6 +7,7 @@ import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { getSettings } from "@/lib/settings-db";
 import { nextThreshold } from "@/server/payroll";
+import { checklistProgress, mentorChecklist } from "@/lib/mentor-checklist";
 import { mentorBoard } from "@/server/leaderboard";
 import { requireMentor } from "@/server/session";
 
@@ -17,7 +18,7 @@ export default async function MentorDashboard() {
   const settings = await getSettings();
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 86_400_000);
-  const [openWeek, bookedWeek, assigned, accrued, rules, awards, ratings, mocks, board] = await Promise.all([
+  const [openWeek, bookedWeek, assigned, accrued, rules, awards, ratings, mocks, board, futureOpenSlots] = await Promise.all([
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: { in: ["OPEN", "HELD"] } } }),
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: "BOOKED" } }),
     db.session.findMany({ where: { mentorId: mentor.id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 6, include: { student: { select: { name: true, studentProfile: true } } } }),
@@ -27,7 +28,10 @@ export default async function MentorDashboard() {
     db.sessionRating.aggregate({ where: { session: { mentorId: mentor.id } }, _avg: { rating: true }, _count: true }),
     countMocks(mentor.id, settings.mockCounts),
     mentorBoard(user.isDemo),
+    db.slot.count({ where: { mentorId: mentor.id, status: "OPEN", startsAt: { gt: now } } }),
   ]);
+  const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots });
+  const progress = checklistProgress(checklist);
   const ruleLite = rules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
   const next = nextThreshold(mentor.tier, mocks, ruleLite);
   const awarded = new Set(awards.map((a) => a.ruleId));
@@ -36,6 +40,21 @@ export default async function MentorDashboard() {
 
   return (
     <PortalPage>
+      {progress.done < progress.total && (
+        <Panel title={`Get ready for students · ${progress.done} of ${progress.total} done`} flush={false}>
+          <ul className="flex flex-col gap-2.5">
+            {checklist.map((i) => (
+              <li key={i.key} className="flex items-start gap-3">
+                <span aria-hidden className={`mt-0.5 flex size-5 flex-none items-center justify-center rounded-full text-[11px] font-bold ${i.done ? "bg-green-tint text-green" : "border border-line-strong text-transparent"}`}>✓</span>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-[13px] font-medium leading-[1.35] ${i.done ? "text-ink-faint line-through" : "text-ink"}`}>{i.done ? i.label : <Link href={i.href}>{i.label}</Link>}</p>
+                  {!i.done && <p className="mt-0.5 text-[12px] leading-[1.45] text-ink-faint">{i.hint}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
       <KpiGrid>
         <Kpi label="This week" value={`${bookedWeek} / ${bookedWeek + openWeek}`} note={`${openWeek} slot${openWeek === 1 ? "" : "s"} still open`} />
         <Kpi label="Mocks, season" value={mocks} note={next ? `${next.threshold - mocks} away from the ${formatPaise(next.amountPaise)} bonus` : "All bonus tiers reached"} noteTone="oxblood" />

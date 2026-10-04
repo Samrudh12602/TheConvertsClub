@@ -78,9 +78,9 @@ export default async function SessionDetail({ params, searchParams }: { params: 
           <div className="flex flex-wrap items-center gap-3.5 rounded-[11px] border border-line bg-card p-[18px]">
             <div className="min-w-[240px] flex-1">
               <h2 className="text-[13.5px] font-bold leading-[1.3] text-ink">Rate this session</h2>
-              <p className="mt-1 text-xs leading-[1.4] text-ink-faint">Only Samrudh sees your rating.</p>
+              <p className="mt-1 text-xs leading-[1.4] text-ink-faint">Your mentor never sees your rating.</p>
             </div>
-            <RatingPicker sessionId={s.id} initial={s.rating?.rating ?? null} />
+            <RatingPicker sessionId={s.id} initial={s.rating?.rating ?? null} initialComment={s.rating?.comment ?? ""} initialConsent={s.rating?.featureConsent ?? false} />
           </div>
         </>
       )}

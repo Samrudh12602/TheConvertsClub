@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { addFaqAction, addResourceAction, addSeasonStatAction, addTestimonialAction, deleteResourceAction, deleteSeasonStatAction, toggleFaqAction, toggleTestimonialAction } from "@/app/admin/actions";
+import { addFaqAction, addResourceAction, addSeasonStatAction, addTestimonialAction, publishRatingAsTestimonialAction, deleteResourceAction, deleteSeasonStatAction, toggleFaqAction, toggleTestimonialAction } from "@/app/admin/actions";
 
 export function TestimonialForm() {
   const router = useRouter();
@@ -45,6 +45,18 @@ export function TestimonialToggle({ id, published }: { id: string; published: bo
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   return <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { setBusy(true); await toggleTestimonialAction(id, !published); setBusy(false); router.refresh(); }}>{busy ? "…" : published ? "Unpublish" : "Publish"}</Button>;
+}
+
+export function FeatureButton({ ratingId }: { ratingId: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button size="sm" disabled={busy} onClick={async () => { setBusy(true); const r = await publishRatingAsTestimonialAction(ratingId); setBusy(false); if (r.ok) router.refresh(); else setErr(r.error); }}>{busy ? "…" : "Publish"}</Button>
+      {err && <p role="alert" className="max-w-[180px] text-right text-[11px] text-oxblood">{err}</p>}
+    </div>
+  );
 }
 
 export function FaqForm() {

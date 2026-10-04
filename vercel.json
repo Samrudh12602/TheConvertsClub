@@ -3,6 +3,7 @@
     { "path": "/api/cron/period-close", "schedule": "0 2 * * *" },
     { "path": "/api/cron/reminders", "schedule": "30 12 * * *" },
     { "path": "/api/cron/expire-holds", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/credit-expiry", "schedule": "30 20 * * *" }
+    { "path": "/api/cron/credit-expiry", "schedule": "30 20 * * *" },
+    { "path": "/api/cron/nudges", "schedule": "30 4 * * *" }
   ]
 }

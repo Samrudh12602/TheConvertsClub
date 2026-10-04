@@ -650,6 +650,8 @@ model SessionRating {
   studentId String
   rating    Int
   comment   String?
+  /// The student said we may show their comment on the public site (first name only).
+  featureConsent Boolean @default(false)
   createdAt DateTime @default(now())
   session   Session  @relation(fields: [sessionId], references: [id])
   student   User     @relation(fields: [studentId], references: [id])
@@ -831,7 +833,18 @@ model Testimonial {
   quote     String
   who       String
   published Boolean  @default(false)
+  /// Set when this was created from a student's rating, so it can't be published twice.
+  ratingId  String?  @unique
   createdAt DateTime @default(now())
+}
+
+/// Someone who asked for the free interview checklist. We keep only what they gave us and whether they said yes to tips.
+model Lead {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  source      String
+  tipsConsent Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 /// Stat tiles on /results (e.g. "240 students prepared last season"). Shown once any exist; until

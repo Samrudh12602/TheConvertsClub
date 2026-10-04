@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Meter, StatusPill } from "@/components/portal/ui";
+import { Meter, Panel, StatusPill } from "@/components/portal/ui";
 import { AddMentorTabs } from "@/components/admin/add-mentor-tabs";
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/money";
+import { getSettings } from "@/lib/settings-db";
+import { mentorQuality, qualityFlags } from "@/server/mentor-quality";
+import { currentUser } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mentors" };
@@ -27,9 +30,35 @@ export default async function MentorsPage() {
     return { open, booked, accrued: accrued._sum.amountPaise ?? 0, referrals };
   }));
 
+  const [viewer, settings] = await Promise.all([currentUser(), getSettings()]);
+  const quality = await mentorQuality(Boolean(viewer?.isDemo), settings.feedbackDueHours);
   return (
     <PortalPage>
       <AddMentorTabs />
+      {quality.length > 0 && (
+        <Panel title="Mentor quality · last 30 days">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-left text-[12.5px]">
+              <thead><tr className="border-b border-line">{["Mentor", "Sessions", "Rating", "Feedback on time", "Overdue now", ""].map((h) => <th key={h} className="type-label px-3.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
+              <tbody>
+                {quality.map((q) => {
+                  const flags = qualityFlags(q);
+                  return (
+                    <tr key={q.mentorId} className="border-b border-line-soft last:border-b-0">
+                      <td className="px-3.5 py-2.5 font-medium"><Link href={`/admin/mentors/${q.mentorId}`}>{q.name}</Link></td>
+                      <td className="tnum px-3.5 py-2.5 text-ink-2">{q.completed}</td>
+                      <td className="tnum px-3.5 py-2.5 text-ink-2">{q.ratingAvg ? `★ ${q.ratingAvg.toFixed(1)} (${q.ratings})` : "—"}</td>
+                      <td className="tnum px-3.5 py-2.5 text-ink-2">{q.feedbackTotal ? `${Math.round((q.feedbackOnTime / q.feedbackTotal) * 100)}%` : "—"}</td>
+                      <td className="tnum px-3.5 py-2.5 text-ink-2">{q.overdueNow || "—"}</td>
+                      <td className="px-3.5 py-2.5">{flags.length === 0 ? <StatusPill tone="green">On track</StatusPill> : flags.map((f) => <span key={f} className="mr-1.5"><StatusPill tone="amber">{f}</StatusPill></span>)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
         {mentors.map((m, i) => {
           const { open, booked, accrued, referrals } = stats[i];

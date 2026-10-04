@@ -11,8 +11,16 @@ export default async function CommunicationsPage() {
   const rows = await db.emailLog.groupBy({ by: ["template"], _count: true });
   const sentByTemplate = await Promise.all(rows.map(async (r) => ({ template: r.template, total: r._count, sent: await db.emailLog.count({ where: { template: r.template, status: "SENT" } }) })));
 
+  const [leads, tipsLeads] = await Promise.all([db.lead.count(), db.lead.count({ where: { tipsConsent: true } })]);
   return (
     <PortalPage width="max-w-[1000px]">
+      <Panel title="Free-checklist sign-ups" flush={false}>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-[13px]">
+          <p className="text-ink-body"><span className="tnum font-display text-xl font-bold text-ink">{leads}</span> {leads === 1 ? "person has" : "people have"} asked for it · <span className="tnum font-semibold">{tipsLeads}</span> said yes to tips</p>
+          {leads > 0 && <a href="/api/admin/leads" download className="text-xs font-semibold">Download CSV</a>}
+        </div>
+        <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">Only email anyone who ticked “tips”. Never add these people to a mailing without that tick.</p>
+      </Panel>
       <Section cols={320}>
         <Panel title="Send a broadcast" flush={false}><BroadcastForm /></Panel>
         <Panel title="Templates & delivery">

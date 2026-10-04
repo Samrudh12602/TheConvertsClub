@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { isFeaturable, testimonialWho } from "@/lib/testimonial";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/session";
 import { rateLimit } from "@/server/ratelimit";
@@ -336,6 +337,21 @@ export async function saveSettingsAction(input: unknown): Promise<Result> {
   } catch (e) { return fail(e); }
 }
 // ───────────── Content ─────────────
+
+/** One click: turn a consenting student's comment into a published testimonial (first name + college only). */
+export async function publishRatingAsTestimonialAction(ratingId: string): Promise<Result> {
+  try {
+    const actor = await guard("content");
+    assertConfigWritable(actor, "testimonials");
+    const r = await db.sessionRating.findUnique({ where: { id: ratingId }, include: { student: { include: { studentProfile: true } } } });
+    if (!r || !isFeaturable(r)) return { ok: false, error: "That comment can't be featured." };
+    if (r.student.isDemo) return { ok: false, error: "That's demo data — it isn't published to the real site." };
+    await db.testimonial.create({ data: { quote: r.comment!.trim(), who: testimonialWho(r.student.name, r.student.studentProfile?.college), published: true, ratingId } });
+    await audit({ actorId: actor.id, action: "content.testimonial_from_rating", entity: "SessionRating", entityId: ratingId });
+    revalidatePath("/admin/content"); revalidatePath("/results");
+    return { ok: true, message: "Published." };
+  } catch (e) { return fail(e); }
+}
 
 const testimonialSchema = z.object({ quote: z.string().trim().min(10).max(500), who: z.string().trim().min(2).max(100) });
 export async function addTestimonialAction(input: unknown): Promise<Result> {

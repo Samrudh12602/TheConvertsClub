@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description:
     "Mock PIs, GD/GE, WAT and SOP reviews with mentors who converted last season. One mock or the whole season, priced in the open.",
   openGraph: { siteName: "The Convert Club", type: "website", locale: "en_IN" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { themeColor: "#F6F3EE" };

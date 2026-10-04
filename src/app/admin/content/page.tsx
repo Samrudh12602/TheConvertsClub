@@ -1,20 +1,41 @@
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Panel, Section } from "@/components/portal/ui";
-import { FaqForm, FaqToggle, ResourceDelete, ResourceForm, SeasonStatDelete, SeasonStatForm, TestimonialForm, TestimonialToggle } from "@/components/admin/content-forms";
+import { FaqForm, FaqToggle, ResourceDelete, ResourceForm, SeasonStatDelete, SeasonStatForm, TestimonialForm, TestimonialToggle, FeatureButton } from "@/components/admin/content-forms";
 import { db } from "@/lib/db";
+import { isFeaturable, testimonialWho } from "@/lib/testimonial";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Site content" };
 
 export default async function ContentPage() {
-  const [testimonials, faqItems, resources, seasonStats] = await Promise.all([
+  const [testimonials, faqItems, resources, seasonStats, candidates] = await Promise.all([
     db.testimonial.findMany({ orderBy: { createdAt: "desc" } }),
     db.faqItem.findMany({ orderBy: { sortOrder: "asc" } }),
     db.resource.findMany({ orderBy: [{ audience: "asc" }, { sortOrder: "asc" }] }),
     db.seasonStat.findMany({ orderBy: { sortOrder: "asc" } }),
+    // Happy students who wrote a comment AND said we may show it, not yet published.
+    db.sessionRating.findMany({
+      where: { featureConsent: true, rating: { gte: 4 }, comment: { not: null }, student: { isDemo: false } },
+      orderBy: { createdAt: "desc" }, take: 30, include: { student: { include: { studentProfile: true } } },
+    }).then(async (rows) => {
+      const used = new Set((await db.testimonial.findMany({ where: { ratingId: { in: rows.map((r) => r.id) } }, select: { ratingId: true } })).map((t) => t.ratingId));
+      return rows.filter((r) => !used.has(r.id) && isFeaturable(r));
+    }),
   ]);
   return (
     <PortalPage width="max-w-[1000px]">
+      {candidates.length > 0 && (
+        <Panel title={`Students who said you can feature their comment · ${candidates.length}`} flush={false}>
+          <div className="flex flex-col gap-2">
+            {candidates.map((c) => (
+              <div key={c.id} className="flex items-start justify-between gap-3 rounded-lg border border-line-soft p-2.5">
+                <div className="min-w-0"><p className="text-[12.5px] leading-[1.5] text-ink-body">&ldquo;{c.comment}&rdquo;</p><p className="mt-1 text-[11px] font-semibold text-oxblood">{testimonialWho(c.student.name, c.student.studentProfile?.college)} · {c.rating}/5</p></div>
+                <FeatureButton ratingId={c.id} />
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
       <Section cols={340}>
         <Panel title="Testimonials (shown on /results once published)" flush={false}>
           <TestimonialForm />
