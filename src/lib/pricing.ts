@@ -117,7 +117,7 @@ export function checkCoupon(c: CouponLite | null, payablePaise: number, now: Dat
   if (c.maxUses !== null && c.usedCount >= c.maxUses) return { ok: false, reason: "That code has been fully used." };
   const raw = c.mentorId && mentorPricePaise !== null
     ? payablePaise - mentorPricePaise
-    : c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100) : c.value;
+    : c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100 / 100) * 100 : c.value; // whole rupees, never ₹539.10
   const discountPaise = Math.max(0, Math.min(raw, payablePaise - MIN_CHARGE_PAISE));
   return discountPaise > 0 ? { ok: true, discountPaise } : { ok: false, reason: "That code doesn't apply to this order." };
 }

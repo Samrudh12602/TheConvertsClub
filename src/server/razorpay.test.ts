@@ -31,8 +31,8 @@ describe("webhook signature", () => {
 
 const base: CouponLite = { type: "PERCENT", value: 10, expiresAt: null, maxUses: null, usedCount: 0, active: true };
 describe("coupons", () => {
-  it("applies a percent discount, rounded down to whole paise", () => {
-    expect(checkCoupon(base, 219900)).toEqual({ ok: true, discountPaise: 21990 });
+  it("applies a percent discount, rounded down to whole rupees", () => {
+    expect(checkCoupon(base, 219900)).toEqual({ ok: true, discountPaise: 21900 });
   });
   it("applies a flat discount", () => expect(checkCoupon({ ...base, type: "FLAT", value: 50000 }, 219900)).toEqual({ ok: true, discountPaise: 50000 }));
   it("never takes the order below ₹1", () => {

@@ -65,6 +65,11 @@ export async function startCheckout(input: { slug: string; name: string; email: 
     if (!input.userId || !(await db.enrollment.count({ where: { userId: input.userId, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
   }
   const email = parsed.data.email.toLowerCase();
+  if (q.couponId) {
+    // A mentor can't use their own referral code (the Terms say so; this is where it is enforced).
+    const owner = await db.coupon.findUnique({ where: { id: q.couponId }, select: { mentor: { select: { userId: true, user: { select: { email: true } } } } } });
+    if (owner?.mentor && (owner.mentor.userId === input.userId || owner.mentor.user.email.toLowerCase() === email)) throw new CheckoutError("You can't use your own referral code.");
+  }
   const phone = normalizeIndianPhone(parsed.data.phone)!;
   const row = await db.product.findUnique({ where: { slug: q.product.slug }, select: { id: true } });
   const order = await db.order.create({

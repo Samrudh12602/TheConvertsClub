@@ -5,6 +5,9 @@ import { getProduct } from "@/lib/catalog";
 import { describeCredit, priceView } from "@/lib/pricing";
 import { getPolicy } from "@/lib/settings-db";
 import { paymentsConfigured } from "@/server/razorpay";
+import { quote } from "@/server/checkout";
+import { getReferral } from "@/server/referral";
+import { ReferralBanner } from "@/components/site/referral-banner";
 import { currentUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
@@ -23,6 +26,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const policy = await getPolicy();
   const v = priceView(product);
   const user = await currentUser();
+  // A mentor's /r/CODE link carries through to here: apply their code for the buyer, who can still change or clear it.
+  const ref = await getReferral();
+  const applied = ref ? await quote(product.slug, ref.code).catch(() => null) : null;
   const summary: CheckoutSummary = {
     slug: product.slug,
     name: product.name,
@@ -32,8 +38,14 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     totalPaise: v.payablePaise,
     refundWindowHours: policy.refundWindowHours,
     paymentsEnabled: paymentsConfigured(),
+    initialCoupon: ref && applied && applied.couponDiscountPaise > 0 ? { code: ref.code, discountPaise: applied.couponDiscountPaise, message: applied.couponMessage ?? "Code applied" } : undefined,
     prefill: user ? { name: user.name?.replace(/\s*\(demo\)\s*/, "") ?? "", email: user.email, phone: user.phone ?? "" } : undefined,
   };
 
-  return <CheckoutView summary={summary} />;
+  return (
+    <>
+      <div className="mx-auto max-w-[900px] px-5 pt-[26px] empty:hidden"><ReferralBanner next={`/checkout?product=${product.slug}`} /></div>
+      <CheckoutView summary={summary} />
+    </>
+  );
 }

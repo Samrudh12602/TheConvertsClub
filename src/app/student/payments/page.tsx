@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { fmtDate } from "@/lib/format";
 import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
+import { getReferral, referralPrice } from "@/server/referral";
 import { paymentsConfigured } from "@/server/razorpay";
 import { getCreditSummary, getEnrollmentBreakdown } from "@/server/credits";
 import { requireStudent } from "@/server/session";
@@ -25,6 +26,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
     getCreditSummary(db, user.id),
   ]);
   const enrolled = enrollments.filter((e) => e.status === "ACTIVE").length;
+  const ref = await getReferral();
   const me = { name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" };
   const canPay = paymentsConfigured();
   // Top up is the enrolled-student shop, not the public a-la-carte catalog — only truly enrolled-only
@@ -44,7 +46,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
               <div key={p.slug} className="flex flex-col gap-2 bg-card p-3.5">
                 <p className="text-[13px] font-semibold leading-[1.3] text-ink">{p.name}</p>
                 <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}</p>
-                {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" /> : null}
+                {referralPrice(p, ref) !== null && ref && <p className="tnum -mt-1 text-[12px] font-semibold text-green">{formatPaise(referralPrice(p, ref)!)} <span className="font-medium">with {ref.mentorFirst}&apos;s code {ref.code}</span></p>}
+                {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" defaultCoupon={referralPrice(p, ref) !== null ? ref?.code : undefined} /> : null}
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@ import { PortalPage } from "@/components/portal/portal-page";
 import { SetPasswordForm } from "@/components/portal/set-password-form";
 import { ProfileForm } from "@/components/mentor/profile-form";
 import { CouponCodeForm } from "@/components/mentor/coupon-code-form";
+import { CopyLink } from "@/components/mentor/copy-link";
 import { db } from "@/lib/db";
 import { decryptJson } from "@/server/crypto";
 import { requireMentor } from "@/server/session";
@@ -36,6 +37,8 @@ export default async function Profile() {
               <p className="tnum font-display text-xl font-bold tracking-[0.08em] text-ink">{coupon.code}</p>
               <p className="mt-1.5 max-w-[46ch] text-[12.5px] leading-[1.5] text-ink-faint">Give this to a student — they enter it at checkout for {coupon.type === "PERCENT" ? `${coupon.value}% off` : "a discount"} on any purchase.</p>
               <CouponCodeForm code={coupon.code} />
+              <p className="mt-3 max-w-[46ch] text-[12.5px] leading-[1.5] text-ink-faint">Or share your link — it shows students the mentor price on every page and applies your code for them at checkout:</p>
+              <CopyLink path={`/r/${coupon.code}`} />
             </div>
             <div className="rounded-[10px] bg-ink px-4 py-3 text-center">
               <p className="tnum font-display text-2xl font-bold leading-none text-surface">{referrals}</p>

@@ -3,18 +3,21 @@ import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { PackageCard } from "@/components/site/package-card";
 import { EnrolledOnlyNote, Price, buyHref, buyLabel, isPubliclyPurchasable } from "@/components/site/price";
+import { ReferralBanner } from "@/components/site/referral-banner";
 import { getBundles, getSingles } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Packages",
   description: "Season packages for GDPI prep, or buy a single mock, GD, WAT or SOP review.",
 };
-export const revalidate = 3600;
+// Reads the visitor's referral cookie to show mentor-code prices, so this page renders per request.
+export const dynamic = "force-dynamic";
 
 export default async function PackagesPage() {
   const [bundles, singles] = await Promise.all([getBundles(), getSingles()]);
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-[18px] px-5 py-[26px]">
+      <ReferralBanner next="/packages" />
       <div>
         <h1 className="type-page text-ink">Packages</h1>
         <p className="mt-2 max-w-[60ch] text-sm leading-[1.6] text-ink-muted">

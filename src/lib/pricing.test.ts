@@ -47,7 +47,7 @@ describe("checkCoupon", () => {
   });
   it("a non-mentor coupon ignores a product's mentor price entirely", () => {
     const r = checkCoupon(generic, 259900, new Date(), 219900);
-    expect(r).toEqual({ ok: true, discountPaise: 25990 });
+    expect(r).toEqual({ ok: true, discountPaise: 25900 });
   });
   it("never discounts below the minimum charge", () => {
     const r = checkCoupon({ ...generic, type: "FLAT", value: 100000 }, 199);

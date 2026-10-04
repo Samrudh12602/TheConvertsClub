@@ -24,6 +24,8 @@ export interface CheckoutSummary {
   refundWindowHours: number;
   paymentsEnabled: boolean;
   prefill?: { name: string; email: string; phone: string };
+  /** A mentor referral code carried in from a /r/CODE link, already priced on the server. */
+  initialCoupon?: { code: string; discountPaise: number; message: string };
 }
 
 /**
@@ -33,9 +35,9 @@ export interface CheckoutSummary {
 export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
   const router = useRouter();
   const [notice, setNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
-  const [coupon, setCoupon] = useState("");
-  const [couponMsg, setCouponMsg] = useState<string | null>(null);
-  const [couponOff, setCouponOff] = useState(0);
+  const [coupon, setCoupon] = useState(summary.initialCoupon?.code ?? "");
+  const [couponMsg, setCouponMsg] = useState<string | null>(summary.initialCoupon?.message ?? null);
+  const [couponOff, setCouponOff] = useState(summary.initialCoupon?.discountPaise ?? 0);
   const [paying, setPaying] = useState(false);
   const [, startTransition] = useTransition();
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutDetails>({

@@ -22,6 +22,7 @@ export function PackageCard({ product, tone }: { product: CatalogProduct; tone: 
           className={clsx("text-[34px]", dark ? "text-surface" : "text-ink")}
           strikeSize="text-sm"
           strikeClassName={dark ? "text-dark-muted" : "text-ink-faint"}
+          onDark={dark}
         />
       </div>
       <ul className="mt-5 flex flex-1 flex-col gap-2">
