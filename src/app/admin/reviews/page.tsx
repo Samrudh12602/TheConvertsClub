@@ -21,7 +21,7 @@ export default async function AdminReviews({ searchParams }: { searchParams: Pro
     orderBy: { dueAt: "asc" },
     include: { student: { select: { name: true } }, assignedMentor: { include: { user: { select: { name: true } } } } },
   });
-  const mentorRows = await db.mentorProfile.findMany({ where: { status: "ACTIVE", isAdminMentor: false }, include: { user: { select: { name: true } } } });
+  const mentorRows = await db.mentorProfile.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true } } } });
   const rates = await db.payRate.findMany();
   const eligible = (kind: (typeof reviews)[number]["kind"]) => {
     const service = serviceForReview(kind);

@@ -28,7 +28,8 @@ export default async function SchedulerPage() {
   const mentors = await db.mentorProfile.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { name: true } } } });
   const options = (type: (typeof unassigned)[number]["type"], focus: (typeof unassigned)[number]["focus"]) => {
     const senior = needsSenior(type, focus, settings.seniorRequiredFocuses);
-    const pool = mentors.filter((m) => (type === "STRATEGY_CALL" ? m.isAdminMentor : !m.isAdminMentor && (!senior || m.tier === "SENIOR")));
+    // Strategy calls are only ever the admin's. Anything else can go to any mentor, including the admin's own mentor mode.
+    const pool = mentors.filter((m) => (type === "STRATEGY_CALL" ? m.isAdminMentor : !senior || m.tier === "SENIOR"));
     return pool.map((m) => ({ id: m.id, label: nm(m.user.name) }));
   };
 

@@ -413,6 +413,14 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     demo vs real, so a real student could have been matched to a fake demo mentor (and real WAT/SOP reviews
     to a demo reviewer). Real students now match only real mentors, demo students only demo ones.
 
+40. **Taking sessions yourself: how pay works.** Students pay the full price to the business at purchase. Mentor pay
+    is a separate cost that accrues per completed session at the fixed rates (Senior/Junior: PI 400/250, GD 200/125,
+    WAT 150/100, Guidance 250/150, SOP 300 Senior only; strategy calls have no rate). Sessions the admin takes accrue
+    nothing (`adminAccrues` off), so the owner keeps that cost. Automatic matching only falls back to the admin when
+    no regular mentor is free (except strategy calls, always the admin's); to take a session deliberately, use
+    Scheduler > reassign. The reassign list (sessions) and the manual-assign list (WAT/SOP reviews) now include the
+    admin, which they previously left out despite the screen saying otherwise.
+
 ## Assumptions
 
 | # | Topic | Default | Where |
