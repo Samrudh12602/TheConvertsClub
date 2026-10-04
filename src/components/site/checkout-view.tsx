@@ -25,6 +25,10 @@ export interface CheckoutSummary {
   paymentsEnabled: boolean;
   prefill?: { name: string; email: string; phone: string };
   /** A mentor code the visitor entered earlier, already priced on the server. */
+  /** A signed-in student buys for their own account, so the email can't be changed. */
+  lockEmail?: boolean;
+  /** An admin/mentor is signed in: the purchase goes to the student whose details are entered. */
+  signedInOther?: boolean;
   initialCoupon?: { code: string; discountPaise: number; message: string };
 }
 
@@ -82,10 +86,10 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
       <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-3.5">
         <Card className="p-[22px]">
           <h1 className="type-section text-ink">Your details</h1>
-          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-ink-faint">No account needed now. We&apos;ll create one and email you a login link.</p>
+          <p className="mt-1.5 text-[12.5px] leading-[1.6] text-ink-faint">{summary.signedInOther ? "You're signed in as staff. This purchase goes to the student whose details you enter here, who gets the receipt and a login link." : "No account needed now. We'll create one and email you a login link."}</p>
           <form id="checkout-form" noValidate className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit(pay)}>
             <Field label="Name" autoComplete="name" placeholder="Your full name" error={errors.name?.message} {...register("name")} />
-            <Field label="Email" type="email" autoComplete="email" inputMode="email" placeholder="Receipts and login link go here" error={errors.email?.message} {...register("email")} />
+            <Field label="Email" type="email" autoComplete="email" inputMode="email" placeholder="Receipts and login link go here" readOnly={summary.lockEmail} hint={summary.lockEmail ? "You're signed in, so this purchase and its receipt go to your account." : undefined} error={errors.email?.message} {...register("email")} />
             <Field label="Phone" type="tel" autoComplete="tel" placeholder="+91 · for session reminders" error={errors.phone?.message} {...register("phone")} />
             <div>
               <label className="flex items-start gap-2.5 text-[12.5px] leading-[1.55] text-ink-2">

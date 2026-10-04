@@ -39,7 +39,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     refundWindowHours: policy.refundWindowHours,
     paymentsEnabled: paymentsConfigured(),
     initialCoupon: ref && applied && applied.couponDiscountPaise > 0 ? { code: ref.code, discountPaise: applied.couponDiscountPaise, message: applied.couponMessage ?? "Code applied" } : undefined,
-    prefill: user ? { name: user.name?.replace(/\s*\(demo\)\s*/, "") ?? "", email: user.email, phone: user.phone ?? "" } : undefined,
+    lockEmail: user?.role === "STUDENT",
+    signedInOther: Boolean(user && user.role !== "STUDENT"),
+    prefill: user?.role === "STUDENT" ? { name: user.name?.replace(/\s*\(demo\)\s*/, "") ?? "", email: user.email, phone: user.phone ?? "" } : undefined,
   };
 
   return (

@@ -379,6 +379,13 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     wipe what you typed after an error. Email may still land in spam while it is sent from a personal Gmail;
     ask recipients to mark "Not spam", and move to a domain-authenticated sender (SPF/DKIM) when you have a domain.
 
+37. **A purchase now always goes to the right student.** Bug: an admin who was signed in and bought using
+    another person's details had the credits attached to the admin account and the receipt emailed to the
+    admin. Now: a signed-in *student* buys for their own account and the email field is locked to it; a signed-in
+    *admin or mentor* is treated as buying on behalf of the student whose details they type (that student gets
+    the account, credits, receipt and login link). Found when a test order for "ankit" landed on the admin
+    account; that one order (test-mode payment, no real money) was left as is.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

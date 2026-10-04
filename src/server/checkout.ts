@@ -52,28 +52,32 @@ export interface CheckoutStart {
 /** Guest (or signed-in) checkout: creates our Order row and the Razorpay order. */
 export async function startCheckout(input: { slug: string; name: string; email: string; phone: string; coupon?: string | null; userId?: string | null; acceptTerms?: boolean; ip?: string | null }): Promise<CheckoutStart> {
   if (!paymentsConfigured()) throw new CheckoutError("Payments aren't enabled yet.");
-  const parsed = guestDetailsSchema.safeParse({ name: input.name, email: input.email, phone: input.phone });
+  // Who is this purchase for? A signed-in STUDENT buys for their own account, and their email is fixed to it
+  // (typing someone else's email can't redirect the receipt or credits). An admin or mentor who happens to be
+  // signed in is NOT buying for themselves: the purchase belongs to whichever student the details name.
+  const signedIn = input.userId ? await db.user.findUnique({ where: { id: input.userId }, select: { id: true, role: true, isDemo: true, email: true, name: true } }) : null;
+  const buyer = signedIn?.role === "STUDENT" ? signedIn : null;
+  const parsed = guestDetailsSchema.safeParse({ name: buyer?.name?.trim() || input.name, email: buyer ? buyer.email : input.email, phone: input.phone });
   if (!parsed.success) throw new CheckoutError(parsed.error.issues[0]?.message ?? "Check your details.");
   // No purchase without agreement: either ticked now, or a signed-in student who has already accepted the current terms.
   if (!input.acceptTerms) {
-    const me = input.userId ? await db.user.findUnique({ where: { id: input.userId }, select: { id: true, role: true, isDemo: true } }) : null;
-    if (!me || !(await hasAcceptedCurrent(me))) throw new CheckoutError("Please accept the Terms of Use, Privacy Policy and Refund Policy to continue.");
+    if (!buyer || !(await hasAcceptedCurrent(buyer))) throw new CheckoutError("Please accept the Terms of Use, Privacy Policy and Refund Policy to continue.");
   }
   const q = await quote(input.slug, input.coupon);
   if (q.product.enrolledOnly) {
     // Additional PI: only for enrolled students, bought from inside the portal.
-    if (!input.userId || !(await db.enrollment.count({ where: { userId: input.userId, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
+    if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
   }
   const email = parsed.data.email.toLowerCase();
   if (q.couponId) {
     // A mentor can't use their own referral code (the Terms say so; this is where it is enforced).
     const owner = await db.coupon.findUnique({ where: { id: q.couponId }, select: { mentor: { select: { userId: true, user: { select: { email: true } } } } } });
-    if (owner?.mentor && (owner.mentor.userId === input.userId || owner.mentor.user.email.toLowerCase() === email)) throw new CheckoutError("You can't use your own referral code.");
+    if (owner?.mentor && (owner.mentor.userId === buyer?.id || owner.mentor.user.email.toLowerCase() === email)) throw new CheckoutError("You can't use your own referral code.");
   }
   const phone = normalizeIndianPhone(parsed.data.phone)!;
   const row = await db.product.findUnique({ where: { slug: q.product.slug }, select: { id: true } });
   const order = await db.order.create({
-    data: { productId: row!.id, userId: input.userId ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date(), termsIp: input.ip ?? null },
+    data: { productId: row!.id, userId: buyer?.id ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date(), termsIp: input.ip ?? null },
   });
   const rz = await rzp().orders.create({ amount: q.totalPaise, currency: "INR", receipt: order.id.slice(0, 40), notes: { orderId: order.id, product: q.product.slug } });
   await db.order.update({ where: { id: order.id }, data: { razorpayOrderId: rz.id } });
