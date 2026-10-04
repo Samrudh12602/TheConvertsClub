@@ -56,6 +56,7 @@ export async function removeSlot(mentorId: string, slotId: string, actorId: stri
   const slot = await db.slot.findUnique({ where: { id: slotId } });
   if (!slot || slot.mentorId !== mentorId) throw new AvailabilityError("Slot not found.");
   if (slot.status === "BOOKED") throw new AvailabilityError("This slot is booked. Ask Samrudh to move the session and it will free up.");
+  if (slot.status === "HELD" && slot.heldUntil && slot.heldUntil.getTime() > Date.now()) throw new AvailabilityError("A student is booking this slot right now. Try again in a few minutes.");
   await db.slot.delete({ where: { id: slotId } });
   await audit({ actorId, action: "availability.remove_slot", entity: "Slot", entityId: slotId });
 }
@@ -65,6 +66,7 @@ export async function toggleSlot(mentorId: string, startsAt: Date) {
   const slot = await db.slot.findUnique({ where: { mentorId_startsAt: { mentorId, startsAt } } });
   if (slot) {
     if (slot.status === "BOOKED") throw new AvailabilityError("Booked slots can't be changed here. Ask Samrudh.");
+    if (slot.status === "HELD" && slot.heldUntil && slot.heldUntil.getTime() > Date.now()) throw new AvailabilityError("A student is booking this slot right now. Try again in a few minutes.");
     await db.slot.delete({ where: { id: slot.id } });
     return "removed" as const;
   }

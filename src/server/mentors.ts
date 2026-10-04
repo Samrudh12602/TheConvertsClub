@@ -6,6 +6,7 @@ import { audit } from "@/server/audit";
 import { assertConfigWritable, type Actor } from "@/server/admin";
 import { adminInbox, sendEmail } from "@/server/email";
 import { LEGAL_VERSION } from "@/lib/legal";
+import { tidyName } from "@/lib/format";
 import { issueTempPassword, TEMP_PASSWORD_DAYS } from "@/server/temp-password";
 import { createMentorCoupon } from "@/server/mentor-coupon";
 import { MAX_PHOTO_BYTES, sniffImage, UploadError } from "@/server/upload-validation";
@@ -102,7 +103,7 @@ export async function promoteApplication(actor: Actor, applicationId: string, ti
   if (existing) throw new MentorAdminError("A user with that email already exists.");
 
   const { user, mentor } = await db.$transaction(async (tx) => {
-    const user = await tx.user.create({ data: { email, name: app.name, phone: app.phone, role: "MENTOR" } });
+    const user = await tx.user.create({ data: { email, name: tidyName(app.name), phone: app.phone, role: "MENTOR" } });
     const mentor = await tx.mentorProfile.create({
       data: {
         userId: user.id,

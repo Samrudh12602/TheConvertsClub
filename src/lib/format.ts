@@ -27,3 +27,10 @@ export const initials = (name?: string | null) =>
   (name ?? "?").replace(/\(.*?\)/g, "").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
 
 export const firstName = (name?: string | null) => (name ?? "there").replace(/\(.*?\)/g, "").trim().split(/\s+/)[0] || "there";
+
+/** "ANKIT SINHA" or "ankit sinha" -> "Ankit Sinha". Mixed-case names ("McDonald", "D'Souza") are left exactly as typed. */
+export function tidyName(name: string | null | undefined): string {
+  const n = (name ?? "").trim();
+  if (n === n.toUpperCase() || n === n.toLowerCase()) return n.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase());
+  return n;
+}

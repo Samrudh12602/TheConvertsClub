@@ -78,6 +78,7 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
     await lockUser(tx, studentId);
     const bal = (await getBalances(tx, studentId))[sessionCreditKind(type)];
     if (!bal || bal.available < 1) throw new BookingError("You have no credit left for this session type.", "NO_CREDIT");
+    if (await tx.session.count({ where: { studentId, startsAt, status: { in: ["CONFIRMED", "REQUESTED"] } } })) throw new BookingError("You already have a session at that time.", "NOT_ALLOWED");
 
     await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
 
@@ -129,6 +130,41 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
   return session;
 }
 
+/**
+ * Admin books a student into ONE specific mentor's open slot (the admin picked the mentor on the calendar).
+ * It takes the hold for the student on exactly that slot, then runs the normal confirmation, so credits, emails,
+ * calendar invite and everything else behave exactly like a booking the student made themselves.
+ */
+export async function bookSpecificSlot(studentId: string, slotId: string, type: SessionType, focus: PiFocus | null) {
+  const s = await getSettings();
+  await db.$transaction(async (tx) => {
+    await lockUser(tx, studentId);
+    const bal = (await getBalances(tx, studentId))[sessionCreditKind(type)];
+    if (!bal || bal.available < 1) throw new BookingError("That student has no credit left for this session type.", "NO_CREDIT");
+    const student = await tx.user.findUnique({ where: { id: studentId }, select: { isDemo: true } });
+    const slot = await tx.slot.findUnique({ where: { id: slotId }, include: { mentor: { include: { user: { select: { isDemo: true } } } } } });
+    if (!slot || slot.startsAt.getTime() <= now().getTime()) throw new BookingError("That slot isn't available any more.", "TAKEN");
+    if (slot.mentor.status !== "ACTIVE") throw new BookingError("That mentor isn't active.", "NOT_ALLOWED");
+    if (slot.mentor.user.isDemo !== Boolean(student?.isDemo)) throw new BookingError("Demo and real accounts can't be mixed.", "NOT_ALLOWED");
+    if (type === "STRATEGY_CALL" && !slot.mentor.isAdminMentor) throw new BookingError("Strategy calls are only taken by the admin.", "NOT_ALLOWED");
+    if (needsSenior(type, focus, s.seniorRequiredFocuses) && slot.mentor.tier !== "SENIOR") throw new BookingError("That focus needs a Senior mentor.", "NOT_ALLOWED");
+    const clash = await tx.session.count({ where: { studentId, startsAt: slot.startsAt, status: { in: ["CONFIRMED", "REQUESTED"] } } });
+    if (clash) throw new BookingError("That student already has a session at that time.", "NOT_ALLOWED");
+    await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
+    const r = await tx.slot.updateMany({
+      where: { id: slotId, ...openOrExpiredHold(now()) },
+      data: { status: "HELD", heldById: studentId, heldUntil: new Date(now().getTime() + s.holdMinutes * 60_000) },
+    });
+    if (r.count !== 1) throw new BookingError("Someone just took that slot.", "TAKEN");
+  });
+  try {
+    return await confirmBooking(studentId, slotId, type, focus);
+  } catch (e) {
+    await releaseHold(studentId, slotId);
+    throw e;
+  }
+}
+
 /** Emails and in-app notices after a booking or move. Never affects the booking itself. */
 async function afterBooked(sessionId: string, kind: "new" | "moved") {
   await ensureMeetingUrl(sessionId); // so the Join button and the calendar invite always have a link
@@ -153,7 +189,8 @@ async function afterBooked(sessionId: string, kind: "new" | "moved") {
   }
 }
 
-export async function cancelSession(studentId: string, sessionId: string) {
+/** `byStaff`: we (admin) cancelled, not the student, so the credit always comes back, however late. */
+export async function cancelSession(studentId: string, sessionId: string, opts: { byStaff?: boolean } = {}) {
   const s = await getSettings();
   const t = now();
   const result = await db.$transaction(async (tx) => {
@@ -162,11 +199,11 @@ export async function cancelSession(studentId: string, sessionId: string) {
     if (!sess || sess.studentId !== studentId) throw new BookingError("Session not found.", "NOT_FOUND");
     if (sess.status !== "CONFIRMED" && sess.status !== "REQUESTED") throw new BookingError("This session can't be cancelled.", "NOT_ALLOWED");
     if (!sess.startsAt) throw new BookingError("Session has no time.", "NOT_ALLOWED");
-    const outcome = cancelOutcome(sess.startsAt, t, s.cancelNoticeHours);
+    const outcome = opts.byStaff ? "RELEASE" : cancelOutcome(sess.startsAt, t, s.cancelNoticeHours);
     const kind = sessionCreditKind(sess.type);
     await tx.session.update({ where: { id: sess.id }, data: { status: "CANCELLED", cancelledAt: t } });
     if (sess.slotId) await tx.slot.update({ where: { id: sess.slotId }, data: { status: "OPEN", heldById: null, heldUntil: null } });
-    if (outcome === "RELEASE") await releaseCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: "Cancelled with notice" });
+    if (outcome === "RELEASE") await releaseCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: opts.byStaff ? "Cancelled by The Convert Club" : "Cancelled with notice" });
     else await consumeCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: `Late cancel (under ${s.cancelNoticeHours}h)` });
     if (sess.gdBatchId) await tx.gdParticipant.updateMany({ where: { batchId: sess.gdBatchId, studentId }, data: { status: "LEFT" } });
     return { sess, outcome };
@@ -192,7 +229,7 @@ async function afterCancel(sessionId: string, outcome: "RELEASE" | "CONSUME") {
 export async function rescheduleSession(studentId: string, sessionId: string, newSlotId: string) {
   const s = await getSettings();
   const t = now();
-  await db.$transaction(async (tx) => {
+  const previous = await db.$transaction(async (tx) => {
     await lockUser(tx, studentId);
     const sess = await tx.session.findUnique({ where: { id: sessionId } });
     if (!sess || sess.studentId !== studentId || !sess.startsAt) throw new BookingError("Session not found.", "NOT_FOUND");
@@ -209,8 +246,19 @@ export async function rescheduleSession(studentId: string, sessionId: string, ne
       data: { slotId: slot.id, mentorId: slot.mentorId, startsAt: slot.startsAt, endsAt: slot.endsAt, meetingUrl: slot.mentor.meetingUrl, rescheduleCount: { increment: 1 }, reminder24Sent: false, reminder1Sent: false },
     });
     await tx.slot.update({ where: { id: slot.id }, data: { status: "BOOKED", heldUntil: null } });
+    return { mentorId: sess.mentorId, startsAt: sess.startsAt };
   });
   await afterBooked(sessionId, "moved");
+  // The mentor who had the old time is told it is free again (the new mentor, if different, hears from afterBooked).
+  const after = await db.session.findUnique({ where: { id: sessionId }, select: { mentorId: true, student: { select: { name: true } } } });
+  if (previous.mentorId && previous.mentorId !== after?.mentorId) {
+    const old = await db.mentorProfile.findUnique({ where: { id: previous.mentorId }, include: { user: true } });
+    if (old) {
+      const when = fmtWhen(previous.startsAt);
+      await sendEmail({ template: "mentor_availability_change", to: old.user.email, vars: { when, detail: `${after?.student?.name ?? "A student"} moved their session on ${when} IST to another time. That hour is open again.` }, url: "/mentor/sessions" });
+      await notify(old.userId, { title: `Moved away: ${after?.student?.name ?? "student"}, ${when}`, href: "/mentor/sessions" });
+    }
+  }
 }
 
 // ───────────── GD / GE batches ─────────────

@@ -159,6 +159,36 @@ export async function markOrderFailed(razorpayOrderId: string) {
   await db.order.updateMany({ where: { razorpayOrderId, status: "CREATED" }, data: { status: "FAILED" } });
 }
 
+/**
+ * Brings an order in line with the refunds recorded against it: order status, and on a full refund the enrollment and the
+ * credits the student hasn't used. Safe to run any number of times and from any source (admin refund, Razorpay webhook,
+ * a refund made in the Razorpay dashboard).
+ */
+export async function applyRefundState(tx: Prisma.TransactionClient, orderId: string, actorId: string) {
+  const order = await tx.order.findUnique({ where: { id: orderId }, include: { payments: { include: { refunds: true } }, enrollment: { include: { product: { include: { credits: true } } } } } });
+  if (!order?.userId) return null;
+  const payment = order.payments.find((p) => p.status === "CAPTURED");
+  if (!payment) return null;
+  const refunded = payment.refunds.reduce((n, r) => n + r.amountPaise, 0);
+  if (refunded <= 0) return null;
+  const full = refunded >= payment.amountPaise;
+  await lockUser(tx, order.userId);
+  await tx.order.update({ where: { id: order.id }, data: { status: full ? "REFUNDED" : "PARTIALLY_REFUNDED" } });
+  if (full && order.enrollment && order.enrollment.status === "ACTIVE") {
+    await tx.enrollment.update({ where: { id: order.enrollment.id }, data: { status: "REFUNDED" } });
+    const bal = await getBalances(tx, order.userId);
+    for (const c of order.enrollment.product.credits) {
+      const kind = c.kind as CreditKind;
+      const unused = Math.min(c.quantity, Math.max(0, bal[kind]?.available ?? 0));
+      if (unused > 0) await adjustCredit(tx, { userId: order.userId, kind, delta: -unused, reason: `Refund of ${order.enrollment.product.name}`, createdById: actorId });
+    }
+  }
+  return { full, refunded };
+}
+
+/** Entry point for the webhook. */
+export const reconcileRefund = (orderId: string) => db.$transaction((tx) => applyRefundState(tx, orderId, "system"));
+
 /** Admin refund. Reverses only credits the student has not used; everything is audited. */
 export async function refundOrder(actor: { id: string; isDemo: boolean }, orderId: string, amountPaise: number | null, reason: string) {
   const order = await db.order.findUnique({ where: { id: orderId }, include: { payments: { include: { refunds: true } }, user: true, enrollment: { include: { product: { include: { credits: true } } } } } });
@@ -177,19 +207,15 @@ export async function refundOrder(actor: { id: string; isDemo: boolean }, orderI
     rzId = r.id;
   }
   const full = amount + already === payment.amountPaise;
+  // Upsert, not create: Razorpay's webhook can record the same refund first, and that must not turn a refund that
+  // already happened into an error here. applyRefundState is idempotent, so whichever runs second changes nothing.
   await db.$transaction(async (tx) => {
-    await lockUser(tx, order.userId!);
-    await tx.refund.create({ data: { paymentId: payment.id, razorpayRefundId: rzId, amountPaise: amount, status: "processed", reason, createdById: actor.id } });
-    await tx.order.update({ where: { id: order.id }, data: { status: full ? "REFUNDED" : "PARTIALLY_REFUNDED" } });
-    if (full && order.enrollment) {
-      await tx.enrollment.update({ where: { id: order.enrollment.id }, data: { status: "REFUNDED" } });
-      const bal = await getBalances(tx, order.userId!);
-      for (const c of order.enrollment.product.credits) {
-        const kind = c.kind as CreditKind;
-        const unused = Math.min(c.quantity, Math.max(0, bal[kind]?.available ?? 0));
-        if (unused > 0) await adjustCredit(tx, { userId: order.userId!, kind, delta: -unused, reason: `Refund of ${order.enrollment.product.name}`, createdById: actor.id });
-      }
-    }
+    await tx.refund.upsert({
+      where: { razorpayRefundId: rzId },
+      update: { reason, createdById: actor.id },
+      create: { paymentId: payment.id, razorpayRefundId: rzId, amountPaise: amount, status: "processed", reason, createdById: actor.id },
+    });
+    await applyRefundState(tx, order.id, actor.id);
   });
   await audit({ actorId: actor.id, action: "order.refund", entity: "Order", entityId: order.id, after: { amountPaise: amount, reason, full } });
   await sendEmail({ template: "refund_processed", to: order.guestEmail, vars: { amount: formatPaise(amount) } });

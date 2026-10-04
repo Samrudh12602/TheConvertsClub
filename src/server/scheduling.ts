@@ -66,18 +66,19 @@ export const needsSenior = (type: SessionType, focus: PiFocus | null | undefined
 const byLoad = (a: Candidate, b: Candidate) => a.load - b.load || a.mentorId.localeCompare(b.mentorId);
 
 /**
- * Default assignment rule:
- *  - senior-required focus: an available Senior (lowest load)
- *  - otherwise: the available Junior with the lowest load, falling back to a Senior
- *  - last resort for both: the Admin's own mentor availability
- * Students never see tier; this only decides which mentor's slot is held.
+ * Assignment rule, first match wins:
+ *  1. the Admin, if they have an open slot at that hour (the owner takes whatever they are free for)
+ *  2. senior-required focus: an available Senior (lowest load)
+ *  3. otherwise: the available Junior with the lowest load, then a Senior
+ * Several mentors can offer the same hour, so two students can book the same time and get different mentors.
+ * Students never see tier or who; this only decides which mentor's slot is held.
  */
 export function pickCandidate(cands: Candidate[], seniorRequired: boolean): Candidate | null {
   const regular = cands.filter((c) => !c.isAdminMentor);
   const seniors = regular.filter((c) => c.tier === "SENIOR").sort(byLoad);
   const juniors = regular.filter((c) => c.tier === "JUNIOR").sort(byLoad);
   const admin = cands.filter((c) => c.isAdminMentor).sort(byLoad);
-  const order = seniorRequired ? [seniors, admin] : [juniors, seniors, admin];
+  const order = seniorRequired ? [admin, seniors] : [admin, juniors, seniors];
   for (const group of order) if (group.length) return group[0];
   return null;
 }

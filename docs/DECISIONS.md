@@ -421,6 +421,24 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     Scheduler > reassign. The reassign list (sessions) and the manual-assign list (WAT/SOP reviews) now include the
     admin, which they previously left out despite the screen saying otherwise.
 
+41. **Admin-first matching, an all-mentors calendar, and a backend bug sweep.**
+    *Matching* (`pickCandidate`): (1) the admin, if they have an open slot at that hour; else (2) Juniors by lowest
+    load, then Seniors; senior-required focuses go admin then Seniors; strategy calls are always the admin's.
+    Several mentors can offer the same hour (slots are unique per mentor+hour, not per hour), so two students can book
+    the same time and get different mentors; a time stays bookable until every mentor offering it is taken. Students
+    see the same simple time picker. *Calendar* (`/admin/calendar`): a week grid of every mentor's free/booked/
+    held/blocked hours (filter by mentor, previous/next week); click a free mentor to book a chosen student into that
+    exact slot (`bookSpecificSlot`: their credit, normal emails, senior/strategy/demo rules enforced).
+    *Bugs found and fixed*: admin cancellations could consume the student's credit when late (now always returned);
+    a refund recorded by Razorpay's webhook before the app saved its own caused a false error and left order/credits
+    unchanged, and dashboard refunds never updated the order or credits (now one idempotent `applyRefundState`);
+    a real admin's payout approve/run swept in demo mentors' accruals (payroll is now scoped real-vs-demo); a
+    rescheduled session never told the previous mentor; a student could be booked twice at the same hour; a mentor
+    could delete a slot a student was mid-booking. Names typed in capitals are tidied ("ANKIT" -> "Ankit").
+    *Known, left as is (decisions for you)*: sign-up logs a person in before their email is verified, so someone
+    could pre-register another person's email and receive that person's later guest purchase; fixing it means
+    requiring email verification before first sign-in.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

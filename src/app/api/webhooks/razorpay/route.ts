@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { fulfilOrder, markOrderFailed } from "@/server/checkout";
+import { fulfilOrder, markOrderFailed, reconcileRefund } from "@/server/checkout";
 import { verifyWebhookSignature } from "@/server/razorpay";
 
 export const runtime = "nodejs";
@@ -38,7 +38,11 @@ export async function POST(req: NextRequest) {
     } else if (event.event === "refund.processed") {
       const r = event.payload.refund.entity as { id: string; payment_id: string; amount: number };
       const payment = await db.payment.findUnique({ where: { razorpayPaymentId: r.payment_id } });
-      if (payment) await db.refund.upsert({ where: { razorpayRefundId: r.id }, update: { status: "processed" }, create: { paymentId: payment.id, razorpayRefundId: r.id, amountPaise: r.amount, status: "processed", reason: "Refund via Razorpay dashboard" } });
+      if (payment) {
+        await db.refund.upsert({ where: { razorpayRefundId: r.id }, update: { status: "processed" }, create: { paymentId: payment.id, razorpayRefundId: r.id, amountPaise: r.amount, status: "processed", reason: "Refund via Razorpay dashboard" } });
+        // A refund made in the Razorpay dashboard must also update the order and take back the credits.
+        await reconcileRefund(payment.orderId);
+      }
     }
     await db.webhookEvent.update({ where: { id: eventId }, data: { processedAt: new Date() } });
     return NextResponse.json({ ok: true });

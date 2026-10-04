@@ -89,7 +89,8 @@ export async function confirmRequested(actor: Actor, sessionId: string) {
 
 // ───────────── payouts ─────────────
 
-const demoScope = (a: Actor) => (a.isDemo ? { mentor: { user: { isDemo: true } } } : {});
+/** Payroll is kept apart: the demo admin only touches demo mentors, and a real admin only ever touches real ones (so approving or paying out can never sweep in fake amounts). */
+const demoScope = (a: Actor) => ({ mentor: { user: { isDemo: a.isDemo } } });
 
 /** ACCRUED -> APPROVED for the given accruals (or all, if ids omitted). */
 export async function approveAccruals(actor: Actor, ids?: string[]) {

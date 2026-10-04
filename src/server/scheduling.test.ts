@@ -45,10 +45,25 @@ describe("pickCandidate", () => {
   it("gives ordinary sessions to the least-loaded Junior", () => {
     expect(pickCandidate([c("j1", "JUNIOR", 4), c("j2", "JUNIOR", 1), c("s1", "SENIOR", 0)], false)?.mentorId).toBe("j2");
   });
-  it("falls back to a Senior, then to the Admin's own availability", () => {
-    expect(pickCandidate([c("s1", "SENIOR", 0), c("a", "SENIOR", 0, true)], false)?.mentorId).toBe("s1");
+  it("falls back to a Senior when no Junior is free", () => {
+    expect(pickCandidate([c("s1", "SENIOR", 0)], false)?.mentorId).toBe("s1");
+  });
+  it("gives the session to the Admin whenever the Admin has a slot at that hour", () => {
+    expect(pickCandidate([c("j1", "JUNIOR", 0), c("s1", "SENIOR", 0), c("a", "SENIOR", 9, true)], false)?.mentorId).toBe("a");
+    expect(pickCandidate([c("s1", "SENIOR", 0), c("a", "SENIOR", 9, true)], true)?.mentorId).toBe("a");
     expect(pickCandidate([c("a", "SENIOR", 0, true)], false)?.mentorId).toBe("a");
-    expect(pickCandidate([c("a", "SENIOR", 0, true)], true)?.mentorId).toBe("a");
+  });
+  it("skips the Admin when they are not free, then goes Junior then Senior", () => {
+    expect(pickCandidate([c("j1", "JUNIOR", 3), c("s1", "SENIOR", 0)], false)?.mentorId).toBe("j1");
+    expect(pickCandidate([c("j1", "JUNIOR", 0), c("s1", "SENIOR", 1)], true)?.mentorId).toBe("s1");
+  });
+  it("lets several mentors offer the same hour: each booking takes one, the next student gets another", () => {
+    const pool = [c("a", "SENIOR", 0, true), c("j1", "JUNIOR", 0), c("s1", "SENIOR", 0)];
+    const order: string[] = [];
+    let left = pool;
+    for (let i = 0; i < 3; i++) { const p = pickCandidate(left, false); if (!p) break; order.push(p.mentorId); left = left.filter((x) => x.mentorId !== p.mentorId); }
+    expect(order).toEqual(["a", "j1", "s1"]);
+    expect(pickCandidate(left, false)).toBeNull(); // a fourth student is told the time is taken
   });
   it("breaks load ties deterministically", () => {
     expect(pickCandidate([c("j2", "JUNIOR", 1), c("j1", "JUNIOR", 1)], false)?.mentorId).toBe("j1");

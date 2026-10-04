@@ -2,7 +2,7 @@ import type { PiFocus, SessionType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { audit } from "@/server/audit";
 import { addWindow } from "@/server/availability";
-import { availableTimesRange, confirmBooking, holdSlot, releaseHold } from "@/server/booking";
+import { availableTimesRange, bookSpecificSlot, confirmBooking, holdSlot, releaseHold } from "@/server/booking";
 import { AdminError, assertConfigWritable, type Actor } from "@/server/admin";
 import { HOUR } from "@/server/scheduling";
 
@@ -76,4 +76,15 @@ export async function adminBookFor(actor: Actor, studentId: string, type: Sessio
     await releaseHold(studentId, held.slotId);
     throw e;
   }
+}
+
+/** Book a student into a specific mentor's slot picked on the admin calendar. */
+export async function adminBookSlot(actor: Actor, studentId: string, slotId: string, type: SessionType, focus: PiFocus | null) {
+  await studentFor(actor, studentId);
+  const slot = await db.slot.findUnique({ where: { id: slotId }, include: { mentor: { include: { user: { select: { isDemo: true } } } } } });
+  if (!slot) throw new AdminError("That slot no longer exists.");
+  if (actor.isDemo && !slot.mentor.user.isDemo) throw new AdminError("The demo admin can only work with demo data.");
+  const session = await bookSpecificSlot(studentId, slotId, type, focus);
+  await audit({ actorId: actor.id, action: "session.booked_by_admin", entity: "Session", entityId: session.id, after: { studentId, slotId, mentorId: slot.mentorId, type } });
+  return session;
 }

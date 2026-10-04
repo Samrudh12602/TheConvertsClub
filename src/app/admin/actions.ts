@@ -15,7 +15,7 @@ import { appUrl } from "@/lib/env";
 import { AdminError, approveAccruals, approveBonuses, assertConfigWritable, assignSession, confirmRequested, createPayoutRun, markPayoutPaid, previewBonuses, type Actor } from "@/server/admin";
 import { cancelSession, BookingError } from "@/server/booking";
 import { AvailabilityError } from "@/server/availability";
-import { adminAddHours, adminBookFor, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
+import { adminAddHours, adminBookFor, adminBookSlot, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
 import { refundOrder, CheckoutError } from "@/server/checkout";
 import { addMentorDirect, MentorAdminError, promoteApplication, resendMentorLogin } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
@@ -54,7 +54,7 @@ export async function adminCancelSessionAction(sessionId: string): Promise<Resul
     const s = await db.session.findUnique({ where: { id: sessionId }, select: { studentId: true, student: { select: { isDemo: true } } } });
     if (!s?.studentId) throw new AdminError("Session not found.");
     if (actor.isDemo && !s.student?.isDemo) throw new AdminError("The demo admin can only work with demo data.");
-    await cancelSession(s.studentId, sessionId);
+    await cancelSession(s.studentId, sessionId, { byStaff: true });
     await audit({ actorId: actor.id, action: "session.admin_cancel", entity: "Session", entityId: sessionId });
     refreshAll();
     return { ok: true, message: "Cancelled." };
@@ -492,5 +492,15 @@ export async function adminBookForStudentAction(studentId: string, type: unknown
     await adminBookFor(actor, studentId, t, t === "MOCK_PI" ? bookFocusSchema.parse(focus) : null, z.string().min(10).parse(startsAtIso));
     refreshAll();
     return { ok: true, message: "Booked. The student has been emailed the confirmation." };
+  } catch (e) { return fail(e); }
+}
+
+export async function adminBookSlotAction(studentId: string, slotId: string, type: unknown, focus: unknown): Promise<Result> {
+  try {
+    const actor = await guard("book-slot");
+    const t = bookTypeSchema.parse(type);
+    await adminBookSlot(actor, studentId, slotId, t, t === "MOCK_PI" ? bookFocusSchema.parse(focus) : null);
+    refreshAll();
+    return { ok: true, message: "Booked. The student and the mentor have been emailed." };
   } catch (e) { return fail(e); }
 }

@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
+import { tidyName } from "@/lib/format";
 
 export interface BoardEntry { mentorId: string; name: string; mocks: number; rating: number | null; ratings: number }
 export interface Ranked extends BoardEntry { rank: number }
 
 /** "Rohan Kulkarni (demo)" -> "Rohan K." — a mentor board shows peers' names, not their full identity. */
 export function shortName(name: string | null | undefined): string {
-  const parts = (name ?? "Mentor").replace(/\s*\(demo.*?\)/, "").trim().split(/\s+/);
+  const parts = tidyName((name ?? "Mentor").replace(/\s*\(demo.*?\)/, "")).split(/\s+/);
   return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0];
 }
 

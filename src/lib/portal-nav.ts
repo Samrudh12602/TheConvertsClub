@@ -110,6 +110,7 @@ export const adminPortal: PortalConfig = {
     {
       label: "Delivery",
       items: [
+        { href: "/admin/calendar", label: "Calendar", title: "Mentor calendar", sub: "Delivery" },
         { href: "/admin/scheduler", label: "Scheduler", title: "Scheduler", sub: "Delivery" },
         { href: "/admin/sessions", label: "Sessions", title: "All sessions", sub: "Delivery" },
         { href: "/admin/reviews", label: "Reviews", title: "WAT & SOP reviews", sub: "Delivery" },
