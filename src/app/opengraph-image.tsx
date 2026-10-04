@@ -18,7 +18,7 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 32, color: "#cfc7bb", maxWidth: 900 }}>Mock PIs, GD/GE, WAT and SOP reviews — priced in the open, no sales call.</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, color: "#b9afa1" }}>
-          <span>convertsclub.in</span>
+          <span>The Convert Club</span>
           <span>GDPI prep, student-led</span>
         </div>
       </div>

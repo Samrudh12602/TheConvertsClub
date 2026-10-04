@@ -22,7 +22,7 @@ export function SiteFooter({ account }: { account: { role: RoleName; home: strin
         <div className="flex-[1_1_220px]">
           <div className="font-display text-[15px] font-bold leading-tight text-surface">The Convert Club</div>
           <p className="mt-[9px] max-w-[38ch] text-[12.5px] leading-[1.65] text-dark-muted">
-            GDPI prep run by people who converted last season. convertsclub.in
+            GDPI prep run by people who converted last season.
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap items-start gap-1.5">

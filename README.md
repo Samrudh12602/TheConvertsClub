@@ -1,6 +1,6 @@
 # The Convert Club
 
-GDPI (MBA group discussion and personal interview) prep platform for convertsclub.in: a public
+GDPI (MBA group discussion and personal interview) prep platform: a public
 marketing site plus Student, Mentor and Admin portals behind one login.
 
 Next.js 16 (App Router) · TypeScript strict · Tailwind v4 · Zod · React Hook Form · Vitest.

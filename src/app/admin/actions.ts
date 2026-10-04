@@ -228,9 +228,10 @@ export async function adjustCreditAction(input: unknown): Promise<Result> {
   } catch (e) { return fail(e); }
 }
 
-const stageSchema = z.enum(["NEW", "SCREENING", "TRIAL_MOCK", "OFFER", "ACCEPTED", "REJECTED"]);
+// ACCEPTED is set only by promoteApplication, so a stage change can never fake an approval.
+const stageSchema = z.enum(["NEW", "SCREENING", "TRIAL_MOCK", "OFFER", "REJECTED"]);
 export async function setApplicationStageAction(id: string, stage: unknown): Promise<Result> {
-  try { const actor = await guard("app-stage"); const next = stageSchema.parse(stage); await db.mentorApplication.update({ where: { id }, data: { stage: next } }); await audit({ actorId: actor.id, action: "application.stage_change", entity: "MentorApplication", entityId: id, after: { stage: next } }); revalidatePath("/admin/applications"); return { ok: true }; } catch (e) { return fail(e); }
+  try { const actor = await guard("app-stage"); assertConfigWritable(actor, "application stages"); const next = stageSchema.parse(stage); await db.mentorApplication.update({ where: { id }, data: { stage: next } }); await audit({ actorId: actor.id, action: "application.stage_change", entity: "MentorApplication", entityId: id, after: { stage: next } }); revalidatePath("/admin/applications"); return { ok: true }; } catch (e) { return fail(e); }
 }
 
 // ───────────── Reviews (async WAT/SOP assignment) ─────────────

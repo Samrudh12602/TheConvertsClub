@@ -42,7 +42,6 @@ const s = StyleSheet.create({
   markText: { color: "#FFFFFF", fontFamily: "Helvetica-Bold", fontSize: 12 },
   brand: { fontFamily: "Helvetica-Bold", fontSize: 13, color: C.ink, marginLeft: 8 },
   brandRow: { flexDirection: "row", alignItems: "center" },
-  site: { fontSize: 8.5, color: C.muted, marginTop: 3, marginLeft: 32 },
 
   headerRight: { alignItems: "flex-end" },
   title: { fontFamily: "Helvetica-Bold", fontSize: 19, color: C.ink, letterSpacing: 0.5 },
@@ -104,7 +103,6 @@ export function ReceiptDocument({ r }: { r: ReceiptData }) {
               <View style={s.mark}><Text style={s.markText}>C</Text></View>
               <Text style={s.brand}>The Convert Club</Text>
             </View>
-            <Text style={s.site}>convertsclub.in</Text>
           </View>
           <View style={s.headerRight}>
             <Text style={s.title}>RECEIPT</Text>

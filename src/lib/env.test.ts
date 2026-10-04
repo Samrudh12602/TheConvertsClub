@@ -17,8 +17,8 @@ afterEach(() => {
 
 describe("appUrl", () => {
   it("prefers an explicit NEXT_PUBLIC_APP_URL, with no trailing slash", () => {
-    process.env.NEXT_PUBLIC_APP_URL = "https://convertsclub.in/";
-    expect(appUrl()).toBe("https://convertsclub.in");
+    process.env.NEXT_PUBLIC_APP_URL = "https://example.com/";
+    expect(appUrl()).toBe("https://example.com");
   });
   it("falls back to Vercel's production URL when no explicit URL is set", () => {
     process.env.VERCEL_PROJECT_PRODUCTION_URL = "the-converts-club.vercel.app";
@@ -34,6 +34,6 @@ describe("appUrl", () => {
   it("never hardcodes a domain that might not actually be live", () => {
     // Regression: NEXT_PUBLIC_APP_URL was once left set to a domain that hadn't been purchased,
     // silently sending every email link to a hostname that didn't resolve.
-    expect(appUrl()).not.toContain("convertsclub.in");
+    expect(appUrl()).not.toContain("example.com");
   });
 });

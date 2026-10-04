@@ -12,7 +12,8 @@ export interface LegalPolicy {
   feedbackDueHours: number;
 }
 
-const CONTACT = `${B.site}${B.contactPath}`;
+/** Where to write to us, phrased so it stays true on whatever address the site is served from. */
+const CONTACT = "the Contact page on our website";
 
 /**
  * The full legal text. Numbers that the admin can change (refund window, notice period...) are filled in
@@ -27,7 +28,7 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
       summary: `Version ${LEGAL_VERSION}. These terms are a binding agreement between you and ${B.operator} (“${B.brand}”, “we”, “us”). Please read them; creating an account, paying, or ticking the box means you accept them.`,
       sections: [
         { heading: "Who we are and what these terms cover", items: [
-          `${B.brand} (${B.site}) is an online platform that connects people preparing for MBA group discussions and personal interviews (“students”, “you”) with mentors who have been through the process, for mock interviews, group discussions, written-test and statement-of-purpose reviews, and guidance calls (the “Services”).`,
+          `${B.brand} is an online platform that connects people preparing for MBA group discussions and personal interviews (“students”, “you”) with mentors who have been through the process, for mock interviews, group discussions, written-test and statement-of-purpose reviews, and guidance calls (the “Services”).`,
           "These Terms, together with our Privacy Policy and Refund Policy, form the entire agreement between you and us for the Services. If you are a mentor, the Mentor Agreement also applies to you.",
           "By creating an account, making a purchase, booking or attending a session, or ticking the acceptance box, you agree to these Terms. This is a valid electronic contract under the Information Technology Act, 2000, and does not need a physical signature.",
         ] },
@@ -112,7 +113,7 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
       summary: `Version ${LEGAL_VERSION}. How ${B.brand} collects, uses, shares and protects your personal data, in line with the Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000.`,
       sections: [
         { heading: "Who is responsible", items: [
-          `${B.operator} is the “data fiduciary” for personal data collected through ${B.site}. Our Grievance Officer is ${B.grievanceOfficer}; reach us through ${CONTACT}.`,
+          `${B.operator} is the “data fiduciary” for personal data collected through our website. Our Grievance Officer is ${B.grievanceOfficer}; reach us through ${CONTACT}.`,
         ] },
         { heading: "What we collect", items: [
           "Account details: your name, email address, phone number, and password (stored only as a one-way cryptographic hash, never in readable form).",
@@ -232,7 +233,7 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
           "You keep the ownership of your pre-existing knowledge and materials. For feedback, scorecards, questions and resources that you create for the platform, you give us a worldwide, perpetual, royalty-free, non-exclusive licence to use, adapt and show them to students and staff in connection with the Services.",
           "You confirm that what you provide is your own work, or that you have the right to use it, and does not infringe anyone else’s rights or break any confidentiality owed by you to a third party, such as an employer or institute.",
           "You may use your name and the fact that you are a mentor with us as a factual statement of your experience. You may not use our brand, logo, or student testimonials in a way that suggests more than that without written permission.",
-          `You grant us the right to show your name, photo, college and bio, and your average rating and session count, on the site (${B.site}/mentors), where we have marked you visible. You can ask us to hide it at any time.`,
+          `You grant us the right to show your name, photo, college and bio, and your average rating and session count, on the public Mentors page of our website, where we have marked you visible. You can ask us to hide it at any time.`,
         ] },
         { heading: "Conflicts and conduct", items: [
           "Tell us at once if a student assigned to you is someone you know personally, or if you have any other conflict of interest, so we can reassign the session.",

@@ -354,6 +354,17 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     - Not built, on purpose: student-to-student referral rewards (needs a reward policy from you), and a
       "tips" mailer.
 
+35. **convertsclub.in removed everywhere, for now (owner's call).** Removed from the Vercel account, and
+    from the footer, receipt PDF, share image, free-checklist email, README/.env examples and tests. The
+    legal pages no longer name a domain ("the Contact page on our website"), so they stay true on any
+    address; `BUSINESS.site` is gone. The site's address is now only the Vercel one, and every emailed link
+    follows it automatically (`appUrl()`). When you buy a domain: add it in Vercel, optionally set
+    `NEXT_PUBLIC_APP_URL`, and re-register the Razorpay webhook with the new address.
+    **Mentor approval fixed:** "Accepted" is no longer a choice in the stage dropdown (it did nothing and looked
+    like an approval). The real step is the **Approve as mentor** button, confirmed inline instead of with a
+    browser pop-up (pop-ups are suppressed in some browsers and made the old button look dead). Stage
+    changes now show their errors, and ACCEPTED is set only by approving.
+
 ## Assumptions
 
 | # | Topic | Default | Where |
