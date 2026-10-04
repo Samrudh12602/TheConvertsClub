@@ -1,7 +1,7 @@
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Panel } from "@/components/portal/ui";
 import { RefundButton } from "@/components/admin/refund-form";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
 import { formatPaise } from "@/lib/money";
 
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Finance" };
 
 export default async function FinancePage() {
+  const db = await adminDb();
   const [grossAgg, feeAgg, refundAgg, payableAgg, payments, byProduct] = await Promise.all([
     db.order.aggregate({ where: { status: { in: ["PAID", "PARTIALLY_REFUNDED"] } }, _sum: { amountPaise: true } }),
     db.payment.aggregate({ where: { status: "CAPTURED" }, _sum: { feePaise: true, taxPaise: true } }),

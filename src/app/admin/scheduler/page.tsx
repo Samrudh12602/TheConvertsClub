@@ -1,7 +1,7 @@
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, StatusPill } from "@/components/portal/ui";
 import { AdminCancelButton, AssignPicker, ConfirmButton } from "@/components/admin/assign-controls";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { getSettings } from "@/lib/settings-db";
@@ -18,6 +18,7 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
  * upcoming session, its current mentor, a suggested best match, and one click to (re)assign.
  */
 export default async function SchedulerPage() {
+  const db = await adminDb();
   const now = new Date();
   const [unassigned, upcoming, settings] = await Promise.all([
     db.session.findMany({ where: { status: { in: ["CONFIRMED", "REQUESTED"] }, mentorId: null, startsAt: { gt: now } }, orderBy: { startsAt: "asc" }, include: { student: { select: { name: true } } } }),

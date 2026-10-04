@@ -6,7 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { DEMO_ACCOUNTS } from "@/lib/roles";
-import { demoMode } from "@/lib/env";
+import { demoEnabled } from "@/server/demo";
 import { safeEqual } from "@/server/crypto";
 import { rateLimit } from "@/server/ratelimit";
 import { sendEmail } from "@/server/email";
@@ -51,7 +51,7 @@ export const { handlers, auth, signIn, signOut, unstable_update: refreshSession 
       name: "Demo access",
       credentials: { email: {}, passcode: {} },
       async authorize(raw) {
-        if (!demoMode()) return null;
+        if (!(await demoEnabled())) return null;
         const email = String(raw?.email ?? "").trim().toLowerCase();
         const passcode = String(raw?.passcode ?? "");
         const rl = await rateLimit(`demo-login:${await clientIp()}`, 10, 900);

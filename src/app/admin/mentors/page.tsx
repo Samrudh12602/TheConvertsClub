@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Meter, Panel, StatusPill } from "@/components/portal/ui";
 import { AddMentorTabs } from "@/components/admin/add-mentor-tabs";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { formatPaise } from "@/lib/money";
 import { getSettings } from "@/lib/settings-db";
 import { mentorQuality, qualityFlags } from "@/server/mentor-quality";
@@ -13,6 +13,7 @@ export const metadata = { title: "Mentors" };
 const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 
 export default async function MentorsPage() {
+  const db = await adminDb();
   const mentors = await db.mentorProfile.findMany({
     where: { isAdminMentor: false },
     orderBy: [{ status: "asc" }, { tier: "asc" }],

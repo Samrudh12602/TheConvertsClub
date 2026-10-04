@@ -386,6 +386,21 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     the account, credits, receipt and login link). Found when a test order for "ankit" landed on the admin
     account; that one order (test-mode payment, no real money) was left as is.
 
+38. **Demo is OFF, with an admin switch; real student data wiped.** (a) `DEMO_LOGIN_ENABLED` set to false in
+    production and a new **Admin > Settings > Testing > Demo mode** checkbox (stored in the DB, default OFF,
+    applies within about a minute) now controls demo logins, demo mentors/results on the public site, and
+    demo rows in the admin portal. All demo data stays in the database. (b) While demo is off, a real admin's
+    list and total screens (dashboard counts, overdue pills, students, mentors, sessions, scheduler, reviews,
+    payouts, finance, analytics, applications) use `adminDb()`, a read-only filter that leaves demo rows out;
+    it was checked against the live database (for example 31 demo "feedback overdue" became 0). Demo
+    logins work again only when the switch is on. On a developer machine the env flag still works.
+    (c) On request, the one real student and all test purchases (10 orders incl. the admin-account "ankit"
+    test, 3 payments, 3 enrollments, 18 ledger rows, 1 booked session whose slot was reopened, coupon use
+    counts rolled back) were deleted in one transaction; a JSON backup was written to the session scratchpad
+    before deleting. Mentors, the admin, coupons and all demo data were not touched.
+    (d) Mentors added directly or promoted get the credentials email; mentors who accept an *invite* are
+    forced to choose a password on first sign-in.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

@@ -26,12 +26,3 @@ export const appUrl = (): string => {
   if (vercelUrl) return `https://${vercelUrl}`;
   return "http://localhost:3000";
 };
-
-/**
- * Demo mode: the seeded demo accounts can sign in with a passcode and demo content (fake mentors, placeholder
- * results) is shown. Turn OFF (DEMO_LOGIN_ENABLED=false) and purge demo data before real launch.
- */
-export const demoMode = (): boolean => process.env.DEMO_LOGIN_ENABLED === "true";
-
-/** Demo content shows outside production, or anywhere demo mode is on. */
-export const showDemoContent = (): boolean => !isProductionEnv() || demoMode();

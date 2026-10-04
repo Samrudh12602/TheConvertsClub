@@ -3,7 +3,7 @@ import { PortalPage } from "@/components/portal/portal-page";
 import { AdminCancelButton } from "@/components/admin/assign-controls";
 import { Empty, StatusPill } from "@/components/portal/ui";
 import type { Prisma } from "@/generated/prisma/client";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtWhen } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { getSettings } from "@/lib/settings-db";
@@ -14,6 +14,7 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 const FILTERS = [["all", "All"], ["upcoming", "Upcoming"], ["overdue", "Feedback overdue"], ["completed", "Completed"]] as const;
 
 export default async function AllSessionsPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const db = await adminDb();
   const { filter = "upcoming" } = await searchParams;
   const settings = await getSettings();
   const now = new Date();

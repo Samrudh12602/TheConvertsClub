@@ -61,6 +61,12 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         <label className="mt-3 flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" checked={v.gstEnabled} onChange={(e) => setV({ ...v, gstEnabled: e.target.checked })} />GST enabled (confirm with a CA before turning on)</label>
       </fieldset>
 
+      <fieldset className="rounded-[11px] border border-line bg-card p-4">
+        <legend className="type-label px-1 text-ink-faint">Testing</legend>
+        <label className="flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" checked={v.demoEnabled} onChange={(e) => setV({ ...v, demoEnabled: e.target.checked })} />Demo mode (demo logins, demo mentors on the public site, and demo rows in this portal)</label>
+        <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">Keep this OFF for real use. The demo data stays stored; this only decides whether anyone can see or sign in to it. Takes up to a minute to apply.</p>
+      </fieldset>
+
       <div className="flex items-center gap-3"><Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save settings"}</Button>{msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}</div>
     </form>
   );

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, StatusPill } from "@/components/portal/ui";
 import { ReviewAssignPicker } from "@/components/admin/review-assign";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { relative } from "@/lib/format";
 import { REVIEW_LABEL, REVIEW_STATUS } from "@/lib/labels";
 import { serviceForReview } from "@/server/payroll";
@@ -13,6 +13,7 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 const FILTERS = [["all", "All"], ["overdue", "Overdue"]] as const;
 
 export default async function AdminReviews({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const db = await adminDb();
   const { filter = "all" } = await searchParams;
   const now = new Date();
   const reviews = await db.review.findMany({

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, StatusPill } from "@/components/portal/ui";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Students" };
 const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ q?: string; plan?: string }> }) {
+  const db = await adminDb();
   const { q, plan } = await searchParams;
   const [students, plans] = await Promise.all([
     db.user.findMany({

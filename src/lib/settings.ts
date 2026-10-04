@@ -26,6 +26,8 @@ export const DEFAULT_SETTINGS = {
   bonusPeriod: "SEASON" as "SEASON" | "MONTH",
   /** Admin's own sessions accrue no pay unless this is on. */
   adminAccrues: false,
+  /** Show demo accounts, demo mentors and demo rows (all fake). Off for real use; Admin can switch it on to test. */
+  demoEnabled: false,
   seasonStart: "2026-12-20",
   seasonEnd: "2027-03-31",
 };

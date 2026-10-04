@@ -331,7 +331,7 @@ const settingsSchema = z.object({
   refundWindowHours: z.coerce.number().int().min(1).max(168), recordingRetentionDays: z.coerce.number().int().min(0).max(365),
   creditValidityDays: z.coerce.number().int().min(0).max(1095), creditExpiryWarnDays: z.coerce.number().int().min(0).max(180),
   gdCapacity: z.coerce.number().int().min(2).max(30), feedbackDueHours: z.coerce.number().int().min(1).max(168),
-  gstEnabled: z.boolean(), adminAccrues: z.boolean(), minLeadHours: z.coerce.number().int().min(0).max(48),
+  gstEnabled: z.boolean(), adminAccrues: z.boolean(), demoEnabled: z.boolean(), minLeadHours: z.coerce.number().int().min(0).max(48),
   bonusPeriod: z.enum(["SEASON", "MONTH"]), seasonStart: z.string(), seasonEnd: z.string(),
   seniorRequiredFocuses: z.array(z.string()), mockCounts: z.array(z.string()),
 });

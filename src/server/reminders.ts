@@ -39,8 +39,8 @@ export async function sendReminders(now = new Date()) {
 }
 
 /** Feedback overdue list for the admin queue. */
-export async function overdueFeedback(now = new Date()) {
+export async function overdueFeedback(now = new Date(), client: typeof db = db) {
   const settings = await getSettings();
   const cutoff = new Date(now.getTime() - settings.feedbackDueHours * HOUR);
-  return db.session.findMany({ where: { status: "CONFIRMED", startsAt: { lt: cutoff }, feedback: null }, include: { mentor: { include: { user: { select: { name: true } } } }, student: { select: { name: true } } }, orderBy: { startsAt: "asc" } });
+  return client.session.findMany({ where: { status: "CONFIRMED", startsAt: { lt: cutoff }, feedback: null }, include: { mentor: { include: { user: { select: { name: true } } } }, student: { select: { name: true } } }, orderBy: { startsAt: "asc" } });
 }

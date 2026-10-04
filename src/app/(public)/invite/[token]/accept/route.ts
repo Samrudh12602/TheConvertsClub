@@ -20,7 +20,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
   if (!user || user.email.toLowerCase() !== invite.email.toLowerCase()) return back(`/invite/${token}`);
 
   await db.$transaction(async (tx) => {
-    if (user.role !== "ADMIN") await tx.user.update({ where: { id: user.id }, data: { role: "MENTOR" } });
+    // A mentor who arrives by invite has no password yet, so their first screen is "choose your password".
+    if (user.role !== "ADMIN") await tx.user.update({ where: { id: user.id }, data: { role: "MENTOR", ...(user.passwordHash ? {} : { mustChangePassword: true }) } });
     const isAdminMentor = user.role === "ADMIN";
     const existingProfile = await tx.mentorProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
     const mentor = await tx.mentorProfile.upsert({

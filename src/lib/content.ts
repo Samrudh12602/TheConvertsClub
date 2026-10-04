@@ -2,7 +2,7 @@ import { getProducts } from "@/lib/catalog";
 import { priceRangeLabel } from "@/lib/pricing";
 import { times } from "@/lib/settings";
 import { getPolicy } from "@/lib/settings-db";
-import { showDemoContent } from "@/lib/env";
+import { demoEnabled } from "@/server/demo";
 import { db } from "@/lib/db";
 import { buildLegalDocs } from "@/lib/legal-text";
 import type { LegalDocKey } from "@/lib/legal";
@@ -113,7 +113,7 @@ export async function getPublicMentors(): Promise<PublicMentor[]> {
       photoSrc: m.photoKey ? `/api/mentor-photo/${m.id}` : m.photoUrl,
     }));
   }
-  return showDemoContent() ? DEMO_MENTORS : [];
+  return (await demoEnabled()) ? DEMO_MENTORS : [];
 }
 
 export interface ResultsContent {
@@ -149,11 +149,12 @@ export async function getResults(): Promise<ResultsContent | null> {
   ]);
   const testimonialsAreReal = realTestimonials.length > 0;
   const statsAreReal = realStats.length > 0;
-  if (!testimonialsAreReal && !statsAreReal && !showDemoContent()) return null;
+  const demo = await demoEnabled();
+  if (!testimonialsAreReal && !statsAreReal && !demo) return null;
 
   return {
-    stats: statsAreReal ? realStats.map((s) => ({ value: s.value, label: s.label })) : showDemoContent() ? DEMO_STATS : null,
-    testimonials: testimonialsAreReal ? realTestimonials.map((t) => ({ quote: t.quote, who: t.who })) : showDemoContent() ? DEMO_TESTIMONIALS : [],
-    isDemo: (!testimonialsAreReal || !statsAreReal) && showDemoContent(),
+    stats: statsAreReal ? realStats.map((s) => ({ value: s.value, label: s.label })) : demo ? DEMO_STATS : null,
+    testimonials: testimonialsAreReal ? realTestimonials.map((t) => ({ quote: t.quote, who: t.who })) : demo ? DEMO_TESTIMONIALS : [],
+    isDemo: (!testimonialsAreReal || !statsAreReal) && demo,
   };
 }

@@ -1,7 +1,9 @@
 import { PortalPage } from "@/components/portal/portal-page";
 import { Notice } from "@/components/ui/notice";
 import { Panel, Section } from "@/components/portal/ui";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
+
+type Db = Awaited<ReturnType<typeof adminDb>>;
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Analytics" };
@@ -11,15 +13,16 @@ export const metadata = { title: "Analytics" };
  * they need a page-analytics tool (e.g. Vercel Analytics), which isn't wired up — see docs/DECISIONS.md.
  */
 export default async function AnalyticsPage() {
+  const db = await adminDb();
   const [checkoutStarted, paid, onboarded, avgConverted, avgOther, ratingAvg, feedbackTotal, feedbackOnTime, repeatBuyers, totalBuyers] = await Promise.all([
     db.order.count(),
     db.order.count({ where: { status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } } }),
     db.studentProfile.count({ where: { onboardedAt: { not: null } } }),
-    mockAvg(true),
-    mockAvg(false),
+    mockAvg(db, true),
+    mockAvg(db, false),
     db.sessionRating.aggregate({ _avg: { rating: true } }),
     db.feedback.count(),
-    onTimeFeedback(),
+    onTimeFeedback(db),
     db.order.groupBy({ by: ["userId"], where: { status: "PAID", userId: { not: null } }, having: { userId: { _count: { gt: 1 } } } }),
     db.order.groupBy({ by: ["userId"], where: { status: "PAID", userId: { not: null } } }),
   ]);
@@ -54,7 +57,7 @@ export default async function AnalyticsPage() {
   );
 }
 
-async function mockAvg(converted: boolean) {
+async function mockAvg(db: Db, converted: boolean) {
   const ids = (await db.callTracker.findMany({ where: { outcome: converted ? "CONVERTED" : { not: "CONVERTED" } }, select: { studentId: true }, distinct: ["studentId"] })).map((c) => c.studentId);
   if (!ids.length) return 0;
   const counts = await db.session.groupBy({ by: ["studentId"], where: { studentId: { in: ids }, status: "COMPLETED" }, _count: true });
@@ -62,7 +65,7 @@ async function mockAvg(converted: boolean) {
   return counts.reduce((n, c) => n + c._count, 0) / ids.length;
 }
 
-async function onTimeFeedback() {
+async function onTimeFeedback(db: Db) {
   const rows = await db.feedback.findMany({ select: { submittedAt: true, session: { select: { startsAt: true } } } });
   const settings = await (await import("@/lib/settings-db")).getSettings();
   return rows.filter((r) => !r.session?.startsAt || r.submittedAt.getTime() - r.session.startsAt.getTime() <= settings.feedbackDueHours * 3_600_000).length;

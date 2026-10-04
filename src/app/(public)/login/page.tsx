@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, emailLoginEnabled, googleEnabled } from "@/auth";
 import { LoginCard } from "@/components/site/login-card";
 import { DEMO_ACCOUNTS, roleHome, safeNext } from "@/lib/roles";
-import { demoMode } from "@/lib/env";
+import { demoEnabled } from "@/server/demo";
 
 export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 
@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         next={safeNext(sp.next) ?? undefined}
         googleEnabled={googleEnabled()}
         emailEnabled={emailLoginEnabled()}
-        demoAccounts={demoMode() ? DEMO_ACCOUNTS.map((a) => ({ role: a.role, email: a.email })) : undefined}
+        demoAccounts={(await demoEnabled()) ? DEMO_ACCOUNTS.map((a) => ({ role: a.role, email: a.email })) : undefined}
         notice={sp.sent ? "sent" : sp.error ? "error" : null}
         defaultEmail={sp.email && sp.email.length <= 254 ? sp.email : undefined}
       />

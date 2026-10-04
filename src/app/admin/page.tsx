@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtTime } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 
 export default async function AdminDashboard() {
+  const db = await adminDb();
   await requireAdmin();
   const now = new Date(nowMs());
   const { istDayRange, istDateString } = await import("@/server/scheduling");
@@ -24,7 +25,7 @@ export default async function AdminDashboard() {
     db.user.count({ where: { role: "STUDENT", status: "ACTIVE", isDemo: false } }),
     db.session.count({ where: { startsAt: { gte: weekAgo, lte: new Date(weekAgo.getTime() + 14 * 86_400_000) }, status: { in: ["CONFIRMED", "REQUESTED", "COMPLETED"] } } }),
     db.session.count({ where: { status: { in: ["CONFIRMED", "REQUESTED"] }, mentorId: null } }),
-    overdueFeedback(now),
+    overdueFeedback(now, db),
     db.order.aggregate({ where: { status: "PAID" }, _sum: { amountPaise: true } }),
     db.payoutAccrual.aggregate({ where: { status: { in: ["ACCRUED", "APPROVED"] } }, _sum: { amountPaise: true }, _count: true }),
     db.session.findMany({ where: { status: { in: ["CONFIRMED", "REQUESTED"] }, mentorId: null, startsAt: { gt: now } }, orderBy: { startsAt: "asc" }, take: 5, include: { student: { select: { name: true } } } }),

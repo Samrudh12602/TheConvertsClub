@@ -1,7 +1,7 @@
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Panel, StatusPill } from "@/components/portal/ui";
 import { ApproveAccrualsButton, ApproveBonusesButton, CreateRunForm, MarkPaidForm, PreviewBonusesButton } from "@/components/admin/payout-controls";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
 import { ACCRUAL_STATUS } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
@@ -12,6 +12,7 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD batch", WAT: "WAT", GUIDANCE: "Guidance", SOP: "SOP review" };
 
 export default async function PayoutsPage() {
+  const db = await adminDb();
   const [accrued, approved, paid, accrualRows, runs] = await Promise.all([
     db.payoutAccrual.aggregate({ where: { status: "ACCRUED" }, _sum: { amountPaise: true }, _count: true }),
     db.payoutAccrual.aggregate({ where: { status: "APPROVED" }, _sum: { amountPaise: true }, _count: true }),

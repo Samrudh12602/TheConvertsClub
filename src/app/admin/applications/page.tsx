@@ -3,13 +3,14 @@ import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, StatusPill } from "@/components/portal/ui";
 import { StageSelect } from "@/components/admin/application-stage-select";
 import { PromoteButton } from "@/components/admin/promote-application";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mentor applications" };
 
 export default async function ApplicationsPage() {
+  const db = await adminDb();
   const apps = await db.mentorApplication.findMany({ orderBy: { createdAt: "desc" } });
   return (
     <PortalPage>

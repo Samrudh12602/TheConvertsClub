@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PortalFrame } from "@/components/portal/portal-frame";
 import { UserChip } from "@/components/portal/user-chip";
-import { db } from "@/lib/db";
+import { adminDb } from "@/server/demo";
 import { requireAdmin } from "@/server/session";
 
 export const metadata: Metadata = { title: { default: "Admin console", template: "%s · The Convert Club" }, robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const db = await adminDb();
   const user = await requireAdmin();
   const now = new Date();
   const [overdueCount, overdueReviewCount] = await Promise.all([

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
-import { showDemoContent } from "@/lib/env";
+import { isProductionEnv } from "@/lib/env";
 import { legalDocs, type LegalSlug } from "@/lib/content";
 
 const ORDER: { slug: LegalSlug; label: string }[] = [
@@ -15,7 +15,7 @@ export async function LegalPage({ slug }: { slug: LegalSlug }) {
   const doc = (await legalDocs())[slug];
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-3.5 px-5 py-[26px]">
-      {showDemoContent() && (
+      {!isProductionEnv() && (
         <Notice>Draft shown outside production. Have an Indian advocate review the final text, and a CA review anything about tax, before launch.</Notice>
       )}
       <nav aria-label="Legal" className="flex flex-wrap gap-1.5">
