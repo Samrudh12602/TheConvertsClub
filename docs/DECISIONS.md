@@ -315,9 +315,10 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     - *Existing real users* (current students and mentors) have no record, so they are asked once at
       their next sign-in. Demo accounts and admins are never asked.
     - *Admin sees proof* on each student's and mentor's page ("Terms accepted").
-    - **ASSUMPTIONS TO CONFIRM** in `src/lib/business.ts`: the operator is "Samrudh Dhaimodkar, trading
-      as The Convert Club" (a sole proprietorship), and disputes are seated in Pune. If you register a
-      company/LLP or are elsewhere, change those two lines and bump `LEGAL_VERSION`.
+    - *Operator and venue (confirmed by the owner):* "Samrudh Dhaimodkar, sole proprietor, trading as
+      The Convert Club"; disputes and arbitration are seated in Goa. Both live in `src/lib/business.ts`.
+      If this ever becomes a company/LLP, change `operator` and bump `LEGAL_VERSION` in `src/lib/legal.ts`.
+      (Version bumped to 2026-10-04 for this change.)
     - **This is a thorough draft, not legal advice.** Have an Indian advocate review it before taking
       real money, especially the liability cap, the non-solicit (12 months), the arbitration clause and
       the mentor "independent contractor" classification.

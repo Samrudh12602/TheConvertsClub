@@ -3,7 +3,7 @@
  * BUMP `LEGAL_VERSION` whenever any legal text changes in a way that matters: every student and mentor
  * is then asked to accept the new version before they can continue. Keep it a date string.
  */
-export const LEGAL_VERSION = "2026-10-03";
+export const LEGAL_VERSION = "2026-10-04";
 
 export type LegalDocKey = "terms" | "privacy" | "refunds" | "mentor-agreement";
 export type AcceptingRole = "STUDENT" | "MENTOR";

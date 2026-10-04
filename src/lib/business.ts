@@ -6,9 +6,9 @@ export const BUSINESS = {
   brand: "The Convert Club",
   site: "convertsclub.in",
   /** Who legally operates the service. A sole proprietor is the person; a company is its registered name. */
-  operator: "Samrudh Dhaimodkar, trading as The Convert Club",
+  operator: "Samrudh Dhaimodkar, sole proprietor, trading as The Convert Club",
   /** Where disputes are heard and arbitration is seated. */
-  jurisdiction: "Pune, Maharashtra, India",
+  jurisdiction: "Goa, India",
   grievanceOfficer: "Samrudh Dhaimodkar",
   /** Contact page is the primary channel; it reaches the owner's inbox. */
   contactPath: "/contact",
