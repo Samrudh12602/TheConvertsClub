@@ -24,7 +24,7 @@ export interface CheckoutSummary {
   refundWindowHours: number;
   paymentsEnabled: boolean;
   prefill?: { name: string; email: string; phone: string };
-  /** A mentor referral code carried in from a /r/CODE link, already priced on the server. */
+  /** A mentor code the visitor entered earlier, already priced on the server. */
   initialCoupon?: { code: string; discountPaise: number; message: string };
 }
 

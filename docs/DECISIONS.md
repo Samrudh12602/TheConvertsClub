@@ -323,14 +323,15 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       real money, especially the liability cap, the non-solicit (12 months), the arbitration clause and
       the mentor "independent contractor" classification.
 
-33. **Mentor-code prices are visible, not hidden until checkout.** A mentor shares `convertsclub.in/r/CODE`
-    (copy button on their Profile). It remembers the code for 30 days (httpOnly cookie, only if the code is a
-    live mentor coupon), and then: the home page, Packages and the student Top-up shop show the exact
-    price with that mentor's code ("₹2,199 with Rohit's code"), a banner explains it with a Remove link,
-    and checkout applies the code automatically (still changeable). Typing a code at checkout works as
-    before. A mentor cannot use their own code (enforced in `startCheckout`). Percent discounts now round
-    down to whole rupees (so ₹599 at 10% is ₹540, never ₹539.10). Pages that show prices now render per
-    request because they read the cookie.
+33. **Mentor prices appear only when the visitor enters a mentor's code — we never hand a code out.**
+    Everyone sees the normal prices. On Packages there is a "Have a mentor's referral code?" box; a
+    visitor who types a valid, live mentor code gets that price shown across the site (remembered 30 days
+    in an httpOnly cookie, removable with one click), and checkout applies it. Typing a code at checkout
+    or in the student Top-up shop works as before. Wrong/off/used-up codes all return the same message and
+    the box is rate-limited, so codes can't be guessed or enumerated. There is deliberately no shareable
+    auto-apply link and no code is displayed to anyone but the person who entered it. A mentor cannot use
+    their own code (enforced in `startCheckout`). Percent discounts round down to whole rupees. Pages that
+    show prices render per request because they read the cookie.
 
 ## Assumptions
 

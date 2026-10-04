@@ -17,7 +17,7 @@ export default async function PackagesPage() {
   const [bundles, singles] = await Promise.all([getBundles(), getSingles()]);
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-[18px] px-5 py-[26px]">
-      <ReferralBanner next="/packages" />
+      <ReferralBanner next="/packages" offerBox />
       <div>
         <h1 className="type-page text-ink">Packages</h1>
         <p className="mt-2 max-w-[60ch] text-sm leading-[1.6] text-ink-muted">

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { checkCoupon, priceView, type CatalogProduct, type CouponLite } from "@/lib/pricing";
 
+/** Cookie holding the code the visitor typed in. Set only by `applyReferralAction`. */
 export const REF_COOKIE = "cc_ref";
 export const REF_DAYS = 30;
 const CODE = /^[A-Za-z0-9]{4,16}$/;
@@ -19,7 +20,7 @@ export async function findReferral(raw: string): Promise<Referral | null> {
   return { code: c.code, mentorFirst: first, coupon: { type: c.type, value: c.value, expiresAt: c.expiresAt, maxUses: c.maxUses, usedCount: c.usedCount, active: c.active, mentorId: c.mentorId } };
 }
 
-/** The visitor's remembered referral (from a /r/CODE link), if it is still valid. Cached per request. */
+/** The code this visitor typed in earlier, if it is still a valid mentor code. Cached per request. */
 export const getReferral = cache(async (): Promise<Referral | null> => {
   const raw = (await cookies()).get(REF_COOKIE)?.value;
   return raw ? findReferral(raw) : null;

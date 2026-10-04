@@ -26,7 +26,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const policy = await getPolicy();
   const v = priceView(product);
   const user = await currentUser();
-  // A mentor's /r/CODE link carries through to here: apply their code for the buyer, who can still change or clear it.
+  // If the visitor entered a mentor's code earlier, apply it here (they can still change or clear it).
   const ref = await getReferral();
   const applied = ref ? await quote(product.slug, ref.code).catch(() => null) : null;
   const summary: CheckoutSummary = {
