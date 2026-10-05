@@ -3,6 +3,7 @@ import { nowMs } from "@/lib/datetime";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Flash, Panel } from "@/components/portal/ui";
 import { WeekGrid, WindowForm, type Cell } from "@/components/mentor/availability-manager";
+import { ModePicker, ModeProvider } from "@/components/mentor/availability-mode";
 import { db } from "@/lib/db";
 import { fmtDay } from "@/lib/format";
 import { requireMentor } from "@/server/session";
@@ -33,7 +34,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
       const iso = at.toISOString();
       if (s?.status === "BOOKED") return { iso, state: "booked", label: s.session?.student?.name?.replace(/\s*\(demo\)/, "").split(" ")[0] ?? "Booked" };
       if (s?.status === "BLOCKED") return { iso, state: "blocked" };
-      if (s) return { iso, state: "open" };
+      if (s) return { iso, state: s.direct ? "special" : "open" };
       return { iso, state: at.getTime() < now ? "past" : "none" };
     }),
   }));
@@ -42,11 +43,14 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
 
   return (
     <PortalPage>
+      <ModeProvider canDirect={mentor.isAdminMentor}>
+      <ModePicker />
       <WindowForm defaultDate={today} weekStart={dayStrs[0]} />
       <Panel title={<span>Week of {fmtDay(istToUtc(dayStrs[0], "12:00"))} · 1-hour slots</span>} action={
         <div className="flex items-center gap-3 text-[10.5px] font-medium text-ink-muted">
           <span className="flex items-center gap-[5px]"><i className="size-[9px] rounded-sm bg-oxblood" />Booked</span>
-          <span className="flex items-center gap-[5px]"><i className="size-[9px] rounded-sm border border-[#DED3C4] bg-[#EFE7DC]" />Open</span>
+          <span className="flex items-center gap-[5px]"><i className="size-[9px] rounded-sm border border-[#DED3C4] bg-[#EFE7DC]" />{mentor.isAdminMentor ? "Free time" : "Open"}</span>
+          {mentor.isAdminMentor && <span className="flex items-center gap-[5px]"><i className="size-[9px] rounded-sm border border-[#C9A96A] bg-[#F2E4C4]" />Special paid</span>}
           <span className="flex items-center gap-[5px]"><i className="size-[9px] rounded-sm border border-dashed border-[#CFC6B9]" />Not offered</span>
           <Link href={`/mentor/availability?week=${shift(-1)}`} className="ml-2 rounded-md border border-line-strong px-2 py-1.5 text-xs font-semibold no-underline">← Prev</Link>
           <Link href={`/mentor/availability?week=${shift(1)}`} className="rounded-md border border-line-strong px-2 py-1.5 text-xs font-semibold no-underline">Next →</Link>
@@ -55,6 +59,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         <WeekGrid days={days} rows={rows} />
       </Panel>
       <Flash>Booked slots can&apos;t be removed here. Ask Samrudh to move the session and the slot frees up.</Flash>
+      </ModeProvider>
     </PortalPage>
   );
 }

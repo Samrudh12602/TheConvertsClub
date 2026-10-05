@@ -6,7 +6,7 @@ import { fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { getSettings } from "@/lib/settings-db";
 import { suggestMentor } from "@/server/admin";
-import { needsSenior } from "@/server/scheduling";
+import { isAdminOnly, needsSenior } from "@/server/scheduling";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Scheduler" };
@@ -29,7 +29,7 @@ export default async function SchedulerPage() {
   const options = (type: (typeof unassigned)[number]["type"], focus: (typeof unassigned)[number]["focus"]) => {
     const senior = needsSenior(type, focus, settings.seniorRequiredFocuses);
     // Strategy calls are only ever the admin's. Anything else can go to any mentor, including the admin's own mentor mode.
-    const pool = mentors.filter((m) => (type === "STRATEGY_CALL" ? m.isAdminMentor : !senior || m.tier === "SENIOR"));
+    const pool = mentors.filter((m) => (isAdminOnly(type) ? m.isAdminMentor : !senior || m.tier === "SENIOR"));
     return pool.map((m) => ({ id: m.id, label: nm(m.user.name) }));
   };
 

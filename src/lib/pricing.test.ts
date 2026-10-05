@@ -3,7 +3,7 @@ import { checkCoupon, priceView, type CatalogProduct } from "./pricing";
 
 const base: CatalogProduct = {
   slug: "x", name: "X", kind: "BUNDLE", pricePaise: 259900, mrpPaise: 299900, mentorPricePaise: 219900,
-  enrolledOnly: false, credits: [], summary: "", includes: [],
+  enrolledOnly: false, withAdmin: false, credits: [], summary: "", includes: [],
 };
 
 describe("priceView", () => {
@@ -37,9 +37,10 @@ describe("checkCoupon", () => {
   it("rejects a coupon that's hit its max uses", () => {
     expect(checkCoupon({ ...generic, maxUses: 5, usedCount: 5 }, 100000).ok).toBe(false);
   });
-  it("a mentor coupon with no per-product mentor price just applies its own percent, like any coupon", () => {
+  it("a mentor coupon does NOT apply to a product with no mentor price (only the flagship programs have one)", () => {
     const r = checkCoupon(mentor, 100000, new Date(), null);
-    expect(r).toEqual({ ok: true, discountPaise: 10000 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toMatch(/Call Convert/);
   });
   it("a mentor coupon with a per-product mentor price charges exactly that price, ignoring its own percent", () => {
     const r = checkCoupon(mentor, 259900, new Date(), 219900);

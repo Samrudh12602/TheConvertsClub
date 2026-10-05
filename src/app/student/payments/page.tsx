@@ -33,7 +33,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // products belong here, and only once actually enrolled. Everyone else buys singles at full price
   // from /services, same as a public visitor. Everything shows at MRP; a mentor's referral code (or
   // any other coupon) is what brings the price down, entered on the buy button below.
-  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && p.enrolledOnly) : [];
+  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin)) : [];
 
   return (
     <PortalPage width="max-w-[820px]">
@@ -47,7 +47,6 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                 <p className="text-[13px] font-semibold leading-[1.3] text-ink">{p.name}</p>
                 <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}</p>
                 {referralPrice(p, ref) !== null && ref && <p className="tnum -mt-1 text-[12px] font-semibold text-green">{formatPaise(referralPrice(p, ref)!)} <span className="font-medium">with your code {ref.code}</span></p>}
-                {!ref && <p className="-mt-1 text-[11.5px] font-medium text-green">{p.mentorPricePaise !== null ? `${formatPaise(p.mentorPricePaise)} with a mentor referral code` : "Even less with a mentor referral code"}</p>}
                 {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" defaultCoupon={referralPrice(p, ref) !== null ? ref?.code : undefined} /> : null}
               </div>
             ))}

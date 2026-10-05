@@ -6,11 +6,11 @@ import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { adminBookSlotAction } from "@/app/admin/actions";
 
-export interface Chip { slotId: string; mentorId: string; mentor: string; status: "OPEN" | "BOOKED" | "BLOCKED" | "HELD"; student?: string; admin?: boolean }
+export interface Chip { slotId: string; mentorId: string; mentor: string; status: "OPEN" | "BOOKED" | "BLOCKED" | "HELD"; student?: string; admin?: boolean; direct?: boolean }
 export interface CalRow { hour: string; cells: { iso: string; chips: Chip[]; past: boolean }[] }
 export interface StudentOpt { id: string; label: string; credits: Record<string, number> }
 
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"]] as const;
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
 const field = "min-h-10 rounded-lg border border-line-strong bg-white px-2.5 text-[12.5px]";
 const IST = "Asia/Kolkata";
@@ -26,13 +26,16 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const creditKind = TYPES.find((t) => t[0] === type)![2];
+  // Special-paid hours can only take the two paid services with Samrudh; every other hour takes everything else.
+  const allowed = TYPES.filter(([k]) => (k === "PI_DIRECT" || k === "STRATEGY_DIRECT") === Boolean(sel?.chip.direct));
+  const effType = allowed.some(([k]) => k === type) ? type : allowed[0][0];
+  const creditKind = TYPES.find((t) => t[0] === effType)![2];
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId]);
 
   const book = async () => {
     if (!sel || !studentId) return;
     setBusy(true); setMsg(null);
-    const r = await adminBookSlotAction(studentId, sel.chip.slotId, type, type === "MOCK_PI" ? focus : null);
+    const r = await adminBookSlotAction(studentId, sel.chip.slotId, effType, effType === "MOCK_PI" ? focus : null);
     setBusy(false);
     setMsg({ ok: r.ok, text: r.ok ? (r.message ?? "Booked.") : r.error });
     if (r.ok) { setSel(null); router.refresh(); }
@@ -57,8 +60,8 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
                     <div className="flex flex-col gap-1">
                       {c.chips.map((chip) => {
                         const open = chip.status === "OPEN" && !c.past;
-                        const style = chip.status === "BOOKED" ? "bg-ink text-surface" : chip.status === "BLOCKED" ? "bg-line-soft text-ink-faint line-through" : chip.status === "HELD" ? "border border-amber-line bg-amber-tint text-amber-ink" : "border border-green/40 bg-green-tint text-green";
-                        const text = chip.status === "BOOKED" ? `${chip.mentor} · ${chip.student ?? "booked"}` : chip.status === "HELD" ? `${chip.mentor} · held` : chip.mentor;
+                        const style = chip.status === "BOOKED" ? "bg-ink text-surface" : chip.status === "BLOCKED" ? "bg-line-soft text-ink-faint line-through" : chip.status === "HELD" ? "border border-amber-line bg-amber-tint text-amber-ink" : chip.direct ? "border border-[#C9A96A] bg-[#F2E4C4] text-[#6B5420]" : "border border-green/40 bg-green-tint text-green";
+                        const text = chip.status === "BOOKED" ? `${chip.mentor} · ${chip.student ?? "booked"}` : chip.status === "HELD" ? `${chip.mentor} · held` : chip.direct ? `${chip.mentor} · paid` : chip.mentor;
                         return open ? (
                           <button key={chip.slotId} type="button" onClick={() => { setSel({ chip, iso: c.iso }); setMsg(null); }} className={clsx("truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold leading-none hover:ring-2 hover:ring-green/50", style, sel?.chip.slotId === chip.slotId && "ring-2 ring-green")} title={`${chip.mentor} is free. Click to book a student.`}>
                             {chip.admin ? "★ " : ""}{text}
@@ -79,6 +82,7 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-ink-faint">
         <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-green/40 bg-green-tint align-middle" />free (click to book)</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm bg-ink align-middle" />booked</span>
+        <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-[#C9A96A] bg-[#F2E4C4] align-middle" />your hours for the paid PI / strategy calls</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-amber-line bg-amber-tint align-middle" />held</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm bg-line-soft align-middle" />blocked</span>
         <span>★ you</span>
@@ -97,12 +101,12 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
                 {students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select></div>
             <div><label className="type-label mb-1.5 block text-ink-faint">Session</label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className={field}>{TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
-            {type === "MOCK_PI" && <div><label className="type-label mb-1.5 block text-ink-faint">Focus</label>
+              <select value={effType} onChange={(e) => setType(e.target.value)} className={field}>{allowed.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+            {effType === "MOCK_PI" && <div><label className="type-label mb-1.5 block text-ink-faint">Focus</label>
               <select value={focus} onChange={(e) => setFocus(e.target.value)} className={field}>{FOCUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>}
             <Button size="sm" disabled={!studentId || busy} onClick={book}>{busy ? "Booking…" : "Book"}</Button>
           </div>
-          {student && <p className="mt-2 text-[12px] text-ink-faint">{student.label.split(" · ")[0]} has <strong className="text-ink-2">{student.credits[creditKind] ?? 0}</strong> {TYPES.find((t) => t[0] === type)![1].toLowerCase()} credit(s) left.</p>}
+          {student && <p className="mt-2 text-[12px] text-ink-faint">{student.label.split(" · ")[0]} has <strong className="text-ink-2">{student.credits[creditKind] ?? 0}</strong> {TYPES.find((t) => t[0] === effType)![1].toLowerCase()} credit(s) left.</p>}
           {students.length === 0 && <p className="mt-2 text-[12px] text-ink-faint">There are no students yet.</p>}
         </div>
       )}

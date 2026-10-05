@@ -42,6 +42,10 @@ enum CreditKind {
   SOP_REVISION
   STRATEGY
   GUIDANCE
+  /// A mock PI taken directly with the owner (never a regular mentor).
+  PI_DIRECT
+  /// A 30-minute strategy call bought as a standalone service with the owner.
+  STRATEGY_DIRECT
 }
 enum OrderStatus {
   CREATED
@@ -77,6 +81,10 @@ enum SessionType {
   STRATEGY_CALL
   GUIDANCE
   GD_BATCH
+  /// A mock PI with the owner directly.
+  PI_DIRECT
+  /// A 30-minute strategy call bought as a standalone service with the owner.
+  STRATEGY_DIRECT
 }
 enum PiFocus {
   HR_PROFILE
@@ -367,6 +375,9 @@ model Product {
   mentorPricePaise Int?
   earlyBirdEndsAt DateTime?
   enrolledOnly    Boolean     @default(false)
+  /// Taken directly by the owner: only the admin's mentor profile can serve it, mentor referral codes don't apply,
+  /// the owner is emailed on every purchase, and enrolled students see it in their Top-up shop.
+  withAdmin       Boolean     @default(false)
   active          Boolean     @default(true)
   summary         String
   includes        String[]
@@ -520,6 +531,7 @@ model AvailabilityWindow {
   startsAt    DateTime
   endsAt      DateTime
   repeatUntil DateTime?
+  direct      Boolean       @default(false)
   createdAt   DateTime      @default(now())
   mentor      MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
 
@@ -534,6 +546,9 @@ model Slot {
   status    SlotStatus    @default(OPEN)
   heldUntil DateTime?
   heldById  String?
+  /// The owner's hours come in two separate kinds. false = free time (ordinary sessions the owner takes);
+  /// true = hours set aside for the paid PI / strategy call with Samrudh. The two never serve each other's bookings.
+  direct    Boolean       @default(false)
   mentor    MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
   session   Session?
 

@@ -439,6 +439,22 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     could pre-register another person's email and receive that person's later guest purchase; fixing it means
     requiring email verification before first sign-in.
 
+42. **Sessions with Samrudh, flagship-only mentor codes, and two kinds of hours (owner's instructions).**
+    *Products*: "PI with Samrudh" (1 hour, 599) and "Strategy call with Samrudh" (30 minutes, 299), buyable by anyone
+    and shown in enrolled students' Top-up shop. They carry their own credit/session types (`PI_DIRECT`,
+    `STRATEGY_DIRECT`), so they can only ever be booked against the owner's mentor profile; no mentor pay accrues; and
+    every purchase emails the owner a specific "{student} asked for: {product}" alert (plus an in-app notice).
+    *WAT and SOP reviews* go straight to the owner whenever mentor mode is on. *Mentor referral codes* now apply ONLY
+    to products that have a mentor-code price (Call Convert and Call Convert Plus); every other product, including the
+    "with Samrudh" ones, is never discounted by a mentor code (admin can still enable it per product by setting its
+    mentor-code price; general codes like TEST90 still work anywhere). *Two kinds of hours* (`Slot.direct`): the
+    owner's free time serves ordinary sessions (owner-first matching) and the strategy calls that come with the
+    programs; hours set aside as "special paid" serve only the 599/299 services. Neither kind ever serves the other:
+    the booking filters, the admin calendar, reassigning, and adding/toggling hours all enforce it. On the owner's
+    availability screen a switch chooses which kind is being added; special hours show amber with a rupee mark. Only
+    the owner can create special hours. The strategy call that comes with Call Convert (45 min) is therefore booked
+    in free time, not special hours (decision for you: say so if you want those to use special hours instead).
+
 ## Assumptions
 
 | # | Topic | Default | Where |

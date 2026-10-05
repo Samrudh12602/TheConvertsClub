@@ -18,7 +18,7 @@ const parts = (iso: string) => {
 };
 
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"]] as const;
 
 interface Props {
   credits: Record<string, number>;
@@ -29,7 +29,7 @@ interface Props {
 
 export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
   const router = useRouter();
-  const [type, setType] = useState(reschedule?.type ?? "MOCK_PI");
+  const [type, setType] = useState(reschedule?.type ?? TYPES.find(([, , k]) => (credits[k] ?? 0) > 0)?.[0] ?? "MOCK_PI");
   const [focus, setFocus] = useState<string | null>(reschedule?.focus ?? "HR_PROFILE");
   const [data, setData] = useState<{ key: string; times: string[] } | null>(null);
   const [reloadN, setReloadN] = useState(0);
@@ -129,6 +129,7 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
             {TYPES.map(([id, label, kind]) => {
               const n = credits[kind] ?? 0;
               const on = type === id;
+              if (n === 0 && (kind === "PI_DIRECT" || kind === "STRATEGY_DIRECT")) return null; // only shown to people who bought it
               if (n === 0 && kind === "GUIDANCE") return <Link key={id} href="/student/payments" className="min-h-11 flex-[1_1_168px] rounded-[9px] border border-line-strong bg-white p-3 text-ink-body no-underline hover:border-ink hover:no-underline"><span className="block text-[13px] font-semibold leading-[1.3]">{label}</span><span className="mt-1 block text-[11.5px] text-ink-faint">Buy · {guidancePrice}</span></Link>;
               return (
                 <button key={id} type="button" disabled={n === 0} aria-pressed={on} onClick={() => choose(id, id === "MOCK_PI" ? focus ?? "HR_PROFILE" : null)}

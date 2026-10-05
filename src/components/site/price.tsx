@@ -56,12 +56,10 @@ export async function Price({
         <p className={clsx("tnum mt-1.5 text-[12.5px] font-semibold leading-[1.3]", onDark ? "text-blush" : "text-green")}>
           {formatPaise(withCode)} <span className="font-medium">with your code {ref.code}</span>
         </p>
-      ) : !ref && (
+      ) : !ref && !product.withAdmin && product.mentorPricePaise !== null && (
         // The teaser everyone sees: a mentor code takes it lower. The code itself is never shown here.
         <p className={clsx("mt-1.5 text-[12px] font-medium leading-[1.35]", onDark ? "text-blush" : "text-green")}>
-          {product.mentorPricePaise !== null
-            ? <><span className="tnum font-semibold">{formatPaise(product.mentorPricePaise)}</span> with a mentor referral code</>
-            : "Even less with a mentor referral code"}
+          <span className="tnum font-semibold">{formatPaise(product.mentorPricePaise!)}</span> with a mentor referral code
         </p>
       )}
     </div>

@@ -27,11 +27,11 @@ async function guard() {
 }
 const refresh = () => { revalidatePath("/mentor", "layout"); revalidatePath("/student", "layout"); };
 
-export async function addWindowAction(input: { date: string; from: string; to: string; repeatUntil?: string }): Promise<Result> {
+export async function addWindowAction(input: { date: string; from: string; to: string; repeatUntil?: string; direct?: boolean }): Promise<Result> {
   try {
     const { mentor } = await guard();
-    const p = z.object({ date, from: time, to: time, repeatUntil: date.optional().or(z.literal("")) }).parse(input);
-    const n = await addWindow(mentor.id, p.date, p.from, p.to, p.repeatUntil || undefined);
+    const p = z.object({ date, from: time, to: time, repeatUntil: date.optional().or(z.literal("")), direct: z.boolean().optional() }).parse(input);
+    const n = await addWindow(mentor.id, p.date, p.from, p.to, p.repeatUntil || undefined, Boolean(p.direct));
     refresh();
     return { ok: true, message: `${n} slot${n === 1 ? "" : "s"} added.` };
   } catch (e) { return fail(e); }
@@ -45,8 +45,8 @@ export async function blockDateAction(d: string, unblock = false): Promise<Resul
   try { const { mentor } = await guard(); const n = unblock ? await unblockDate(mentor.id, date.parse(d)) : await blockDate(mentor.id, date.parse(d)); refresh(); return { ok: true, message: `${n} slot${n === 1 ? "" : "s"} ${unblock ? "reopened" : "blocked"}.` }; } catch (e) { return fail(e); }
 }
 
-export async function toggleSlotAction(iso: string): Promise<Result> {
-  try { const { mentor } = await guard(); await toggleSlot(mentor.id, new Date(iso)); refresh(); return { ok: true }; } catch (e) { return fail(e); }
+export async function toggleSlotAction(iso: string, direct = false): Promise<Result> {
+  try { const { mentor } = await guard(); await toggleSlot(mentor.id, new Date(iso), Boolean(direct)); refresh(); return { ok: true }; } catch (e) { return fail(e); }
 }
 
 const fb = z.object({

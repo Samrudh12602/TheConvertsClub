@@ -14,6 +14,9 @@ export { ReviewError };
 
 /** Least-loaded eligible mentor: must have a pay rate for the service (so SOPs go to Seniors), never the Admin's own mentor mode. */
 async function pickReviewer(kind: ReviewKind, studentIsDemo: boolean) {
+  // WAT and SOP reviews come straight to the owner whenever mentor mode is on; everyone else only gets them when it is off.
+  const owner = await db.mentorProfile.findFirst({ where: { isAdminMentor: true, status: "ACTIVE", user: { isDemo: studentIsDemo } }, select: { id: true } });
+  if (owner) return owner.id;
   const service = serviceForReview(kind);
   const rates = await db.payRate.findMany({ where: { service } });
   const tiers = rates.map((r) => r.tier);

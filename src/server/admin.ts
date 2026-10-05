@@ -5,7 +5,7 @@ import { fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { bonusesDue, type BonusRuleLite } from "@/server/payroll";
-import { HOUR, needsSenior, pickCandidate } from "@/server/scheduling";
+import { HOUR, isAdminOnly, isDirectType, needsSenior, pickCandidate } from "@/server/scheduling";
 import { icsAttachment } from "@/server/ics";
 import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
@@ -29,7 +29,7 @@ export async function suggestMentor(sessionId: string): Promise<{ mentorId: stri
   if (!s?.startsAt) return null;
   const settings = await getSettings();
   const slots = await db.slot.findMany({
-    where: { startsAt: s.startsAt, status: "OPEN", mentor: { status: "ACTIVE", user: { isDemo: Boolean(s.student?.isDemo) }, ...(s.type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) } },
+    where: { startsAt: s.startsAt, status: "OPEN", direct: isDirectType(s.type), mentor: { status: "ACTIVE", user: { isDemo: Boolean(s.student?.isDemo) }, ...(isAdminOnly(s.type) ? { isAdminMentor: true } : {}) } },
     include: { mentor: { include: { user: { select: { name: true } } } } },
   });
   if (!slots.length) return null;
@@ -51,6 +51,8 @@ export async function assignSession(actor: Actor, sessionId: string, mentorId: s
     if (actor.isDemo && (!mentor.user.isDemo || !s.student?.isDemo)) throw new AdminError("The demo admin can only work with demo data.");
     const clash = await tx.session.findFirst({ where: { mentorId, startsAt: s.startsAt, status: { in: ["CONFIRMED", "REQUESTED"] }, id: { not: s.id }, ...(s.gdBatchId ? { gdBatchId: { not: s.gdBatchId } } : {}) } });
     if (clash) throw new AdminError("That mentor already has a session at this time.");
+    const existingSlot = await tx.slot.findUnique({ where: { mentorId_startsAt: { mentorId, startsAt: s.startsAt } } });
+    if (existingSlot && existingSlot.direct !== isDirectType(s.type)) throw new AdminError(isDirectType(s.type) ? "That hour is your free time, not set aside for the paid PI / strategy calls." : "That hour is set aside for the paid PI / strategy calls with Samrudh.");
     const oldMentorId = s.mentorId;
     if (s.slotId && oldMentorId !== mentorId) await tx.slot.update({ where: { id: s.slotId }, data: { status: "OPEN" } });
     const slot = await tx.slot.upsert({ where: { mentorId_startsAt: { mentorId, startsAt: s.startsAt } }, update: { status: "BOOKED", heldById: null, heldUntil: null }, create: { mentorId, startsAt: s.startsAt, endsAt: s.endsAt, status: "BOOKED" } });

@@ -14,7 +14,9 @@ export type CreditKind =
   | "SOP_DETAILED"
   | "SOP_REVISION"
   | "STRATEGY"
-  | "GUIDANCE";
+  | "GUIDANCE"
+  | "PI_DIRECT"
+  | "STRATEGY_DIRECT";
 
 export interface Credit {
   kind: CreditKind;
@@ -32,6 +34,8 @@ export interface CatalogProduct {
   mentorPricePaise: number | null;
   /** Only purchasable from inside the student portal by an enrolled student. */
   enrolledOnly: boolean;
+  /** Taken directly by the owner: the owner is emailed on purchase, mentor referral codes don't apply, and enrolled students see it in their Top-up shop. */
+  withAdmin: boolean;
   credits: Credit[];
   /** One-line description for grids. */
   summary: string;
@@ -73,6 +77,8 @@ const LABELS: Record<CreditKind, { long: [string, string]; short: [string, strin
   SOP_REVISION: { long: ["SOP revision", "SOP revisions"], short: ["SOP revision", "SOP revision"] },
   STRATEGY: { long: ["strategy call", "strategy calls"], short: ["strategy call", "strategy call"] },
   GUIDANCE: { long: ["guidance call", "guidance calls"], short: ["guidance call", "guidance call"] },
+  PI_DIRECT: { long: ["PI with Samrudh", "PIs with Samrudh"], short: ["PI with Samrudh", "PI with Samrudh"] },
+  STRATEGY_DIRECT: { long: ["strategy call with Samrudh", "strategy calls with Samrudh"], short: ["Strategy with Samrudh", "Strategy with Samrudh"] },
 };
 
 /** "4 mock PIs" (long) or "4 Mock PI" (short chip). */
@@ -115,6 +121,9 @@ export function checkCoupon(c: CouponLite | null, payablePaise: number, now: Dat
   if (!c || !c.active) return { ok: false, reason: "That code isn't valid." };
   if (c.expiresAt && c.expiresAt < now) return { ok: false, reason: "That code has expired." };
   if (c.maxUses !== null && c.usedCount >= c.maxUses) return { ok: false, reason: "That code has been fully used." };
+  // A mentor's referral code is a flagship-programs-only discount: it works on a product only when admin has set a
+  // "mentor code price" for it. Every other product is already priced to leave room for mentor pay, so it never discounts.
+  if (c.mentorId && mentorPricePaise === null) return { ok: false, reason: "Mentor codes apply to Call Convert and Call Convert Plus only." };
   const raw = c.mentorId && mentorPricePaise !== null
     ? payablePaise - mentorPricePaise
     : c.type === "PERCENT" ? Math.floor((payablePaise * Math.min(100, Math.max(0, c.value))) / 100 / 100) * 100 : c.value; // whole rupees, never ₹539.10

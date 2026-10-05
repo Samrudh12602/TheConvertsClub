@@ -60,6 +60,18 @@ export interface Candidate {
   load: number;
 }
 
+/** Session types only the owner takes: strategy calls and PIs bought "with Samrudh". No regular mentor is ever matched to these. */
+export const ADMIN_ONLY_TYPES: ReadonlySet<string> = new Set(["STRATEGY_CALL", "PI_DIRECT", "STRATEGY_DIRECT"]);
+export const isAdminOnly = (type: string) => ADMIN_ONLY_TYPES.has(type);
+
+/**
+ * The paid "with Samrudh" services (PI for 599, strategy call for 299) are booked only into hours the owner sets aside
+ * for them (`Slot.direct`). The owner's free time (direct = false) serves ordinary sessions and the strategy calls that
+ * come with the programs. The two kinds of hours never serve each other.
+ */
+export const DIRECT_TYPES: ReadonlySet<string> = new Set(["PI_DIRECT", "STRATEGY_DIRECT"]);
+export const isDirectType = (type: string) => DIRECT_TYPES.has(type);
+
 export const needsSenior = (type: SessionType, focus: PiFocus | null | undefined, seniorFocuses: string[]) =>
   type === "MOCK_PI" && !!focus && seniorFocuses.includes(focus);
 

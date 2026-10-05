@@ -8,7 +8,7 @@ import { guestDetailsSchema, normalizeIndianPhone } from "@/lib/validation/forms
 import { grantCredit, lockUser, getBalances, adjustCredit } from "@/server/credits";
 import { paymentsConfigured, rzp } from "@/server/razorpay";
 import { createLoginLink } from "@/server/magic-link";
-import { sendEmail } from "@/server/email";
+import { adminInbox, sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 import { audit } from "@/server/audit";
 import { hasAcceptedCurrent } from "@/server/legal-acceptance";
@@ -29,7 +29,8 @@ export async function quote(slug: string, couponCode?: string | null, now = new 
   let couponMessage: string | null = null;
   if (couponCode?.trim()) {
     const c = await db.coupon.findUnique({ where: { code: couponCode.trim().toUpperCase() } });
-    const r = checkCoupon(c, v.payablePaise, now, product.mentorPricePaise);
+    // Sessions with Samrudh are the owner's own time, so mentors' referral codes don't discount them (a general code still can).
+    const r = c?.mentorId && product.withAdmin ? { ok: false as const, reason: "Mentor codes don't apply to sessions with Samrudh." } : checkCoupon(c, v.payablePaise, now, product.mentorPricePaise);
     if (r.ok) {
       discountPaise = r.discountPaise;
       couponId = c!.id;
@@ -149,6 +150,7 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
         attachments,
       });
       await notify(result.user.id, { title: `Payment confirmed: ${result.product.name}`, href: "/student" });
+      if (result.product.withAdmin) await alertAdminDirectRequest(result);
     } catch (e) { console.error("post-fulfil side effects failed", e); }
   }
   return result;
@@ -157,6 +159,26 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
 /** A failed payment attempt only marks a still-unpaid order as failed. */
 export async function markOrderFailed(razorpayOrderId: string) {
   await db.order.updateMany({ where: { razorpayOrderId, status: "CREATED" }, data: { status: "FAILED" } });
+}
+
+/**
+ * Someone paid for a session directly with the owner (PI or strategy call). Tell the owner, specifically, the moment it
+ * happens, by email and in the app, with who and what, so nothing waits for them to notice a new order.
+ */
+async function alertAdminDirectRequest(r: { orderId: string; user: { id: string; name: string | null; email: string; phone: string | null; isDemo: boolean }; product: { name: string }; amountPaise: number }) {
+  try {
+    const inbox = adminInbox();
+    const label = r.product.name;
+    if (inbox && !r.user.isDemo) {
+      await sendEmail({
+        template: "direct_request", to: inbox, replyTo: r.user.email, url: `/admin/students/${r.user.id}`,
+        vars: { student: r.user.name ?? r.user.email, product: label },
+        details: [{ k: "Student", v: r.user.name ?? "—" }, { k: "Email", v: r.user.email }, { k: "Phone", v: r.user.phone ?? "—" }, { k: "Asked for", v: label }, { k: "Paid", v: formatPaise(r.amountPaise) }],
+      });
+    }
+    const admins = await db.user.findMany({ where: { role: "ADMIN", status: "ACTIVE", isDemo: r.user.isDemo }, select: { id: true } });
+    await Promise.all(admins.map((a) => notify(a.id, { title: `${r.user.name ?? "A student"} asked for: ${label}`, body: "They'll book a slot with you next.", href: `/admin/students/${r.user.id}` })));
+  } catch (e) { console.error("direct request alert failed", e); }
 }
 
 /**

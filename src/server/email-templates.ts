@@ -10,7 +10,7 @@ export type TemplateKey =
   | "session_cancelled" | "session_rescheduled" | "feedback_published" | "review_completed"
   | "mentor_invite" | "mentor_added" | "mentor_assignment" | "mentor_availability_change"
   | "application_received" | "application_admin_alert"
-  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received" | "credits_expiring" | "credits_expired" | "nudge_mentor_hours" | "nudge_credits" | "nudge_onboarding" | "free_guide";
+  | "payout_processed" | "refund_processed" | "broadcast" | "contact_message" | "contact_received" | "credits_expiring" | "credits_expired" | "nudge_mentor_hours" | "nudge_credits" | "nudge_onboarding" | "free_guide" | "direct_request";
 
 export interface TemplateDef {
   subject: string;
@@ -49,6 +49,7 @@ export const TEMPLATES: Record<TemplateKey, TemplateDef> = {
   nudge_credits: { subject: "You have credits waiting", head: "{credits} ready to use, {name}", body: "You've got unspent credits and nothing booked. Mocks work best when they're spread out before your calls, so pick a slot while good ones are open.", cta: "Book a session", footer: "We'll only remind you once every couple of weeks." },
   nudge_onboarding: { subject: "Two minutes to finish your profile", head: "Finish your profile, {name}", body: "Your mentor reads your profile before every session, so the sharper it is, the better your mock. It takes about two minutes.", cta: "Finish my profile", footer: "We'll only remind you once a week." },
   free_guide: { subject: "Your free 48-hour interview checklist", head: "The 48-hour interview checklist", body: "Ten things to do before your personal interview, in the order to do them. Written by people who sat the same panels last season.", cta: "See how our mocks work", footer: "You asked for this on our website. We won't send you anything else unless you ticked the box for tips." },
+  direct_request: { subject: "{student} asked for: {product}", head: "{student} wants a session with you", body: "They've paid for {product}, to be taken directly with you. They'll pick a time from your open slots next. Reply to this email to reach them, or open their page to book a slot for them.", cta: "Open their page", footer: "Make sure you have open hours published (Mentor mode > Availability), or they won't find a slot." },
   contact_received: { subject: "We got your message", head: "Thanks, {name} — we've got it", body: "We read every message and usually reply within a day. If it's about a session that's about to start, email us again with the session time in the subject.", footer: "You don't need to do anything else." },
 };
 

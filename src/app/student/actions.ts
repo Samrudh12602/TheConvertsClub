@@ -19,7 +19,7 @@ const fail = (e: unknown): { ok: false; error: string } => {
   return { ok: false, error: "Something went wrong. Please try again." };
 };
 
-const typeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE"]);
+const typeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT"]);
 const focusSchema = z.enum(["HR_PROFILE", "ACADEMICS", "STRESS", "INSTITUTE_FINAL", "CURRENT_AFFAIRS", "CROSS_QUESTIONING"]).nullable();
 
 async function guard(scope: string) {

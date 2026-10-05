@@ -26,6 +26,7 @@ function toCatalog(p: Row): CatalogProduct {
     mrpPaise: p.mrpPaise,
     mentorPricePaise: p.mentorPricePaise,
     enrolledOnly: p.enrolledOnly,
+    withAdmin: p.withAdmin,
     credits: p.credits.map((c) => ({ kind: c.kind, quantity: c.quantity })),
     summary: p.summary,
     includes: p.includes,

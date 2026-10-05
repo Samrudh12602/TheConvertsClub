@@ -5,7 +5,7 @@ import { describeCredit, priceView } from "./pricing";
 const bySlug = (s: string) => PRODUCTS.find((p) => p.slug === s)!;
 
 describe("seed catalog matches the spec", () => {
-  it("has the nine products at the specified prices", () => {
+  it("has the eleven products at the specified prices", () => {
     expect(Object.fromEntries(PRODUCTS.map((p) => [p.slug, p.pricePaise / 100]))).toEqual({
       "call-convert-plus": 3999,
       "call-convert": 2599,
@@ -16,6 +16,8 @@ describe("seed catalog matches the spec", () => {
       "sop-detailed": 399,
       "sop-basic": 99,
       "quick-guidance": 299,
+      "pi-with-samrudh": 599,
+      "strategy-with-samrudh": 299,
     });
   });
 
@@ -41,8 +43,8 @@ describe("seed catalog matches the spec", () => {
     }
   });
 
-  it("orders seven singles for the grid, all present", () => {
-    expect(SINGLES_ORDER).toHaveLength(7);
+  it("orders nine singles for the grid, all present", () => {
+    expect(SINGLES_ORDER).toHaveLength(9);
     for (const s of SINGLES_ORDER) expect(bySlug(s).kind).toBe("SINGLE");
   });
 });

@@ -14,6 +14,8 @@ export const TYPE_LABEL: Record<SessionType, string> = {
   STRATEGY_CALL: "Strategy call",
   GUIDANCE: "Guidance call",
   GD_BATCH: "GD/GE",
+  PI_DIRECT: "PI with Samrudh",
+  STRATEGY_DIRECT: "Strategy call with Samrudh",
 };
 
 export const sessionTitle = (type: SessionType, focus?: PiFocus | null) =>
@@ -22,7 +24,7 @@ export const sessionTitle = (type: SessionType, focus?: PiFocus | null) =>
 export const REVIEW_LABEL: Record<ReviewKind, string> = { WAT: "WAT evaluation", SOP_BASIC: "Basic SOP review", SOP_DETAILED: "Detailed SOP review" };
 
 export const CREDIT_LABEL: Record<CreditKind, string> = {
-  PI: "PI", GD: "GD", WAT: "WAT", SOP_BASIC: "SOP basic", SOP_DETAILED: "SOP", SOP_REVISION: "SOP rev", STRATEGY: "strategy", GUIDANCE: "guidance",
+  PI: "PI", GD: "GD", WAT: "WAT", SOP_BASIC: "SOP basic", SOP_DETAILED: "SOP", SOP_REVISION: "SOP rev", STRATEGY: "strategy", GUIDANCE: "guidance", PI_DIRECT: "PI w/ Samrudh", STRATEGY_DIRECT: "strategy w/ Samrudh",
 };
 
 /** Full, singular names — used wherever a credit type needs to read unambiguously on its own,
@@ -36,10 +38,12 @@ export const CREDIT_FULL_LABEL: Record<CreditKind, string> = {
   SOP_REVISION: "SOP revision",
   STRATEGY: "Strategy call",
   GUIDANCE: "Guidance call",
+  PI_DIRECT: "PI with Samrudh",
+  STRATEGY_DIRECT: "Strategy call with Samrudh",
 };
 
 /** Fixed, stable display order for credit kinds — used everywhere a full breakdown is shown. */
-export const CREDIT_KIND_ORDER: CreditKind[] = ["PI", "GD", "WAT", "SOP_BASIC", "SOP_DETAILED", "SOP_REVISION", "STRATEGY", "GUIDANCE"];
+export const CREDIT_KIND_ORDER: CreditKind[] = ["PI", "GD", "WAT", "SOP_BASIC", "SOP_DETAILED", "SOP_REVISION", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT"];
 
 export type Tone = "green" | "amber" | "oxblood" | "indigo" | "stone";
 

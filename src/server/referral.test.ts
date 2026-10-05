@@ -12,8 +12,8 @@ describe("referralPrice", () => {
   it("shows the exact mentor price when the product has one", () => {
     expect(referralPrice(product(), ref())).toBe(299900);
   });
-  it("falls back to the coupon's own percent when the product has no mentor price", () => {
-    expect(referralPrice(product({ mentorPricePaise: null, pricePaise: 100000 }), ref())).toBe(90000);
+  it("gives no discount when the product has no mentor price (only the flagship programs do)", () => {
+    expect(referralPrice(product({ mentorPricePaise: null, pricePaise: 100000 }), ref())).toBeNull();
   });
   it("shows nothing without a referral", () => {
     expect(referralPrice(product(), null)).toBeNull();

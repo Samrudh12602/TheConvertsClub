@@ -41,7 +41,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const byStart = new Map<number, Chip[]>();
   for (const s of slots) {
     const list = byStart.get(s.startsAt.getTime()) ?? [];
-    list.push({ slotId: s.id, mentorId: s.mentorId, mentor: first(s.mentor.user.name), status: s.status, student: s.session?.student?.name ? first(s.session.student.name) : undefined, admin: s.mentor.isAdminMentor });
+    list.push({ slotId: s.id, mentorId: s.mentorId, mentor: first(s.mentor.user.name), status: s.status, student: s.session?.student?.name ? first(s.session.student.name) : undefined, admin: s.mentor.isAdminMentor, direct: s.direct });
     byStart.set(s.startsAt.getTime(), list);
   }
   const rows: CalRow[] = HOURS.map((h) => ({

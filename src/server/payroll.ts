@@ -3,7 +3,7 @@ import type { MentorTier, PayService, ReviewKind, SessionType } from "@/generate
 /** Pure payroll rules. DB-touching code lives in the actions that call these. */
 
 export const serviceForSession = (t: SessionType): PayService | null =>
-  ({ MOCK_PI: "PI", GD_BATCH: "GD", GUIDANCE: "GUIDANCE", STRATEGY_CALL: null } as const)[t];
+  ({ MOCK_PI: "PI", GD_BATCH: "GD", GUIDANCE: "GUIDANCE", STRATEGY_CALL: null, PI_DIRECT: null, STRATEGY_DIRECT: null } as const)[t];
 
 export const serviceForReview = (k: ReviewKind): PayService => (k === "WAT" ? "WAT" : "SOP");
 

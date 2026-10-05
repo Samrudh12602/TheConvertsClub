@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { useMode } from "@/components/mentor/availability-mode";
 import { addWindowAction, blockDateAction, copyWeekAction, toggleSlotAction } from "@/app/mentor/actions";
 
 export function WindowForm({ defaultDate, weekStart }: { defaultDate: string; weekStart: string }) {
@@ -13,6 +14,7 @@ export function WindowForm({ defaultDate, weekStart }: { defaultDate: string; we
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [blockDay, setBlockDay] = useState(defaultDate);
   const [pending, start] = useTransition();
+  const { direct } = useMode();
   const run = (fn: () => Promise<{ ok: boolean; message?: string; error?: string }>) => start(async () => { const r = await fn(); setMsg({ ok: r.ok, text: r.ok ? r.message ?? "Done." : r.error ?? "Failed." }); if (r.ok) router.refresh(); });
   return (
     <div className="flex flex-col gap-3">
@@ -21,7 +23,7 @@ export function WindowForm({ defaultDate, weekStart }: { defaultDate: string; we
         <div className="min-w-[110px] flex-[1_1_110px]"><Field label="From" type="time" step={3600} value={v.from} onChange={(e) => setV({ ...v, from: e.target.value })} /></div>
         <div className="min-w-[110px] flex-[1_1_110px]"><Field label="To" type="time" step={3600} value={v.to} onChange={(e) => setV({ ...v, to: e.target.value })} /></div>
         <div className="min-w-[150px] flex-[1_1_150px]"><Field label="Repeat weekly until" type="date" value={v.repeatUntil} onChange={(e) => setV({ ...v, repeatUntil: e.target.value })} /></div>
-        <Button disabled={pending} onClick={() => run(() => addWindowAction(v))}>Add window</Button>
+        <Button disabled={pending} onClick={() => run(() => addWindowAction({ ...v, direct }))}>{direct ? "Add special hours" : "Add window"}</Button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" size="sm" disabled={pending} onClick={() => run(() => copyWeekAction(weekStart))}>Copy last week</Button>
@@ -34,13 +36,14 @@ export function WindowForm({ defaultDate, weekStart }: { defaultDate: string; we
   );
 }
 
-export type Cell = { iso: string; state: "booked" | "open" | "blocked" | "none" | "past"; label?: string };
+export type Cell = { iso: string; state: "booked" | "open" | "special" | "blocked" | "none" | "past"; label?: string };
 
 export function WeekGrid({ days, rows }: { days: string[]; rows: { hour: string; cells: Cell[] }[] }) {
   const router = useRouter();
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const click = (c: Cell) => { if (c.state === "past") return; start(async () => { setErr(null); const r = await toggleSlotAction(c.iso); if (!r.ok) setErr(r.error); else router.refresh(); }); };
+  const { direct } = useMode();
+  const click = (c: Cell) => { if (c.state === "past") return; start(async () => { setErr(null); const r = await toggleSlotAction(c.iso, direct); if (!r.ok) setErr(r.error); else router.refresh(); }); };
   return (
     <div>
       <div className="overflow-x-auto pb-3">
@@ -55,7 +58,8 @@ export function WeekGrid({ days, rows }: { days: string[]; rows: { hour: string;
               {r.cells.map((c) => (
                 <div key={c.iso} className="p-[3px]">
                   {c.state === "booked" ? <div className="min-h-[30px] overflow-hidden text-ellipsis whitespace-nowrap rounded-[5px] bg-oxblood px-[5px] py-1.5 text-[9.5px] font-semibold leading-[1.2] text-white" title="Booked. Ask Samrudh to move it.">{c.label}</div>
-                  : c.state === "open" ? <button aria-label="Open slot, click to remove" onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-[#DED3C4] bg-[#EFE7DC] hover:bg-[#E3D9CA]" />
+                  : c.state === "open" ? <button aria-label={direct ? "Free-time slot, click to turn it into a special paid slot" : "Open slot, click to remove"} onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-[#DED3C4] bg-[#EFE7DC] hover:bg-[#E3D9CA]" />
+                  : c.state === "special" ? <button aria-label={direct ? "Special paid slot, click to remove" : "Special paid slot, click to turn it into free time"} onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-[#C9A96A] bg-[#F2E4C4] text-[9.5px] font-semibold text-[#6B5420] hover:bg-[#EAD9B0]">₹</button>
                   : c.state === "blocked" ? <div className="min-h-[30px] rounded-[5px] border border-[#DED3C4] bg-[repeating-linear-gradient(45deg,#F0EBE4,#F0EBE4_4px,#E5DFD7_4px,#E5DFD7_8px)]" title="Blocked" />
                   : c.state === "past" ? <div className="min-h-[30px]" />
                   : <button aria-label="Not offered, click to open this hour" onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-dashed border-line hover:border-[#B9AF9F]" />}

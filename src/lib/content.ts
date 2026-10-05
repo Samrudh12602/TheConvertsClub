@@ -34,6 +34,7 @@ export async function getServices() {
     { name: "WAT evaluation", price: priceRangeLabel(by("wat")), body: "Upload your essay. Marked on structure, argument, balance and conclusion, with the paragraph that let you down rewritten.", meta: "24-hour turnaround" },
     { name: "SOP review", price: priceRangeLabel(by("sop-basic", "sop-detailed")), body: "Basic covers structure, tone and red flags. Detailed adds line edits and a rewritten paragraph.", meta: "Detailed includes one revision on Plus" },
     { name: "Strategy call", price: "In packages", body: "Forty-five minutes on sequencing: which calls to prioritise, what to drop, what your profile can and can't carry.", meta: "With Samrudh" },
+    { name: "PI / Strategy with Samrudh", price: priceRangeLabel(by("pi-with-samrudh", "strategy-with-samrudh")), body: "Want it straight from the founder? A one-hour mock PI, or a 30-minute strategy call, directly with Samrudh.", meta: "Written feedback within 24 hours" },
     { name: "Quick Guidance", price: priceRangeLabel(by("quick-guidance")), body: "For people who aren't sure they need any of the above. One call, honest answer about where you stand.", meta: "45 minutes" },
   ];
 }

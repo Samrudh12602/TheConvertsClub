@@ -28,7 +28,7 @@ export const getReferral = cache(async (): Promise<Referral | null> => {
 
 /** What this product costs with the referral applied, or null when it makes no difference. */
 export function referralPrice(product: CatalogProduct, ref: Referral | null): number | null {
-  if (!ref) return null;
+  if (!ref || product.withAdmin) return null; // sessions with Samrudh are never discounted by a mentor code
   const payable = priceView(product).payablePaise;
   const r = checkCoupon(ref.coupon, payable, new Date(), product.mentorPricePaise);
   return r.ok ? payable - r.discountPaise : null;

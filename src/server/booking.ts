@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings-db";
 import { fmtDay, fmtTime, fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { getBalances, InsufficientCreditsError, lockUser, releaseCredit, consumeCredit, reserveCredit, sessionCreditKind } from "@/server/credits";
-import { canReschedule, cancelOutcome, HOUR, istDayRange, needsSenior, pickCandidate, type Candidate } from "@/server/scheduling";
+import { canReschedule, cancelOutcome, HOUR, isAdminOnly, isDirectType, istDayRange, needsSenior, pickCandidate, type Candidate } from "@/server/scheduling";
 import { icsAttachment } from "@/server/ics";
 import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
@@ -20,7 +20,7 @@ const now = () => new Date();
 const openOrExpiredHold = (t: Date) => ({ OR: [{ status: "OPEN" as const }, { status: "HELD" as const, heldUntil: { lt: t } }] });
 
 /** Mentors whose slots can serve this session type. Strategy calls are Samrudh's; everything else any active mentor. */
-const mentorFilter = (type: SessionType, demo: boolean) => ({ status: "ACTIVE" as const, user: { isDemo: demo }, ...(type === "STRATEGY_CALL" ? { isAdminMentor: true } : {}) });
+export const mentorFilter = (type: SessionType, demo: boolean) => ({ status: "ACTIVE" as const, user: { isDemo: demo }, ...(isAdminOnly(type) ? { isAdminMentor: true } : {}) });
 
 /** Real students are only ever matched to real mentors, and demo students to demo mentors, so a fake demo mentor can never get a real booking. */
 const isDemoStudent = async (client: Pick<typeof db, "user">, studentId: string) => Boolean((await client.user.findUnique({ where: { id: studentId }, select: { isDemo: true } }))?.isDemo);
@@ -28,7 +28,7 @@ const isDemoStudent = async (client: Pick<typeof db, "user">, studentId: string)
 async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean): Promise<Candidate[]> {
   const t = now();
   const slots = await tx.slot.findMany({
-    where: { startsAt, ...openOrExpiredHold(t), mentor: mentorFilter(type, demo) },
+    where: { startsAt, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, demo) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
   });
   if (!slots.length) return [];
@@ -48,7 +48,7 @@ export async function availableTimesRange(studentId: string, type: SessionType, 
   const earliest = new Date(Math.max(rangeFrom.getTime(), t.getTime() + s.minLeadHours * HOUR));
   if (earliest >= rangeTo) return [];
   const slots = await db.slot.findMany({
-    where: { startsAt: { gte: earliest, lt: rangeTo }, ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId)) },
+    where: { startsAt: { gte: earliest, lt: rangeTo }, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId)) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
     orderBy: { startsAt: "asc" },
   });
@@ -146,7 +146,8 @@ export async function bookSpecificSlot(studentId: string, slotId: string, type: 
     if (!slot || slot.startsAt.getTime() <= now().getTime()) throw new BookingError("That slot isn't available any more.", "TAKEN");
     if (slot.mentor.status !== "ACTIVE") throw new BookingError("That mentor isn't active.", "NOT_ALLOWED");
     if (slot.mentor.user.isDemo !== Boolean(student?.isDemo)) throw new BookingError("Demo and real accounts can't be mixed.", "NOT_ALLOWED");
-    if (type === "STRATEGY_CALL" && !slot.mentor.isAdminMentor) throw new BookingError("Strategy calls are only taken by the admin.", "NOT_ALLOWED");
+    if (isAdminOnly(type) && !slot.mentor.isAdminMentor) throw new BookingError("That kind of session is only taken by the admin.", "NOT_ALLOWED");
+    if (slot.direct !== isDirectType(type)) throw new BookingError(isDirectType(type) ? "That hour is your free time, not set aside for the paid PI / strategy calls." : "That hour is set aside for the paid PI / strategy calls with Samrudh.", "NOT_ALLOWED");
     if (needsSenior(type, focus, s.seniorRequiredFocuses) && slot.mentor.tier !== "SENIOR") throw new BookingError("That focus needs a Senior mentor.", "NOT_ALLOWED");
     const clash = await tx.session.count({ where: { studentId, startsAt: slot.startsAt, status: { in: ["CONFIRMED", "REQUESTED"] } } });
     if (clash) throw new BookingError("That student already has a session at that time.", "NOT_ALLOWED");
