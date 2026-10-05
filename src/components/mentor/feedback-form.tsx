@@ -16,17 +16,18 @@ const AREAS = [
   ["questionsToPrepare", "Questions to prepare", "text-ink-muted", "Three to five, based on their form and today's gaps."],
 ] as const;
 
-type Form = { scores: Record<string, number>; strengths: string; weaknesses: string; redFlags: string; answerFraming: string; questionsToPrepare: string; recommendation: string; privateNote: string };
-const empty: Form = { scores: {}, strengths: "", weaknesses: "", redFlags: "", answerFraming: "", questionsToPrepare: "", recommendation: "", privateNote: "" };
+type Form = { recordingUrl: string; heldAt: string; scores: Record<string, number>; strengths: string; weaknesses: string; redFlags: string; answerFraming: string; questionsToPrepare: string; recommendation: string; privateNote: string };
+const empty: Form = { recordingUrl: "", heldAt: "", scores: {}, strengths: "", weaknesses: "", redFlags: "", answerFraming: "", questionsToPrepare: "", recommendation: "", privateNote: "" };
 
-export function FeedbackForm({ targetId }: { targetId: string }) {
+/** `proof` is set for live sessions (not written reviews): the recording link that confirms it took place. */
+export function FeedbackForm({ targetId, proof }: { targetId: string; proof?: { required: boolean; scheduledAtLabel: string; notDueYet: boolean; defaultLink: string } }) {
   const router = useRouter();
   const key = `feedback-draft:${targetId}`;
   // A saved draft lives in localStorage; read it as an external store so there is no setState-in-effect.
   const subscribe = (cb: () => void) => { window.addEventListener("storage", cb); return () => window.removeEventListener("storage", cb); };
   const draft = useSyncExternalStore(subscribe, () => { try { return localStorage.getItem(key); } catch { return null; } }, () => null);
   const [edited, setEdited] = useState<Form | null>(null);
-  const f: Form = edited ?? (draft ? { ...empty, ...(JSON.parse(draft) as Partial<Form>) } : empty);
+  const f: Form = edited ?? (draft ? { ...empty, ...(JSON.parse(draft) as Partial<Form>) } : { ...empty, recordingUrl: proof?.defaultLink ?? "" });
   const setF = (next: Form) => setEdited(next);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -36,8 +37,10 @@ export function FeedbackForm({ targetId }: { targetId: string }) {
   async function submit() {
     setErr(null);
     if (!f.recommendation) { setErr("Choose an overall recommendation."); return; }
+    if (proof?.required && !f.recordingUrl.trim()) { setErr("Add the recording link: it's how we confirm the session took place."); return; }
+    if (proof?.notDueYet && !f.heldAt) { setErr("This session isn't due yet, so say when it actually took place."); return; }
     setBusy(true);
-    const r = await submitFeedbackAction(targetId, { scores: f.scores, strengths: f.strengths, weaknesses: f.weaknesses, redFlags: f.redFlags, answerFraming: f.answerFraming, questionsToPrepare: f.questionsToPrepare, recommendation: f.recommendation as never, privateNote: f.privateNote });
+    const r = await submitFeedbackAction(targetId, { ...(proof ? { recordingUrl: f.recordingUrl.trim() || undefined, heldAt: f.heldAt ? new Date(f.heldAt).toISOString() : undefined } : {}), scores: f.scores, strengths: f.strengths, weaknesses: f.weaknesses, redFlags: f.redFlags, answerFraming: f.answerFraming, questionsToPrepare: f.questionsToPrepare, recommendation: f.recommendation as never, privateNote: f.privateNote });
     setBusy(false);
     if (!r.ok) { setErr(r.error); return; }
     try { localStorage.removeItem(key); } catch { /* ignore */ }
@@ -48,6 +51,23 @@ export function FeedbackForm({ targetId }: { targetId: string }) {
 
   return (
     <div className="flex max-w-[800px] flex-col gap-3.5">
+      {proof && (
+        <div className={card}>
+          <h2 className="text-[13px] font-bold leading-none text-ink">Proof the session took place</h2>
+          <p className="mt-2 text-[12px] leading-[1.55] text-ink-faint">You can complete a session any time — before, during or after its booked slot ({proof.scheduledAtLabel}). Add the recording link and your feedback below and it is marked done.</p>
+          <div className="mt-3.5 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+            <div>
+              <label htmlFor="recordingUrl" className="type-label mb-1.5 block text-ink-faint">Recording or video link{proof.required ? "" : " (optional for you)"}</label>
+              <input id="recordingUrl" type="url" inputMode="url" value={f.recordingUrl} onChange={(e) => setF({ ...f, recordingUrl: e.target.value })} placeholder="https://drive.google.com/…" className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-base text-ink md:text-[13px]" />
+            </div>
+            <div>
+              <label htmlFor="heldAt" className="type-label mb-1.5 block text-ink-faint">When did it take place?{proof.notDueYet ? " (needed — it isn’t due yet)" : " (optional)"}</label>
+              <input id="heldAt" type="datetime-local" value={f.heldAt} onChange={(e) => setF({ ...f, heldAt: e.target.value })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-base text-ink md:text-[13px]" />
+            </div>
+          </div>
+          <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">Share the link so that Samrudh and the student can open it. Your pay for the session is added when you submit.</p>
+        </div>
+      )}
       <div className={card}>
         <h2 className="text-[13px] font-bold leading-none text-ink">Rubric · 1 to 10</h2>
         <div className="mt-3.5 flex flex-col gap-3">

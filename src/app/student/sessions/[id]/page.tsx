@@ -34,7 +34,7 @@ export default async function SessionDetail({ params, searchParams }: { params: 
         <div>
           <h2 className="font-display text-[19px] font-bold leading-[1.25] text-ink">{title}</h2>
           <p className="mt-[5px] text-[12.5px] leading-normal text-ink-faint">{s.startsAt ? fmtWhen(s.startsAt) + " IST" : ""}{mentor ? ` · ${mentor}` : ""}{s.startsAt && upcoming ? ` · ${relative(s.startsAt)}` : ""}</p>
-          <div className="mt-2"><StatusPill tone={st.tone}>{st.label}</StatusPill></div>
+          <div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill tone={st.tone}>{st.label}</StatusPill>{s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold">Watch the recording ↗</a>}</div>
         </div>
         {f && <div className="text-right"><p className="type-label text-ink-faint">Overall</p><p className={`tnum mt-1.5 font-display text-[30px] font-bold leading-none ${SCORE_TEXT[scoreTone(f.overall)]}`}>{f.overall.toFixed(1)}</p></div>}
       </div>

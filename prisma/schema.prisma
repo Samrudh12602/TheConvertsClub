@@ -575,6 +575,10 @@ model Session {
   startsAt        DateTime?
   endsAt          DateTime?
   meetingUrl      String?
+  /// Proof the session happened: the mentor's recording/video link, required (except for the owner) to mark it complete.
+  recordingUrl    String?
+  /// When it actually took place, if the mentor said (a session can be completed before or after its booked slot).
+  heldAt          DateTime?
   notes           String?
   gdBatchId       String?
   rescheduleCount Int           @default(0)

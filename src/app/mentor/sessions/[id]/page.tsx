@@ -30,11 +30,11 @@ export default async function MentorSession({ params }: { params: Promise<{ id: 
         <div>
           <h2 className="font-display text-[17px] font-bold leading-[1.25] text-ink">{s.type === "GD_BATCH" ? s.gdBatch?.topic ?? "GD batch" : `${nm(s.student?.name)} · ${sessionTitle(s.type, s.focus)}`}</h2>
           <p className="mt-1 text-[12.5px] leading-[1.45] text-ink-faint">{s.startsAt ? `${fmtWhen(s.startsAt)} IST` : ""}</p>
-          <div className="mt-2"><StatusPill tone={st.tone}>{st.label}</StatusPill></div>
+          <div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill tone={st.tone}>{st.label}</StatusPill>{s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold">Recording ↗</a>}{s.heldAt && <span className="text-[11.5px] text-ink-faint">Took place {fmtWhen(s.heldAt)} IST</span>}</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {s.status === "CONFIRMED" && s.meetingUrl && <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-line-strong bg-white px-4 text-[13px] font-medium leading-none text-ink-2 no-underline hover:border-ink hover:text-ink hover:no-underline">Join meeting</a>}
-          {s.status === "CONFIRMED" && started && <ButtonLink href={`/mentor/feedback/${s.id}`}>Submit feedback</ButtonLink>}
+          {s.status === "CONFIRMED" && <ButtonLink href={`/mentor/feedback/${s.id}`}>{started ? "Complete session" : "Complete early"}</ButtonLink>}
           {s.status === "CONFIRMED" && started && <NoShowButton sessionId={s.id} />}
         </div>
       </div>

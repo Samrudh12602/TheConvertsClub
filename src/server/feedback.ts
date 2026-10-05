@@ -19,6 +19,25 @@ export interface FeedbackInput {
   questionsToPrepare?: string;
   recommendation: Recommendation;
   privateNote?: string;
+  /** Proof the session happened (a recording or video link). Required for sessions, except the owner's own. */
+  recordingUrl?: string;
+  /** When it actually took place (ISO). Optional, but needed when completing before the booked time. */
+  heldAt?: string;
+}
+
+/**
+ * A recording link is the mentor's proof that the session took place. We can't see inside a private Drive or Zoom
+ * link, so what is checked is that it is a real, public-looking https link. Admin can open it from the session.
+ */
+export function checkRecordingUrl(raw: string | undefined): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  if (v.length > 500) throw new FeedbackError("That link is too long.");
+  let u: URL;
+  try { u = new URL(v); } catch { throw new FeedbackError("Enter the recording link as a full address, like https://drive.google.com/…"); }
+  if (u.protocol !== "https:") throw new FeedbackError("The recording link must start with https://");
+  if (/^(localhost|127\.|10\.|192\.168\.)/i.test(u.hostname) || !u.hostname.includes(".")) throw new FeedbackError("Enter a link that others can open (not a local or private address).");
+  return u.toString();
 }
 
 function validate(i: FeedbackInput) {
@@ -49,11 +68,23 @@ export async function submitSessionFeedback(mentorId: string, sessionId: string,
     if (!s || s.mentorId !== mentorId || !s.studentId) throw new FeedbackError("Session not found.");
     if (s.feedback) throw new FeedbackError("Feedback was already submitted for this session.");
     if (s.status !== "CONFIRMED" && s.status !== "IN_PROGRESS") throw new FeedbackError("Only confirmed sessions can be completed.");
-    if (s.startsAt && s.startsAt.getTime() > Date.now()) throw new FeedbackError("You can submit feedback once the session has started.");
+    // No time restriction on purpose: a session can be completed before, during or long after its booked slot (it may
+    // have happened early, late or on a different day). What is required is the proof and the feedback.
+    const recordingUrl = checkRecordingUrl(input.recordingUrl);
+    if (!recordingUrl && !s.mentor?.isAdminMentor) throw new FeedbackError("Add the recording link: it's how we confirm the session took place.");
+    let heldAt: Date | null = null;
+    if (input.heldAt) {
+      heldAt = new Date(input.heldAt);
+      if (Number.isNaN(heldAt.getTime())) throw new FeedbackError("That date and time isn't valid.");
+      if (heldAt.getTime() > Date.now() + 5 * 60_000) throw new FeedbackError("The session can't have taken place in the future.");
+    }
+    if (!heldAt && s.startsAt && s.startsAt.getTime() > Date.now() + 15 * 60_000) throw new FeedbackError("This session isn't due yet, so tell us when it actually took place.");
     await lockUser(tx, s.studentId);
     const overall = overallScore(input.scores);
     await tx.feedback.create({ data: { sessionId, mentorId, scores: input.scores, overall, strengths: input.strengths.trim(), weaknesses: input.weaknesses.trim(), redFlags: input.redFlags?.trim() || null, answerFraming: input.answerFraming?.trim() || null, questionsToPrepare: input.questionsToPrepare?.trim() || null, recommendation: input.recommendation, privateNote: input.privateNote?.trim() || null } });
-    await tx.session.update({ where: { id: sessionId }, data: { status: "COMPLETED" } });
+    await tx.session.update({ where: { id: sessionId }, data: { status: "COMPLETED", recordingUrl, heldAt } });
+    // One recording covers a whole GD batch: share it with the other participants' sessions that don't have one yet.
+    if (recordingUrl && s.gdBatchId) await tx.session.updateMany({ where: { gdBatchId: s.gdBatchId, id: { not: sessionId }, recordingUrl: null }, data: { recordingUrl } });
     await consumeCredit(tx, { userId: s.studentId, kind: sessionCreditKind(s.type), sessionId });
 
     const service = serviceForSession(s.type);

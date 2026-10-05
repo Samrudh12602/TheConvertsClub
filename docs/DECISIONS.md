@@ -470,6 +470,17 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     paid once; awards start "pending approval" and flow through the existing approve -> payout run. The Mentor Agreement
     now says so (legal version 2026-10-05, so mentors are asked to accept again).
 
+44. **Completing a session: proof link plus feedback, with no time restriction.** A mentor marks a live session
+    complete by submitting the feedback together with a recording/video link (`Session.recordingUrl`); that single step
+    completes the session, uses the student's credit and accrues the mentor's pay. It can be done at ANY time (before,
+    during or long after the booked slot): the old rule that blocked it until the session had started is gone, and
+    "Complete early" appears for sessions not yet due. A session completed more than 15 minutes before its start also
+    needs "when did it take place" (`heldAt`, never in the future). The link must be a public https address (we can't
+    see inside a private Drive/Zoom link, so admin opens it to audit; the system checks format only). It is required
+    for every mentor except the owner. One recording covers a whole GD batch (shared to the other participants'
+    sessions). Students see "Watch the recording"; mentors and admin see it too. Nothing auto-completes a session and
+    nothing locks one; the admin "feedback overdue" flags remain as information only.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

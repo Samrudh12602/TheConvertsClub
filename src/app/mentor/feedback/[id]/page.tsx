@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { FeedbackForm } from "@/components/mentor/feedback-form";
 import { db } from "@/lib/db";
+import { nowMs } from "@/lib/datetime";
 import { fmtWhen, relative } from "@/lib/format";
 import { REVIEW_LABEL, sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
@@ -24,6 +25,8 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
   if (!mine || (!session && !review)) notFound();
   if ((session?.feedback ?? review?.feedback)) redirect(session ? `/mentor/sessions/${id}` : "/mentor/reviews");
 
+  // One recording usually covers a whole GD batch: offer it to the other participants' sessions.
+  const sharedLink = session?.gdBatchId ? (await db.session.findFirst({ where: { gdBatchId: session.gdBatchId, recordingUrl: { not: null } }, select: { recordingUrl: true } }))?.recordingUrl : null;
   const service = session ? serviceForSession(session.type) : serviceForReview(review!.kind);
   const rate = service && !mentor.isAdminMentor ? (await db.payRate.findUnique({ where: { tier_service: { tier: mentor.tier, service } } }))?.amountPaise : null;
   const dueAt = session?.startsAt ? new Date(session.startsAt.getTime() + settings.feedbackDueHours * 3_600_000) : review?.dueAt;
@@ -40,7 +43,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
         </div>
         <div className="rounded-lg border border-amber-line bg-amber-tint px-[11px] py-2 text-[11.5px] font-semibold leading-none text-amber">{dueAt ? `Due ${relative(dueAt)}` : ""}{rate ? ` · ${formatPaise(rate)} accrues on submit` : ""}</div>
       </div>
-      <FeedbackForm targetId={id} />
+      <FeedbackForm targetId={id} proof={session ? { required: !mentor.isAdminMentor, scheduledAtLabel: session.startsAt ? `${fmtWhen(session.startsAt)} IST` : "no time set", notDueYet: Boolean(session.startsAt && session.startsAt.getTime() > nowMs() + 15 * 60_000), defaultLink: sharedLink ?? "" } : undefined} />
     </PortalPage>
   );
 }

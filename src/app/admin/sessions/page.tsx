@@ -42,7 +42,7 @@ export default async function AllSessionsPage({ searchParams }: { searchParams: 
                     <td className="px-3 py-2.5 text-ink-body">{nm(s.student?.name) || "GD batch"}</td>
                     <td className="px-3 py-2.5 text-ink-muted">{sessionTitle(s.type, s.focus)}</td>
                     <td className="px-3 py-2.5 text-ink-muted">{s.mentor ? nm(s.mentor.user.name) : "—"}</td>
-                    <td className="px-3 py-2.5"><StatusPill tone={st.tone}>{st.label}</StatusPill></td>
+                    <td className="px-3 py-2.5"><StatusPill tone={st.tone}>{st.label}</StatusPill>{s.recordingUrl && <a href={s.recordingUrl} target="_blank" rel="noreferrer" className="ml-2 text-[11.5px] font-semibold">Recording ↗</a>}</td>
                     <td className="px-3 py-2.5">{["CONFIRMED", "REQUESTED"].includes(s.status) && <AdminCancelButton sessionId={s.id} />}</td>
                   </tr>
                 );

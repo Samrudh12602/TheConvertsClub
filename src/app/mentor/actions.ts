@@ -55,6 +55,7 @@ const fb = z.object({
   redFlags: z.string().max(2000).optional(), answerFraming: z.string().max(4000).optional(), questionsToPrepare: z.string().max(2000).optional(),
   recommendation: z.enum(["READY", "NEARLY_THERE", "NEEDS_MORE_MOCKS", "REWORK_BASICS"]),
   privateNote: z.string().max(2000).optional(),
+  recordingUrl: z.string().max(500).optional(), heldAt: z.string().max(40).optional(),
 });
 
 /** `id` is a session id or a review id; the server works out which and checks it's assigned to this mentor. */
