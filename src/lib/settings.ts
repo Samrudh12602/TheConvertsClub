@@ -24,6 +24,9 @@ export const DEFAULT_SETTINGS = {
   /** What counts as a "mock" for bonuses: completed PI, GD and WAT by default. */
   mockCounts: ["PI", "GD", "WAT"] as string[],
   bonusPeriod: "SEASON" as "SEASON" | "MONTH",
+  /** Referral bonus: every N students a mentor refers earns them this percent of the fees those students paid. */
+  referralBonusEvery: 10,
+  referralBonusPercent: 5,
   /** Admin's own sessions accrue no pay unless this is on. */
   adminAccrues: false,
   /** Show demo accounts, demo mentors and demo rows (all fake). Off for real use; Admin can switch it on to test. */

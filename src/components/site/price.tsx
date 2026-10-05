@@ -52,6 +52,11 @@ export async function Price({
           </span>
         )}
       </div>
+      {product.earlyBird && product.earlyBird.seatsLeft > 0 && (
+        <p className={clsx("mt-1.5 text-[12px] font-semibold leading-[1.35]", onDark ? "text-blush" : "text-oxblood")}>
+          Early bird · {product.earlyBird.seatsLeft} of {product.earlyBird.limit} seats left
+        </p>
+      )}
       {withCode !== null && ref ? (
         <p className={clsx("tnum mt-1.5 text-[12.5px] font-semibold leading-[1.3]", onDark ? "text-blush" : "text-green")}>
           {formatPaise(withCode)} <span className="font-medium">with your code {ref.code}</span>

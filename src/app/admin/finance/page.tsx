@@ -4,6 +4,7 @@ import { RefundButton } from "@/components/admin/refund-form";
 import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
 import { formatPaise } from "@/lib/money";
+import { gatewayCost } from "@/lib/gateway-fee";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Finance" };
@@ -12,7 +13,7 @@ export default async function FinancePage() {
   const db = await adminDb();
   const [grossAgg, feeAgg, refundAgg, payableAgg, payments, byProduct] = await Promise.all([
     db.order.aggregate({ where: { status: { in: ["PAID", "PARTIALLY_REFUNDED"] } }, _sum: { amountPaise: true } }),
-    db.payment.aggregate({ where: { status: "CAPTURED" }, _sum: { feePaise: true, taxPaise: true } }),
+    db.payment.aggregate({ where: { status: "CAPTURED" }, _sum: { amountPaise: true } }),
     db.refund.aggregate({ _sum: { amountPaise: true }, _count: true }),
     db.payoutAccrual.aggregate({ _sum: { amountPaise: true } }),
     db.order.findMany({ where: { status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" }, take: 25, include: { product: { select: { name: true } }, payments: { select: { razorpayPaymentId: true } } } }),
@@ -20,7 +21,9 @@ export default async function FinancePage() {
   ]);
   const products = Object.fromEntries((await db.product.findMany({ select: { id: true, name: true } })).map((p) => [p.id, p.name]));
   const gross = grossAgg._sum.amountPaise ?? 0;
-  const fees = feeAgg._sum.feePaise ?? 0;
+  // One rule everywhere: Razorpay keeps 2% plus 18% GST on that 2% (2.36% in all). Refunds don't return the gateway's fee.
+  const gateway = gatewayCost(feeAgg._sum.amountPaise ?? 0);
+  const fees = gateway.totalPaise;
   const refunds = refundAgg._sum.amountPaise ?? 0;
   const mentorCost = payableAgg._sum.amountPaise ?? 0;
   const net = gross - fees - refunds - mentorCost;
@@ -30,7 +33,7 @@ export default async function FinancePage() {
     <PortalPage width="max-w-[1000px]">
       <KpiGrid>
         <Kpi label="Gross revenue" value={formatPaise(gross)} note="Season to date" />
-        <Kpi label="Gateway fees" value={formatPaise(fees)} note={gross ? `${((fees / gross) * 100).toFixed(1)}% blended` : ""} />
+        <Kpi label="Gateway cost" value={formatPaise(fees)} note={`2% fee ${formatPaise(gateway.feePaise)} + 18% GST ${formatPaise(gateway.gstPaise)}`} />
         <Kpi label="Refunds" value={formatPaise(refunds)} note={`${refundAgg._count} orders`} noteTone="oxblood" />
         <Kpi label="Mentor cost" value={formatPaise(mentorCost)} note={gross ? `${((mentorCost / gross) * 100).toFixed(0)}% of gross` : ""} />
         <Kpi label="Net" value={formatPaise(net)} note="After fees, refunds, payouts" noteTone="green" />

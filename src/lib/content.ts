@@ -60,11 +60,14 @@ export async function faqs() {
   return defaultFaqs();
 }
 
-export const mentorPerks = [
-  { title: "Paid per session", body: "Rates are fixed and visible in your portal. Pay accrues the moment you submit feedback, not when the student pays." },
-  { title: "Your hours", body: "Publish the hours you're free. Nothing is assigned outside them. Pause any time." },
-  { title: "Bonuses at volume", body: "Milestone bonuses through the season on top of per-session pay." },
-];
+export const mentorPerks = async () => {
+  const p = await getPolicy();
+  return [
+    { title: "Paid per session", body: "Rates are fixed and visible in your portal. Pay accrues the moment you submit feedback, not when the student pays." },
+    { title: "Your hours", body: "Publish the hours you're free. Nothing is assigned outside them. Pause any time." },
+    { title: "Referral bonus", body: `Every ${p.referralBonusEvery} students who join with your code earn you ${p.referralBonusPercent}% of the fees they paid, on top of your per-session pay.` },
+  ];
+};
 
 export const legalDocs = async () => buildLegalDocs(await getPolicy());
 

@@ -1,11 +1,10 @@
-import type { AccrualStatus, MentorTier } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings-db";
 import { fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
-import { bonusesDue, type BonusRuleLite } from "@/server/payroll";
-import { HOUR, isAdminOnly, isDirectType, needsSenior, pickCandidate } from "@/server/scheduling";
+import { isAdminOnly, isDirectType, needsSenior, pickCandidate } from "@/server/scheduling";
+import { accrueReferralBonuses } from "@/server/referral-bonus";
 import { icsAttachment } from "@/server/ics";
 import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
@@ -150,37 +149,11 @@ export async function markPayoutPaid(actor: Actor, payoutId: string, reference: 
 
 // ───────────── bonuses ─────────────
 
-/** Start/end of the bonus period as UTC instants. SEASON uses the Season dates in Settings; MONTH is the current IST month. */
-export function periodRange(period: "SEASON" | "MONTH", s: { seasonStart: string; seasonEnd: string }, now: Date) {
-  if (period === "SEASON") return { from: new Date(`${s.seasonStart}T00:00:00+05:30`), to: new Date(`${s.seasonEnd}T23:59:59+05:30`), key: "season" };
-  const ist = new Date(now.getTime() + 5.5 * HOUR);
-  const y = ist.getUTCFullYear(), m = ist.getUTCMonth();
-  const from = new Date(Date.UTC(y, m, 1) - 5.5 * HOUR), to = new Date(Date.UTC(y, m + 1, 1) - 5.5 * HOUR);
-  return { from, to, key: `${y}-${String(m + 1).padStart(2, "0")}` };
-}
-
 /**
- * Compute milestone bonuses at period close. Awards are created as ACCRUED = "pending approval" (the preview);
- * Admin approves them into a payout run. Safe to run repeatedly: (mentor, rule, period) is unique.
+ * The only bonus is the referral bonus (milestone bonuses for completing N sessions were retired): every N students a
+ * mentor refers earns them a percent of the fees those students paid. This creates the ones that have become due, as
+ * "pending approval"; Admin approves them into a payout run. Safe to run repeatedly.
  */
 export async function previewBonuses(now = new Date()) {
-  const settings = await getSettings();
-  const { from, to, key } = periodRange(settings.bonusPeriod, settings, now);
-  const rules = await db.bonusRule.findMany({ where: { period: settings.bonusPeriod, active: true } });
-  const lite: BonusRuleLite[] = rules.map((r) => ({ id: r.id, tier: r.tier as MentorTier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
-  const mentors = await db.mentorProfile.findMany({ where: { status: { not: "OFFBOARDED" }, isAdminMentor: false } });
-  const created: { mentorId: string; ruleId: string; amountPaise: number }[] = [];
-  for (const m of mentors) {
-    const types = [settings.mockCounts.includes("PI") && "MOCK_PI", settings.mockCounts.includes("GD") && "GD_BATCH"].filter(Boolean) as ("MOCK_PI" | "GD_BATCH")[];
-    const [a, b] = await Promise.all([
-      types.length ? db.session.count({ where: { mentorId: m.id, status: "COMPLETED", type: { in: types }, startsAt: { gte: from, lt: to } } }) : 0,
-      settings.mockCounts.includes("WAT") ? db.review.count({ where: { assignedMentorId: m.id, status: "COMPLETED", kind: "WAT", completedAt: { gte: from, lt: to } } }) : 0,
-    ]);
-    const have = new Set((await db.bonusAward.findMany({ where: { mentorId: m.id, periodKey: key }, select: { ruleId: true } })).map((x) => x.ruleId));
-    for (const r of bonusesDue(m.tier, a + b, lite, have)) {
-      await db.bonusAward.create({ data: { mentorId: m.id, ruleId: r.id, periodKey: key, amountPaise: r.amountPaise, status: "ACCRUED" as AccrualStatus } }).catch(() => undefined);
-      created.push({ mentorId: m.id, ruleId: r.id, amountPaise: r.amountPaise });
-    }
-  }
-  return { periodKey: key, created };
+  return accrueReferralBonuses(now);
 }

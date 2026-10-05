@@ -33,6 +33,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     slug: product.slug,
     name: product.name,
     items: product.credits.map((c) => describeCredit(c)),
+    earlyBirdSeatsLeft: product.earlyBird && product.earlyBird.seatsLeft > 0 ? product.earlyBird.seatsLeft : undefined,
     listPricePaise: v.strikePaise,
     discountPaise: v.strikePaise !== null ? v.strikePaise - v.payablePaise : 0,
     totalPaise: v.payablePaise,

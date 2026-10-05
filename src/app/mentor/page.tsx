@@ -6,7 +6,7 @@ import { fmtWhen, relative } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { getSettings } from "@/lib/settings-db";
-import { nextThreshold } from "@/server/payroll";
+import { referralProgress } from "@/server/referral-bonus";
 import { checklistProgress, mentorChecklist } from "@/lib/mentor-checklist";
 import { mentorBoard } from "@/server/leaderboard";
 import { requireMentor } from "@/server/session";
@@ -18,24 +18,20 @@ export default async function MentorDashboard() {
   const settings = await getSettings();
   const now = new Date();
   const weekEnd = new Date(now.getTime() + 7 * 86_400_000);
-  const [openWeek, bookedWeek, assigned, accrued, rules, awards, ratings, mocks, board, futureOpenSlots] = await Promise.all([
+  const [openWeek, bookedWeek, assigned, accrued, ratings, mocks, board, futureOpenSlots, referral] = await Promise.all([
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: { in: ["OPEN", "HELD"] } } }),
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: "BOOKED" } }),
     db.session.findMany({ where: { mentorId: mentor.id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 6, include: { student: { select: { name: true, studentProfile: true } } } }),
     db.payoutAccrual.aggregate({ where: { mentorId: mentor.id, status: { in: ["ACCRUED", "APPROVED"] } }, _sum: { amountPaise: true } }),
-    db.bonusRule.findMany({ where: { tier: mentor.tier, active: true }, orderBy: { threshold: "asc" } }),
-    db.bonusAward.findMany({ where: { mentorId: mentor.id } }),
     db.sessionRating.aggregate({ where: { session: { mentorId: mentor.id } }, _avg: { rating: true }, _count: true }),
     countMocks(mentor.id, settings.mockCounts),
     mentorBoard(user.isDemo),
     db.slot.count({ where: { mentorId: mentor.id, status: "OPEN", startsAt: { gt: now } } }),
+    mentor.isAdminMentor ? Promise.resolve(null) : referralProgress(mentor.id),
   ]);
   // The owner's own mentor mode earns no pay and isn't listed publicly, so only 'publish your hours' applies.
   const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots }).filter((i) => !mentor.isAdminMentor || i.key === "availability");
   const progress = checklistProgress(checklist);
-  const ruleLite = rules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
-  const next = nextThreshold(mentor.tier, mocks, ruleLite);
-  const awarded = new Set(awards.map((a) => a.ruleId));
   const first = assigned[0];
   const nm = (n?: string | null) => n?.replace(/\s*\(demo\)/, "") ?? "Student";
 
@@ -59,7 +55,7 @@ export default async function MentorDashboard() {
       )}
       <KpiGrid>
         <Kpi label="This week" value={`${bookedWeek} / ${bookedWeek + openWeek}`} note={`${openWeek} slot${openWeek === 1 ? "" : "s"} still open`} />
-        <Kpi label="Mocks, season" value={mocks} note={next ? `${next.threshold - mocks} away from the ${formatPaise(next.amountPaise)} bonus` : "All bonus tiers reached"} noteTone="oxblood" />
+        <Kpi label="Mocks, season" value={mocks} note="Completed sessions" noteTone="muted" />
         <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note="Awaiting payout" />
         <Kpi label="Avg rating" value={ratings._avg.rating ? ratings._avg.rating.toFixed(1) : "—"} note={`Across ${ratings._count} rated sessions`} noteTone="green" />
       </KpiGrid>
@@ -87,15 +83,14 @@ export default async function MentorDashboard() {
             </Row>
           ))}
         </Panel>
-        <Panel title="Bonus progress · season" flush={false}>
-          <div className="flex flex-col gap-[13px]">
-            {rules.map((r) => {
-              const done = awarded.has(r.id) || mocks >= r.threshold;
-              return <Meter key={r.id} label={`${r.threshold} mocks · ${formatPaise(r.amountPaise)}`} note={done ? "Awarded" : `${mocks} of ${r.threshold}`} pct={Math.min(100, (mocks / r.threshold) * 100)} tone={done ? "green" : "oxblood"} />;
-            })}
-            {rules.length === 0 && <Empty>No bonus tiers configured.</Empty>}
-          </div>
-        </Panel>
+        {referral && (
+          <Panel title="Referral bonus" flush={false}>
+            <p className="text-[12.5px] leading-[1.55] text-ink-2">Refer <strong>{referral.every}</strong> students with your code and earn <strong>{referral.percent}%</strong> of the fees they paid.</p>
+            <div className="mt-3.5"><Meter label={`${referral.students % referral.every} of ${referral.every} students toward your next bonus`} note={`${referral.toNext} to go`} pct={((referral.students % referral.every) / referral.every) * 100} tone="oxblood" /></div>
+            <p className="tnum mt-3 text-[12px] text-ink-faint">{referral.students} student{referral.students === 1 ? "" : "s"} referred in total{referral.awards.length > 0 ? ` · ${referral.awards.length} bonus${referral.awards.length === 1 ? "" : "es"} earned (${formatPaise(referral.awards.reduce((n, a) => n + a.amountPaise, 0))})` : ""}</p>
+            <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">A student counts once their purchase is past the refund window. Bonuses are approved by Samrudh and paid with your session pay.</p>
+          </Panel>
+        )}
       </Section>
 
       <Panel title="Leaderboard · last 30 days" flush={false}>

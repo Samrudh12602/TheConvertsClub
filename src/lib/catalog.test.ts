@@ -16,8 +16,8 @@ describe("seed catalog matches the spec", () => {
       "sop-detailed": 399,
       "sop-basic": 99,
       "quick-guidance": 299,
-      "pi-with-samrudh": 599,
-      "strategy-with-samrudh": 299,
+      "pi-with-samrudh": 699,
+      "strategy-with-samrudh": 349,
     });
   });
 

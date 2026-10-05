@@ -19,11 +19,11 @@ export function ApproveAccrualsButton() {
 }
 export function ApproveBonusesButton() {
   const { pending, msg, run } = useAction();
-  return <div className="flex flex-col items-start gap-1"><Button size="sm" variant="secondary" disabled={pending} onClick={() => run(() => approveBonusesAction())}>{pending ? "…" : "Approve all bonuses"}</Button>{msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}</div>;
+  return <div className="flex flex-col items-start gap-1"><Button size="sm" variant="secondary" disabled={pending} onClick={() => run(() => approveBonusesAction())}>{pending ? "…" : "Approve all referral bonuses"}</Button>{msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}</div>;
 }
 export function PreviewBonusesButton() {
   const { pending, msg, run } = useAction();
-  return <div className="flex flex-col items-start gap-1"><Button size="sm" variant="secondary" disabled={pending} onClick={() => run(() => previewBonusesAction())}>{pending ? "…" : "Compute this period's bonuses"}</Button>{msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}</div>;
+  return <div className="flex flex-col items-start gap-1"><Button size="sm" variant="secondary" disabled={pending} onClick={() => run(() => previewBonusesAction())}>{pending ? "…" : "Calculate referral bonuses"}</Button>{msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}</div>;
 }
 
 export function CreateRunForm() {

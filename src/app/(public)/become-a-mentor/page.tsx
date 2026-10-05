@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   description: "Take mocks on your own hours, paid per session, with no minimum commitment.",
 };
 
-export default function BecomeAMentorPage() {
+export default async function BecomeAMentorPage() {
+  const perks = await mentorPerks();
   return (
     <div className="mx-auto flex max-w-[780px] flex-col gap-4 px-5 py-[26px]">
       <section className="rounded-xl bg-ink p-8">
@@ -20,7 +21,7 @@ export default function BecomeAMentorPage() {
         </p>
       </section>
       <ul className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
-        {mentorPerks.map((p) => (
+        {perks.map((p) => (
           <li key={p.title}>
             <Card className="h-full">
               <h2 className="font-display text-[15px] font-bold leading-[1.3] text-ink">{p.title}</h2>

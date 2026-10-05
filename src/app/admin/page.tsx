@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { adminDb } from "@/server/demo";
+import { GATEWAY_EFFECTIVE_PERCENT, GATEWAY_FEE_RATE, GATEWAY_GST_RATE, gatewayCost } from "@/lib/gateway-fee";
 import { fmtTime } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
@@ -36,6 +37,9 @@ export default async function AdminDashboard() {
     db.order.aggregate({ where: { status: "PAID", createdAt: { gte: weekAgo } }, _sum: { amountPaise: true } }),
   ]);
 
+  const revenue = revenueAgg._sum.amountPaise ?? 0;
+  const gateway = gatewayCost(revenue);
+
   const [piBooked, piTotal, gdSeatsFilled, gdSeatsTotal] = await Promise.all([
     db.slot.count({ where: { status: "BOOKED", startsAt: { gte: now, lt: new Date(now.getTime() + 7 * 86_400_000) } } }),
     db.slot.count({ where: { startsAt: { gte: now, lt: new Date(now.getTime() + 7 * 86_400_000) } } }),
@@ -56,8 +60,10 @@ export default async function AdminDashboard() {
         <Kpi label="Active students" value={activeStudents} />
         <Kpi label="Sessions, 2wk window" value={sessionsThisWeek} note={`${unassignedCount} unassigned`} noteTone={unassignedCount ? "oxblood" : "muted"} />
         <Kpi label="Feedback overdue" value={overdue.length} noteTone={overdue.length ? "oxblood" : "muted"} />
-        <Kpi label="Revenue, season" value={formatPaise(revenueAgg._sum.amountPaise ?? 0)} note={`+${formatPaise(weekOrders._sum.amountPaise ?? 0)} this week`} noteTone="green" />
+        <Kpi label="Revenue, season" value={formatPaise(revenue)} note={`+${formatPaise(weekOrders._sum.amountPaise ?? 0)} this week`} noteTone="green" />
+        <Kpi label="Gateway cost" value={formatPaise(gateway.totalPaise)} note={`Razorpay ${GATEWAY_FEE_RATE * 100}% + ${GATEWAY_GST_RATE * 100}% GST (${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}%)`} noteTone="muted" />
         <Kpi label="Payable to mentors" value={formatPaise(payable._sum.amountPaise ?? 0)} note={`${payable._count} accruals pending`} noteTone="amber" />
+        <Kpi label="Kept after gateway & mentors" value={formatPaise(revenue - gateway.totalPaise - (payable._sum.amountPaise ?? 0))} note="Before refunds and bonuses paid" noteTone="green" />
       </KpiGrid>
 
       <Section cols={300}>

@@ -7,7 +7,6 @@ import { saveSettingsAction } from "@/app/admin/actions";
 import type { Settings } from "@/lib/settings";
 
 const FOCUSES = ["HR_PROFILE", "ACADEMICS", "STRESS", "INSTITUTE_FINAL", "CURRENT_AFFAIRS", "CROSS_QUESTIONING"];
-const MOCK_KINDS = ["PI", "GD", "WAT"];
 
 export function SettingsForm({ initial }: { initial: Settings }) {
   const [v, setV] = useState(initial);
@@ -38,15 +37,15 @@ export function SettingsForm({ initial }: { initial: Settings }) {
       </fieldset>
 
       <fieldset className="rounded-[11px] border border-line bg-card p-4">
-        <legend className="type-label px-1 text-ink-faint">Pay & bonuses</legend>
+        <legend className="type-label px-1 text-ink-faint">Pay & referral bonus</legend>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
           <Field label="Feedback due (hours)" type="number" {...num("feedbackDueHours")} />
-          <div><label className="type-label mb-1.5 block text-ink-faint">Bonus period</label><select value={v.bonusPeriod} onChange={(e) => setV({ ...v, bonusPeriod: e.target.value as Settings["bonusPeriod"] })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="SEASON">Per season</option><option value="MONTH">Per month</option></select></div>
+          <Field label="Referral bonus: every N students" type="number" {...num("referralBonusEvery")} />
+          <Field label="Referral bonus: % of their fees" type="number" {...num("referralBonusPercent")} />
           <Field label="Season start" type="date" value={v.seasonStart} onChange={(e) => setV({ ...v, seasonStart: e.target.value })} />
           <Field label="Season end" type="date" value={v.seasonEnd} onChange={(e) => setV({ ...v, seasonEnd: e.target.value })} />
         </div>
-        <p className="mb-2 mt-3 text-[11.5px] text-ink-faint">What counts as a mock</p>
-        <div className="flex flex-wrap gap-1.5">{MOCK_KINDS.map((k) => <button type="button" key={k} onClick={() => toggleArr("mockCounts", k)} className={`rounded-lg border px-2.5 py-1.5 text-[11.5px] font-medium ${v.mockCounts.includes(k) ? "border-ink bg-ink text-surface" : "border-line-strong bg-white text-ink-2"}`}>{k}</button>)}</div>
+        <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">A mentor earns this percent of the fees paid by every complete group of N students who bought with their code. Purchases only count once their refund window has passed. Set the percent to 0 to switch it off.</p>
       </fieldset>
 
       <fieldset className="rounded-[11px] border border-line bg-card p-4">

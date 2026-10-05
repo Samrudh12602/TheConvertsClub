@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
+import { Empty, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { AdminHoursForm } from "@/components/admin/admin-schedule";
 import { MentorCouponEditor, PublicVisibleToggle, ResendLoginButton, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
 import { LegalRecord } from "@/components/admin/legal-record";
@@ -10,8 +10,7 @@ import { fmtDate, fmtWhen } from "@/lib/format";
 import { ACCRUAL_STATUS, sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
 import { decryptJson } from "@/server/crypto";
-import { nextThreshold } from "@/server/payroll";
-import { countMocks } from "@/app/mentor/page";
+import { getSettings } from "@/lib/settings-db";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mentor" };
@@ -28,21 +27,17 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const m = await db.mentorProfile.findUnique({ where: { id }, include: { user: true, referralCoupon: true } });
   if (!m) notFound();
-  const [rates, bonusRules, awards, accruals, sessions, ratings, mocks, referralOrders] = await Promise.all([
+  const [rates, awards, accruals, sessions, ratings, referralOrders] = await Promise.all([
     db.payRate.findMany({ where: { tier: m.tier }, orderBy: { service: "asc" } }),
-    db.bonusRule.findMany({ where: { tier: m.tier, active: true }, orderBy: { threshold: "asc" } }),
-    db.bonusAward.findMany({ where: { mentorId: id } }),
+    db.bonusAward.findMany({ where: { mentorId: id, kind: "REFERRAL" }, orderBy: { referralBatch: "asc" } }),
     db.payoutAccrual.findMany({ where: { mentorId: id }, orderBy: { createdAt: "desc" }, take: 15 }),
     db.session.findMany({ where: { mentorId: id }, orderBy: { startsAt: "desc" }, take: 10, include: { student: { select: { name: true } } } }),
     db.sessionRating.aggregate({ where: { session: { mentorId: id } }, _avg: { rating: true }, _count: true }),
-    countMocks(id, (await import("@/lib/settings")).DEFAULT_SETTINGS.mockCounts),
     m.referralCoupon
       ? db.order.findMany({ where: { couponId: m.referralCoupon.id, status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" }, include: { product: { select: { name: true } } } })
       : Promise.resolve([]),
   ]);
-  const ruleLite = bonusRules.map((r) => ({ id: r.id, tier: r.tier, threshold: r.threshold, amountPaise: r.amountPaise, active: r.active }));
-  const next = nextThreshold(m.tier, mocks, ruleLite);
-  const awarded = new Set(awards.map((a) => a.ruleId));
+  const settings = await getSettings();
   const pendingAccrued = accruals.filter((a) => a.status !== "PAID").reduce((n, a) => n + a.amountPaise, 0);
 
   return (
@@ -112,11 +107,12 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
         <Panel title={`Pay structure · ${m.tier}`} flush={false}>
           {rates.map((r) => <div key={r.id} className="tnum flex justify-between gap-2.5 border-b border-line-soft py-2 text-[12.5px] last:border-b-0"><span className="text-ink-2">{SERVICE[r.service]}</span><span className="font-semibold text-ink">{formatPaise(r.amountPaise)}</span></div>)}
         </Panel>
-        <Panel title="Bonus progress" flush={false}>
-          <div className="flex flex-col gap-3">
-            {bonusRules.map((r) => { const done = awarded.has(r.id) || mocks >= r.threshold; return <Meter key={r.id} label={`${r.threshold} mocks · ${formatPaise(r.amountPaise)}`} note={done ? "Awarded" : `${mocks} of ${r.threshold}`} pct={Math.min(100, (mocks / r.threshold) * 100)} tone={done ? "green" : "oxblood"} />; })}
-            {next && <p className="text-[11.5px] text-ink-faint">{next.threshold - mocks} mocks to next tier.</p>}
-          </div>
+        <Panel title="Referral bonuses" flush={false}>
+          {awards.length === 0 ? <p className="text-[12.5px] text-ink-faint">None yet. Every {settings.referralBonusEvery} referred students earn {settings.referralBonusPercent}% of the fees they paid.</p> : (
+            <div className="flex flex-col gap-1.5">
+              {awards.map((a) => <div key={a.id} className="tnum flex justify-between gap-2.5 border-b border-line-soft py-2 text-[12.5px] last:border-b-0"><span className="text-ink-2">Group {a.referralBatch} · {a.percent}% of {formatPaise(a.basePaise ?? 0)}</span><span className="font-semibold text-ink">{formatPaise(a.amountPaise)} <span className="ml-1 text-[11px] font-normal text-ink-faint">{a.status === "PAID" ? "paid" : a.status === "APPROVED" ? "approved" : "pending"}</span></span></div>)}
+            </div>
+          )}
         </Panel>
       </Section>
 

@@ -455,6 +455,21 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     the owner can create special hours. The strategy call that comes with Call Convert (45 min) is therefore booked
     in free time, not special hours (decision for you: say so if you want those to use special hours instead).
 
+43. **Early-bird pricing, gateway cost rule, and the referral bonus replacing milestone bonuses (owner's instructions).**
+    *Early bird*: a product can have an early-bird price for its first N buyers (`earlyBirdPricePaise`, `earlyBirdSeats`,
+    editable per product in Admin > Products with "x of N taken"). While seats remain, the normal price shows struck
+    through and the early price is charged; the discount is recorded on the order and receipt. Seats are counted per
+    distinct student from paid orders plus anyone who started an order in the last 30 minutes, decided under a database
+    lock so two people paying at once can't both take the last seat; one early-bird seat per student per product.
+    Configured for PI with Samrudh (699, early 599 for 10) and Strategy call with Samrudh (349, early 299 for 10).
+    *Gateway cost* (`gatewayCost`): Razorpay keeps 2% plus 18% GST on that 2% = 2.36% (Rs 2,360 on Rs 1 lakh); the
+    dashboard and Finance show it with "kept after gateway & mentors". *Bonuses*: milestone bonuses for completing N
+    sessions are retired (rules switched off, panels and settings removed). The only bonus now is the referral bonus: every
+    N (10) students who buy with a mentor's code earn them P% (5%) of the fees those students paid; both numbers are in
+    Settings. A purchase counts only after its refund window passes and if not refunded; students count once; groups are
+    paid once; awards start "pending approval" and flow through the existing approve -> payout run. The Mentor Agreement
+    now says so (legal version 2026-10-05, so mentors are asked to accept again).
+
 ## Assumptions
 
 | # | Topic | Default | Where |

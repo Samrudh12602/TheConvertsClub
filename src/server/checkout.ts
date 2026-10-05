@@ -20,10 +20,13 @@ import type { CreditKind } from "@/generated/prisma/client";
 export class CheckoutError extends Error {}
 
 /** Price for an order, always computed here from the database. The browser never supplies an amount. */
-export async function quote(slug: string, couponCode?: string | null, now = new Date()) {
-  const product = await getProduct(slug);
+export async function quote(slug: string, couponCode?: string | null, now = new Date(), opts: { earlyBirdOpen?: boolean } = {}) {
+  let product = await getProduct(slug);
   if (!product) throw new CheckoutError("That product isn't available.");
+  // The caller can force the early-bird seat on or off (used inside the locked order creation, where the seat count is decided).
+  if (product.earlyBird && opts.earlyBirdOpen !== undefined) product = { ...product, earlyBird: { ...product.earlyBird, seatsLeft: opts.earlyBirdOpen ? Math.max(1, product.earlyBird.seatsLeft) : 0 } };
   const v = priceView(product);
+  const earlyBird = Boolean(product.earlyBird && product.earlyBird.seatsLeft > 0 && v.payablePaise === product.earlyBird.pricePaise && v.strikePaise !== null);
   let discountPaise = 0;
   let couponId: string | null = null;
   let couponMessage: string | null = null;
@@ -37,7 +40,7 @@ export async function quote(slug: string, couponCode?: string | null, now = new 
       couponMessage = `Code applied · ${formatPaise(discountPaise)} off`;
     } else couponMessage = r.reason;
   }
-  return { product, view: v, couponId, couponDiscountPaise: discountPaise, couponMessage, totalPaise: v.payablePaise - discountPaise };
+  return { product, view: v, earlyBird, couponId, couponDiscountPaise: discountPaise, couponMessage, totalPaise: v.payablePaise - discountPaise };
 }
 
 export interface CheckoutStart {
@@ -64,7 +67,7 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   if (!input.acceptTerms) {
     if (!buyer || !(await hasAcceptedCurrent(buyer))) throw new CheckoutError("Please accept the Terms of Use, Privacy Policy and Refund Policy to continue.");
   }
-  const q = await quote(input.slug, input.coupon);
+  let q = await quote(input.slug, input.coupon);
   if (q.product.enrolledOnly) {
     // Additional PI: only for enrolled students, bought from inside the portal.
     if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
@@ -77,8 +80,22 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   }
   const phone = normalizeIndianPhone(parsed.data.phone)!;
   const row = await db.product.findUnique({ where: { slug: q.product.slug }, select: { id: true } });
-  const order = await db.order.create({
-    data: { productId: row!.id, userId: buyer?.id ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date(), termsIp: input.ip ?? null },
+  // The early-bird seat is decided under a lock, so two people paying at the same moment can't both get the last seat.
+  // A student gets the early-bird price once per product, and only while seats remain.
+  const order = await db.$transaction(async (tx) => {
+    if (q.product.earlyBird) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"earlybird:" + q.product.slug}))`;
+      const taken = await tx.$queryRaw<{ n: number }[]>`
+        SELECT COUNT(DISTINCT lower("guestEmail"))::int AS n FROM "Order"
+        WHERE "productId" = ${row!.id} AND "earlyBird" = true AND lower("guestEmail") <> ${email}
+          AND (status IN ('PAID','PARTIALLY_REFUNDED') OR (status = 'CREATED' AND "createdAt" > now() - interval '30 minutes'))`;
+      const already = await tx.order.count({ where: { productId: row!.id, earlyBird: true, status: { in: ["PAID", "PARTIALLY_REFUNDED"] }, guestEmail: { equals: email, mode: "insensitive" } } });
+      const open = already === 0 && (taken[0]?.n ?? 0) < q.product.earlyBird.limit;
+      if (open !== q.earlyBird) q = await quote(input.slug, input.coupon, undefined, { earlyBirdOpen: open });
+    }
+    return tx.order.create({
+      data: { productId: row!.id, userId: buyer?.id ?? null, couponId: q.couponId, listPricePaise: q.view.strikePaise ?? q.view.payablePaise, discountPaise: (q.view.strikePaise ? q.view.strikePaise - q.view.payablePaise : 0) + q.couponDiscountPaise, amountPaise: q.totalPaise, earlyBird: q.earlyBird, guestName: parsed.data.name.trim(), guestEmail: email, guestPhone: phone, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date(), termsIp: input.ip ?? null },
+    });
   });
   const rz = await rzp().orders.create({ amount: q.totalPaise, currency: "INR", receipt: order.id.slice(0, 40), notes: { orderId: order.id, product: q.product.slug } });
   await db.order.update({ where: { id: order.id }, data: { razorpayOrderId: rz.id } });

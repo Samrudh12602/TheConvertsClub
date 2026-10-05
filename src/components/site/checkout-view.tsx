@@ -23,6 +23,8 @@ export interface CheckoutSummary {
   totalPaise: number;
   refundWindowHours: number;
   paymentsEnabled: boolean;
+  /** Set while the product's early-bird price is on: how many early-bird seats are still open. */
+  earlyBirdSeatsLeft?: number;
   prefill?: { name: string; email: string; phone: string };
   /** A mentor code the visitor entered earlier, already priced on the server. */
   /** A signed-in student buys for their own account, so the email can't be changed. */
@@ -52,7 +54,7 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
   const lines: { label: string; value: string; strong?: boolean; tone?: "discount" }[] = [];
   if (summary.listPricePaise !== null) {
     lines.push({ label: summary.name, value: formatPaise(summary.listPricePaise) });
-    lines.push({ label: "Discount", value: formatPaise(-summary.discountPaise), tone: "discount" });
+    lines.push({ label: summary.earlyBirdSeatsLeft ? `Early bird (${summary.earlyBirdSeatsLeft} seats left)` : "Discount", value: formatPaise(-summary.discountPaise), tone: "discount" });
   }
   if (couponOff > 0) lines.push({ label: "Coupon", value: formatPaise(-couponOff), tone: "discount" });
   lines.push({ label: "Total", value: formatPaise(total), strong: true });

@@ -10,6 +10,8 @@ export interface LegalPolicy {
   cancelNoticeHours: number;
   maxReschedules: number;
   feedbackDueHours: number;
+  referralBonusEvery: number;
+  referralBonusPercent: number;
 }
 
 /** Where to write to us, phrased so it stays true on whatever address the site is served from. */
@@ -213,7 +215,8 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
           "Treat every student with respect and fairness. Discrimination, harassment, inappropriate behaviour, or pressuring students is prohibited and may lead to immediate removal and, where appropriate, reporting to the authorities.",
         ] },
         { heading: "Pay and tax", items: [
-          "You are paid the per-session and bonus amounts shown for your tier in your portal. Rates and bonus rules can be changed by us for future sessions on notice in the portal; they do not change for sessions already completed.",
+          `You are paid the per-session amounts shown for your tier in your portal. Rates can be changed by us for future sessions on notice in the portal; they do not change for sessions already completed.`,
+          `Referral bonus: for every ${p.referralBonusEvery} students who buy using your referral code, you earn ${p.referralBonusPercent}% of the fees those students actually paid (after any discount). A purchase counts only once its refund window has passed and only if it was not refunded; a student counts once, however many times they buy. Bonuses are approved by us and paid with your session pay. We may change or end the referral bonus for referrals made after we tell you in the portal; it does not change for groups already earned.`,
           "Pay accrues when you submit feedback for a completed session and is paid in the cycle shown in your portal, to the payout account you give. Sessions that are cancelled, not attended by you, or found to be fraudulent do not earn pay, and amounts paid in error or because of a breach can be recovered from later payouts.",
           "You are responsible for your own taxes. We may deduct tax at source or collect tax details where the law requires, and will give you the statement. You must give correct PAN and payout details.",
           "Referral coupons given to you are a tool to share the platform. They do not by themselves entitle you to any payment, commission or reward unless we have told you so in writing.",

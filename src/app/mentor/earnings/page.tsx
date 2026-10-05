@@ -26,7 +26,7 @@ export default async function Earnings() {
         <Kpi label="Accrued" value={formatPaise(a._sum.amountPaise ?? 0)} note={`${a._count} items awaiting approval`} />
         <Kpi label="Approved" value={formatPaise(p._sum.amountPaise ?? 0)} note="In the next payout run" />
         <Kpi label="Paid, season" value={formatPaise(d._sum.amountPaise ?? 0)} note={`${d._count} items`} />
-        <Kpi label="Bonuses" value={formatPaise(bonus._sum.amountPaise ?? 0)} note="Milestone awards" />
+        <Kpi label="Bonuses" value={formatPaise(bonus._sum.amountPaise ?? 0)} note="Referral bonuses" />
       </KpiGrid>
       <Section cols={280}>
         <Panel title="Recent accruals">

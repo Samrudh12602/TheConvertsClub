@@ -56,3 +56,16 @@ describe("checkCoupon", () => {
     if (r.ok) expect(r.discountPaise).toBe(99);
   });
 });
+
+describe("early bird", () => {
+  const eb = (seatsLeft: number) => ({ ...base, pricePaise: 69900, mrpPaise: null, mentorPricePaise: null, earlyBird: { pricePaise: 59900, limit: 10, seatsLeft } });
+  it("charges the early-bird price (normal price struck through) while seats remain", () => {
+    expect(priceView(eb(7))).toEqual({ payablePaise: 59900, strikePaise: 69900 });
+  });
+  it("charges the normal price once the seats are gone", () => {
+    expect(priceView(eb(0))).toEqual({ payablePaise: 69900, strikePaise: null });
+  });
+  it("ignores an early-bird price that isn't actually lower", () => {
+    expect(priceView({ ...eb(5), earlyBird: { pricePaise: 69900, limit: 10, seatsLeft: 5 } }).payablePaise).toBe(69900);
+  });
+});

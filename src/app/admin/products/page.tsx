@@ -4,6 +4,7 @@ import { Empty, Panel } from "@/components/portal/ui";
 import { CouponForm, CouponToggle, ProductRow } from "@/components/admin/product-controls";
 import { db } from "@/lib/db";
 import { fmtDate } from "@/lib/format";
+import { earlyBirdTaken } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Products" };
@@ -16,13 +17,14 @@ export default async function ProductsPage() {
     // been used, not split across pages. A mentor's own row still links to their full breakdown.
     db.coupon.findMany({ orderBy: [{ usedCount: "desc" }, { createdAt: "desc" }], include: { mentor: { include: { user: { select: { name: true } } } } } }),
   ]);
+  const taken = await earlyBirdTaken();
   return (
     <PortalPage width="max-w-[1000px]">
       <Panel title="Catalog" flush={false}>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] border-collapse text-left text-[12.5px]">
-            <thead><tr className="border-b border-line">{["Product", "Price ₹", "MRP ₹", "Mentor code ₹", "Active", ""].map((h) => <th key={h} className="type-label px-3.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
-            <tbody>{products.map((p) => <ProductRow key={p.id} id={p.id} name={`${p.name} · ${p._count.enrollments} sold`} pricePaise={p.pricePaise} mrpPaise={p.mrpPaise} mentorPricePaise={p.mentorPricePaise} active={p.active} />)}</tbody>
+          <table className="w-full min-w-[720px] border-collapse text-left text-[12.5px]">
+            <thead><tr className="border-b border-line">{["Product", "Price ₹", "MRP ₹", "Mentor code ₹", "Early bird", "Active", ""].map((h) => <th key={h} className="type-label px-3.5 py-2 text-ink-faint">{h}</th>)}</tr></thead>
+            <tbody>{products.map((p) => <ProductRow key={p.id} id={p.id} name={`${p.name} · ${p._count.enrollments} sold`} pricePaise={p.pricePaise} mrpPaise={p.mrpPaise} mentorPricePaise={p.mentorPricePaise} earlyBirdPricePaise={p.earlyBirdPricePaise} earlyBirdSeats={p.earlyBirdSeats} earlyBirdTaken={taken.get(p.id) ?? 0} active={p.active} />)}</tbody>
           </table>
         </div>
       </Panel>

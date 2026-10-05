@@ -45,7 +45,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
             {extra.map((p) => (
               <div key={p.slug} className="flex flex-col gap-2 bg-card p-3.5">
                 <p className="text-[13px] font-semibold leading-[1.3] text-ink">{p.name}</p>
-                <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}</p>
+                <p className="tnum font-display text-lg font-bold text-ink">{formatPaise(priceView(p).payablePaise)}{p.earlyBird && p.earlyBird.seatsLeft > 0 && <span className="ml-2 text-[11px] font-semibold text-oxblood">Early bird · {p.earlyBird.seatsLeft} left</span>}</p>
                 {referralPrice(p, ref) !== null && ref && <p className="tnum -mt-1 text-[12px] font-semibold text-green">{formatPaise(referralPrice(p, ref)!)} <span className="font-medium">with your code {ref.code}</span></p>}
                 {canPay ? <PortalBuy slug={p.slug} me={me} label="Buy" variant="secondary" defaultCoupon={referralPrice(p, ref) !== null ? ref?.code : undefined} /> : null}
               </div>

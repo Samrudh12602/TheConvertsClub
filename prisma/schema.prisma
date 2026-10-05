@@ -378,6 +378,10 @@ model Product {
   /// Taken directly by the owner: only the admin's mentor profile can serve it, mentor referral codes don't apply,
   /// the owner is emailed on every purchase, and enrolled students see it in their Top-up shop.
   withAdmin       Boolean     @default(false)
+  /// Early-bird: for the first `earlyBirdSeats` buyers the price is `earlyBirdPricePaise` (pricePaise is struck through).
+  /// Seats are counted from paid orders (and very recent unpaid ones) so it can't be oversold.
+  earlyBirdPricePaise Int?
+  earlyBirdSeats      Int?
   active          Boolean     @default(true)
   summary         String
   includes        String[]
@@ -438,6 +442,8 @@ model Order {
   termsVersion    String?
   termsAcceptedAt DateTime?
   termsIp         String?
+  /// True when this order was priced at the product's early-bird price (it holds one early-bird seat).
+  earlyBird       Boolean     @default(false)
   createdAt       DateTime    @default(now())
   user            User?       @relation(fields: [userId], references: [id])
   product         Product     @relation(fields: [productId], references: [id])
@@ -723,16 +729,23 @@ model BonusRule {
 model BonusAward {
   id          String        @id @default(cuid())
   mentorId    String
-  ruleId      String
+  /// Milestone awards (retired) have a rule; referral bonuses don't.
+  ruleId      String?
   periodKey   String
   amountPaise Int
   status      AccrualStatus @default(ACCRUED)
   payoutId    String?
+  /// "MILESTONE" (retired) or "REFERRAL": every N students a mentor refers earns a percent of the fees those students paid.
+  kind        String        @default("MILESTONE")
+  referralBatch Int?
+  basePaise   Int?
+  percent     Int?
   createdAt   DateTime      @default(now())
   mentor      MentorProfile @relation(fields: [mentorId], references: [id])
-  rule        BonusRule     @relation(fields: [ruleId], references: [id])
+  rule        BonusRule?    @relation(fields: [ruleId], references: [id])
 
   @@unique([mentorId, ruleId, periodKey])
+  @@unique([mentorId, referralBatch])
 }
 
 model PayoutRun {

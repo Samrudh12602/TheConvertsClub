@@ -23,6 +23,9 @@ export interface Credit {
   quantity: number;
 }
 
+/** Early-bird: while seats remain, the product sells at `pricePaise` instead of its normal price. */
+export interface EarlyBird { pricePaise: number; limit: number; seatsLeft: number }
+
 export interface CatalogProduct {
   slug: string;
   name: string;
@@ -36,6 +39,8 @@ export interface CatalogProduct {
   enrolledOnly: boolean;
   /** Taken directly by the owner: the owner is emailed on purchase, mentor referral codes don't apply, and enrolled students see it in their Top-up shop. */
   withAdmin: boolean;
+  /** Set when the product has an early-bird offer (null/absent otherwise). seatsLeft is read fresh, not cached. */
+  earlyBird?: EarlyBird | null;
   credits: Credit[];
   /** One-line description for grids. */
   summary: string;
@@ -61,6 +66,8 @@ export interface PriceView {
  * separate, unrelated gate on who can even buy it).
  */
 export function priceView(p: CatalogProduct): PriceView {
+  // Early bird: the normal price is shown struck through and the buyer pays the early-bird price, until the seats run out.
+  if (p.earlyBird && p.earlyBird.seatsLeft > 0 && p.earlyBird.pricePaise < p.pricePaise) return { payablePaise: p.earlyBird.pricePaise, strikePaise: p.pricePaise };
   const strikePaise = p.mrpPaise !== null && p.mrpPaise > p.pricePaise ? p.mrpPaise : null;
   return { payablePaise: p.pricePaise, strikePaise };
 }

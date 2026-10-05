@@ -272,7 +272,7 @@ export async function approveBonusesAction(): Promise<Result> {
   try { const actor = await guard("approve-bonuses"); const n = await approveBonuses(actor); revalidatePath("/admin/payouts"); return { ok: true, message: `${n} bonus${n === 1 ? "" : "es"} approved.` }; } catch (e) { return fail(e); }
 }
 export async function previewBonusesAction(): Promise<Result> {
-  try { await guard("preview-bonuses"); const r = await previewBonuses(); revalidatePath("/admin/payouts"); return { ok: true, message: `${r.created.length} new bonus award${r.created.length === 1 ? "" : "s"} for ${r.periodKey}.` }; } catch (e) { return fail(e); }
+  try { await guard("preview-bonuses"); const r = await previewBonuses(); revalidatePath("/admin/payouts"); return { ok: true, message: `${r.created.length} new referral bonus${r.created.length === 1 ? "" : "es"} due.` }; } catch (e) { return fail(e); }
 }
 export async function createPayoutRunAction(label: string): Promise<Result> {
   try { const actor = await guard("payout-run"); await createPayoutRun(actor, label.trim() || `Payout ${new Date().toISOString().slice(0, 10)}`); revalidatePath("/admin/payouts"); return { ok: true, message: "Run created." }; } catch (e) { return fail(e); }
@@ -294,13 +294,13 @@ export async function refundOrderAction(input: unknown): Promise<Result> {
 
 // ───────────── Products & coupons ─────────────
 
-const productSchema = z.object({ id: z.string(), pricePaise: z.coerce.number().int().min(100), mrpPaise: z.coerce.number().int().min(0).optional(), mentorPricePaise: z.coerce.number().int().min(0).optional(), active: z.boolean() });
+const productSchema = z.object({ id: z.string(), pricePaise: z.coerce.number().int().min(100), mrpPaise: z.coerce.number().int().min(0).optional(), mentorPricePaise: z.coerce.number().int().min(0).optional(), earlyBirdPricePaise: z.coerce.number().int().min(100).optional(), earlyBirdSeats: z.coerce.number().int().min(1).max(10000).optional(), active: z.boolean() }).refine((p) => (p.earlyBirdPricePaise === undefined) === (p.earlyBirdSeats === undefined), { message: "Set both the early-bird price and the number of seats, or leave both blank." }).refine((p) => p.earlyBirdPricePaise === undefined || p.earlyBirdPricePaise < p.pricePaise, { message: "The early-bird price must be lower than the normal price." });
 export async function updateProductAction(input: unknown): Promise<Result> {
   try {
     const actor = await guard("product");
     assertConfigWritable(actor, "products");
     const p = productSchema.parse(input);
-    await db.product.update({ where: { id: p.id }, data: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise || null, mentorPricePaise: p.mentorPricePaise || null, active: p.active } });
+    await db.product.update({ where: { id: p.id }, data: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise || null, mentorPricePaise: p.mentorPricePaise || null, earlyBirdPricePaise: p.earlyBirdPricePaise ?? null, earlyBirdSeats: p.earlyBirdSeats ?? null, active: p.active } });
     await audit({ actorId: actor.id, action: "product.update", entity: "Product", entityId: p.id, after: p });
     revalidatePath("/", "layout"); revalidatePath("/admin/products");
     return { ok: true, message: "Saved." };
@@ -335,6 +335,7 @@ const settingsSchema = z.object({
   gdCapacity: z.coerce.number().int().min(2).max(30), feedbackDueHours: z.coerce.number().int().min(1).max(168),
   gstEnabled: z.boolean(), adminAccrues: z.boolean(), demoEnabled: z.boolean(), minLeadHours: z.coerce.number().int().min(0).max(48),
   bonusPeriod: z.enum(["SEASON", "MONTH"]), seasonStart: z.string(), seasonEnd: z.string(),
+  referralBonusEvery: z.coerce.number().int().min(1).max(1000), referralBonusPercent: z.coerce.number().min(0).max(50),
   seniorRequiredFocuses: z.array(z.string()), mockCounts: z.array(z.string()),
 });
 export async function saveSettingsAction(input: unknown): Promise<Result> {

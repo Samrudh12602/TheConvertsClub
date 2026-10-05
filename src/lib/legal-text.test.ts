@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { REQUIRED_DOCS } from "./legal";
 import { buildLegalDocs } from "./legal-text";
 
-const policy = { refundWindowHours: 48, recordingRetentionDays: 90, cancelNoticeHours: 12, maxReschedules: 2, feedbackDueHours: 24 };
+const policy = { refundWindowHours: 48, recordingRetentionDays: 90, cancelNoticeHours: 12, maxReschedules: 2, feedbackDueHours: 24, referralBonusEvery: 10, referralBonusPercent: 5 };
 const docs = buildLegalDocs(policy);
 const text = (k: keyof typeof docs) => JSON.stringify(docs[k]);
 
@@ -22,6 +22,8 @@ describe("legal documents", () => {
     expect(text("terms")).toContain("12 hours");
     expect(text("terms")).toContain("90 days");
     expect(text("mentor-agreement")).toContain("24 hours");
+    expect(text("mentor-agreement")).toContain("every 10 students");
+    expect(text("mentor-agreement")).toContain("5% of the fees");
     expect(buildLegalDocs({ ...policy, refundWindowHours: 72 }).refunds.sections[0].items[0]).toContain("72 hours");
   });
   it("covers the protections both sides need", () => {
