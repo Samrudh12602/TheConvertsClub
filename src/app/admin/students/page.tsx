@@ -49,7 +49,24 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         {(q || plan) && <Link href="/admin/students" className="inline-flex min-h-11 items-center px-2 text-[12.5px] font-medium text-ink-faint no-underline">Clear</Link>}
       </form>
       {students.length === 0 ? <Empty>No students found.</Empty> : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card shadow-card">
+        <>
+        <ul className="flex flex-col gap-2.5 md:hidden">
+          {students.map((s) => (
+            <li key={s.id}>
+              <Link href={`/admin/students/${s.id}`} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-3.5 text-inherit no-underline shadow-card hover:no-underline">
+                <Avatar name={nm(s.name)} size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-semibold text-ink">{nm(s.name)}{s.isDemo && <span className="ml-1.5 rounded bg-line-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-ink-faint">demo</span>}</span>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-ink-faint">{s.enrollments.length ? s.enrollments.map((e) => e.product.name).join(" · ") : "Not enrolled"}</span>
+                  <span className="mt-1 block text-[11px] text-ink-muted">{s._count.studentSessions} session{s._count.studentSessions === 1 ? "" : "s"}{s.studentProfile?.college ? ` · ${s.studentProfile.college}` : ""}</span>
+                </span>
+                <StatusPill tone={s.status === "ACTIVE" ? "green" : "oxblood"}>{s.status === "ACTIVE" ? "Active" : "Suspended"}</StatusPill>
+                <ChevronRight aria-hidden className="size-4 flex-none text-ink-faint" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-2xl border border-line bg-card shadow-card md:block">
           <table className="w-full min-w-[760px] border-collapse text-left text-[12.5px]">
             <thead><tr className="border-b border-line bg-surface/60">{["Student", "Enrolled in", "College", "Sessions", "Status", ""].map((h) => <th key={h} className="type-label px-4 py-3 text-ink-faint">{h}</th>)}</tr></thead>
             <tbody>
@@ -77,6 +94,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
             </tbody>
           </table>
         </div>
+        </>
       )}
     </PortalPage>
   );

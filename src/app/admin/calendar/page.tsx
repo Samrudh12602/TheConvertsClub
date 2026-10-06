@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ScheduleTabs } from "@/components/admin/schedule-tabs";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Flash } from "@/components/portal/ui";
 import { CalendarGrid, type CalRow, type Chip, type StudentOpt } from "@/components/admin/calendar-grid";
@@ -63,6 +64,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   return (
     <PortalPage width="max-w-[1180px]">
+      <ScheduleTabs active="calendar" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Link href={q(shift(-1), sp.mentor)} className="rounded-lg border border-line-strong bg-white px-3 py-2 text-xs font-semibold text-ink no-underline hover:no-underline">← Prev week</Link>

@@ -70,9 +70,7 @@ export const mentorPortal: PortalConfig = {
       items: [
         { href: "/mentor", label: "Dashboard", title: "Dashboard", sub: "All times IST" },
         { href: "/mentor/availability", label: "Availability", title: "Availability", sub: "Offer whole hours; the system splits your window into slots" },
-        { href: "/mentor/sessions", label: "My sessions", title: "My sessions", sub: "Assigned to you" },
-        // The design has a "Feedback due" nav item; the spec routes only /mentor/feedback/[id], so it opens the filtered list.
-        { href: "/mentor/sessions?status=feedback-due", label: "Feedback due", title: "Submit feedback", sub: "Pay accrues only after you submit", match: ["/mentor/feedback"] },
+        { href: "/mentor/sessions", label: "My sessions", title: "My sessions", sub: "Assigned to you; feedback due is a tab", match: ["/mentor/feedback"] },
         { href: "/mentor/reviews", label: "WAT & SOP queue", title: "WAT & SOP queue", sub: `${s.feedbackDueHours}-hour turnaround` },
         { href: "/mentor/earnings", label: "Earnings", title: "Earnings", sub: "Accrued, approved and paid" },
         { href: "/mentor/messages", label: "Messages", title: "Messages", sub: "Talk to The Convert Club team" },
@@ -110,8 +108,7 @@ export const adminPortal: PortalConfig = {
     {
       label: "Delivery",
       items: [
-        { href: "/admin/calendar", label: "Calendar", title: "Mentor calendar", sub: "Delivery" },
-        { href: "/admin/scheduler", label: "Scheduler", title: "Scheduler", sub: "Delivery" },
+        { href: "/admin/scheduler", label: "Schedule", title: "Schedule", sub: "Delivery", match: ["/admin/calendar"] },
         { href: "/admin/sessions", label: "Sessions", title: "All sessions", sub: "Delivery" },
         { href: "/admin/reviews", label: "Reviews", title: "WAT & SOP reviews", sub: "Delivery" },
       ],
@@ -135,6 +132,7 @@ export const adminPortal: PortalConfig = {
     },
   ],
   details: [
+    { pattern: /^\/admin\/calendar$/, title: "Schedule", sub: "Delivery · Week calendar" },
     { pattern: /^\/admin\/students\/[^/]+$/, title: "Student", sub: "People · Students", crumb: "People · Students" },
     { pattern: /^\/admin\/mentors\/[^/]+$/, title: "Mentor", sub: "People · Mentors", crumb: "People · Mentors" },
   ],

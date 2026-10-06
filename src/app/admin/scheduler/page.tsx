@@ -1,5 +1,7 @@
+import { ScheduleTabs } from "@/components/admin/schedule-tabs";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Flash, StatusPill } from "@/components/portal/ui";
+import { Avatar, Empty, Flash, StatusPill } from "@/components/portal/ui";
+import { fmtDayNum, fmtMon, fmtTime } from "@/lib/format";
 import { AdminCancelButton, AssignPicker, ConfirmButton } from "@/components/admin/assign-controls";
 import { adminDb } from "@/server/demo";
 import { fmtWhen } from "@/lib/format";
@@ -35,13 +37,15 @@ export default async function SchedulerPage() {
 
   return (
     <PortalPage width="max-w-[1000px]">
+      <ScheduleTabs active="assign" />
       {unassigned.length > 0 && (
         <>
           <Flash tone="oxblood">{unassigned.length} session{unassigned.length === 1 ? "" : "s"} unassigned.</Flash>
           {await Promise.all(unassigned.map(async (s) => {
             const suggestion = await suggestMentor(s.id);
             return (
-              <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-[10px] border border-oxblood-line bg-oxblood-tint p-3.5">
+              <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-oxblood-line bg-oxblood-tint p-3.5 shadow-xs">
+                <Avatar name={nm(s.student?.name)} />
                 <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-ink">{nm(s.student?.name)} · {sessionTitle(s.type, s.focus)}</p><p className="mt-0.5 text-[11.5px] text-ink-faint">{s.startsAt ? fmtWhen(s.startsAt) : ""}</p></div>
                 {s.status === "REQUESTED" && <ConfirmButton sessionId={s.id} />}
                 <AssignPicker sessionId={s.id} options={options(s.type, s.focus)} suggestedId={suggestion?.mentorId} />
@@ -52,8 +56,10 @@ export default async function SchedulerPage() {
       )}
       <Flash>Upcoming sessions, next 7 days. Reassign anyone, including to yourself as a mentor.</Flash>
       {upcoming.length === 0 ? <Empty>Nothing scheduled in the next 7 days.</Empty> : upcoming.map((s) => (
-        <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-[10px] border border-line bg-card p-3.5">
-          <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-ink">{nm(s.student?.name) || "GD batch"} · {sessionTitle(s.type, s.focus)}</p><p className="mt-0.5 text-[11.5px] text-ink-faint">{s.startsAt ? fmtWhen(s.startsAt) : ""} · currently {s.mentor ? nm(s.mentor.user.name) : "unassigned"}</p></div>
+        <div key={s.id} className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-line bg-card p-3.5 shadow-card">
+          {s.startsAt && <div className="w-12 flex-none text-center"><p className="font-display text-[20px] font-bold leading-none text-ink">{fmtDayNum(s.startsAt)}</p><p className="mt-1 text-[10px] font-semibold uppercase leading-none tracking-[0.06em] text-ink-faint">{fmtMon(s.startsAt)}</p></div>}
+          <Avatar name={nm(s.student?.name) || "GD"} />
+          <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-ink">{nm(s.student?.name) || "GD batch"} · {sessionTitle(s.type, s.focus)}</p><p className="mt-0.5 text-[11.5px] text-ink-faint">{s.startsAt ? fmtTime(s.startsAt) : ""} · with <span className="font-semibold text-ink-2">{s.mentor ? nm(s.mentor.user.name) : "unassigned"}</span></p></div>
           {s.status === "REQUESTED" && <ConfirmButton sessionId={s.id} />}
           <AdminCancelButton sessionId={s.id} />
           <AssignPicker sessionId={s.id} options={options(s.type, s.focus)} />

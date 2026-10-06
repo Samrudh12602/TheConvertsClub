@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { fmtDayNum, fmtMon, fmtTime, fmtWhen, relative } from "@/lib/format";
 import { SCORE_TEXT, scoreTone, sessionTitle } from "@/lib/labels";
 import { ProgressRing } from "@/components/ui/charts";
+import { AddToCalendar } from "@/components/student/add-to-calendar";
+import { WelcomeTour } from "@/components/student/welcome-tour";
 import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
 import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
@@ -27,6 +29,7 @@ export default async function StudentDashboard() {
     db.enrollment.count({ where: { userId: user.id, status: "ACTIVE" } }),
     getCreditSummary(db, user.id),
   ]);
+  const bookable = (["PI", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "GD"] as const).reduce((n, k) => n + (creditSummary[k]?.available ?? 0), 0);
   const rings = CREDIT_KIND_ORDER.filter((k) => (creditSummary[k]?.granted ?? 0) > 0).map((k) => ({ kind: k, ...creditSummary[k]! }));
   const next = upcoming[0];
   const rest = upcoming.slice(1, 5);
@@ -35,6 +38,7 @@ export default async function StudentDashboard() {
 
   return (
     <PortalPage>
+      {enrolledCount > 0 && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
       {next ? (
         <div className="flex flex-wrap items-center gap-5 rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <div className="min-w-0 flex-[1_1_260px]">
@@ -49,6 +53,7 @@ export default async function StudentDashboard() {
               <Link href={`/student/sessions/${next.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-[#3A332B] px-3.5 text-[13px] font-medium leading-none text-dark-text no-underline hover:border-dark-muted hover:text-dark-text hover:no-underline">Details &amp; reschedule</Link>
             </div>
           </div>
+          {next.status === "CONFIRMED" && <div className="basis-full"><AddToCalendar tone="dark" id={next.id} title={sessionTitle(next.type, next.focus)} startsAtIso={next.startsAt!.toISOString()} details={next.meetingUrl ? `Join: ${next.meetingUrl}` : "The Convert Club session"} /></div>}
           <div className="flex-[0_1_240px] border-dark-line md:border-l md:pl-5">
             <p className="type-eyebrow text-dark-muted">Prepare</p>
             {[...prep, "Keep your resume open in another tab."].slice(0, 3).map((p) => <p key={p} className="mt-2 text-[12.5px] leading-normal text-[#D5CEC5]">{p}</p>)}
@@ -65,7 +70,7 @@ export default async function StudentDashboard() {
         <div className="rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <p className="type-eyebrow text-dark-muted">Nothing booked</p>
           <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2] text-surface">Book your next session</h2>
-          <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">Pick a type, a focus and a time. Slots are released by mentors each Sunday.</p>
+          <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">{bookable > 0 ? `You have ${bookable} unused session credit${bookable === 1 ? "" : "s"} waiting. Pick a type, a focus and a time. Slots are released by mentors each Sunday.` : "Pick a type, a focus and a time. Slots are released by mentors each Sunday."}</p>
           <ButtonLink href="/student/book" variant="onDark" className="mt-3.5">Book a session</ButtonLink>
         </div>
       )}
