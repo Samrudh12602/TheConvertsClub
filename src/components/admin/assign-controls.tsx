@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { assignSessionAction, confirmRequestedAction, adminCancelSessionAction } from "@/app/admin/actions";
 
 export function AssignPicker({ sessionId, options, suggestedId }: { sessionId: string; options: { id: string; label: string }[]; suggestedId?: string | null }) {
@@ -30,6 +32,14 @@ export function ConfirmButton({ sessionId }: { sessionId: string }) {
 
 export function AdminCancelButton({ sessionId }: { sessionId: string }) {
   const router = useRouter();
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
-  return <Button size="sm" variant="quiet" disabled={pending} onClick={() => { if (confirm("Cancel this session?")) start(async () => { await adminCancelSessionAction(sessionId); router.refresh(); }); }}>{pending ? "…" : "Cancel"}</Button>;
+  return (
+    <>
+      <Button size="sm" variant="quiet" disabled={pending} onClick={() => setOpen(true)}>{pending ? "…" : "Cancel"}</Button>
+      <ConfirmDialog open={open} onClose={() => setOpen(false)} danger title="Cancel this session?" body="The student is told, and their credit is returned." confirmLabel="Cancel session" busy={pending}
+        onConfirm={() => start(async () => { await adminCancelSessionAction(sessionId); setOpen(false); toast.success("Session cancelled."); router.refresh(); })} />
+    </>
+  );
 }

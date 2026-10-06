@@ -5,12 +5,12 @@ export type ButtonVariant = "primary" | "onDark" | "dark" | "secondary" | "fillO
 export type ButtonSize = "sm" | "md" | "lg";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "border-transparent bg-oxblood text-white hover:bg-oxblood-deep",
-  onDark: "border-transparent bg-oxblood text-white hover:bg-oxblood-hover",
-  dark: "border-ink bg-ink text-white hover:bg-ink-body",
-  secondary: "border-line-strong bg-white font-medium text-ink-2 hover:border-ink hover:text-ink",
-  fillOnHover: "border-line-strong bg-white text-ink hover:border-ink hover:bg-ink hover:text-white",
-  quiet: "border-oxblood-line bg-oxblood-tint text-oxblood hover:border-oxblood",
+  primary: "border-transparent bg-brand text-white shadow-glow hover:brightness-110 hover:shadow-lift",
+  onDark: "border-transparent bg-brand text-white shadow-glow hover:brightness-115 hover:shadow-lift",
+  dark: "border-ink bg-ink text-white shadow-card hover:bg-ink-body hover:shadow-lift",
+  secondary: "border-line-strong bg-white font-medium text-ink-2 shadow-xs hover:border-ink hover:text-ink hover:shadow-card",
+  fillOnHover: "border-line-strong bg-white text-ink shadow-xs hover:border-ink hover:bg-ink hover:text-white hover:shadow-card",
+  quiet: "border-oxblood-line bg-oxblood-tint text-oxblood hover:border-oxblood hover:shadow-xs",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -22,8 +22,8 @@ const sizes: Record<ButtonSize, string> = {
 export function buttonClasses(opts: { variant?: ButtonVariant; size?: ButtonSize; block?: boolean; className?: string } = {}) {
   const { variant = "primary", size = "md", block, className } = opts;
   return clsx(
-    "inline-flex items-center justify-center rounded-lg border font-semibold leading-none transition-colors",
-    "cursor-pointer no-underline hover:no-underline disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold leading-none transition-all duration-200",
+    "cursor-pointer no-underline hover:-translate-y-px hover:no-underline active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
     variants[variant],
     sizes[size],
     block && "w-full",

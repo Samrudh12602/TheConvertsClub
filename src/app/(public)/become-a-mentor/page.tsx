@@ -12,7 +12,7 @@ export default async function BecomeAMentorPage() {
   const perks = await mentorPerks();
   return (
     <div className="mx-auto flex max-w-[780px] flex-col gap-4 px-5 py-[26px]">
-      <section className="rounded-xl bg-ink p-8">
+      <section className="rounded-2xl bg-night p-8 shadow-lift ring-1 ring-white/5">
         <h1 className="text-pretty font-display text-[clamp(24px,3.4vw,34px)] font-bold leading-[1.15] text-surface">
           You converted. Someone a year behind you is about to freeze in the same room.
         </h1>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarCheck, IndianRupee, Star, Trophy } from "lucide-react";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, Kpi, KpiGrid, Meter, Panel, Row, Section } from "@/components/portal/ui";
 import { db } from "@/lib/db";
@@ -54,14 +55,14 @@ export default async function MentorDashboard() {
         </Panel>
       )}
       <KpiGrid>
-        <Kpi label="This week" value={`${bookedWeek} / ${bookedWeek + openWeek}`} note={`${openWeek} slot${openWeek === 1 ? "" : "s"} still open`} />
-        <Kpi label="Mocks, season" value={mocks} note="Completed sessions" noteTone="muted" />
-        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note="Awaiting payout" />
-        <Kpi label="Avg rating" value={ratings._avg.rating ? ratings._avg.rating.toFixed(1) : "—"} note={`Across ${ratings._count} rated sessions`} noteTone="green" />
+        <Kpi label="This week" value={`${bookedWeek} / ${bookedWeek + openWeek}`} note={`${openWeek} slot${openWeek === 1 ? "" : "s"} still open`} icon={<CalendarCheck />} accent="indigo" />
+        <Kpi label="Mocks, season" value={mocks} note="Completed sessions" noteTone="muted" icon={<Trophy />} accent="gold" />
+        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note="Awaiting payout" icon={<IndianRupee />} accent="teal" />
+        <Kpi label="Avg rating" value={ratings._avg.rating ? ratings._avg.rating.toFixed(1) : "—"} note={`Across ${ratings._count} rated sessions`} noteTone="green" icon={<Star />} accent="gold" />
       </KpiGrid>
 
       {first ? (
-        <div className="flex flex-wrap items-center gap-[18px] rounded-xl bg-ink p-5">
+        <div className="flex flex-wrap items-center gap-[18px] rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <div className="min-w-0 flex-[1_1_260px]">
             <p className="type-eyebrow text-dark-muted">Next session · {relative(first.startsAt!)}</p>
             <h2 className="mt-2 font-display text-[23px] font-bold leading-[1.25] text-surface">{nm(first.student?.name)} · {sessionTitle(first.type, first.focus)}</h2>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CalendarClock, Clock, GraduationCap, IndianRupee, Landmark, PiggyBank, Percent } from "lucide-react";
+import { Sparkline } from "@/components/ui/charts";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { adminDb } from "@/server/demo";
@@ -36,6 +38,9 @@ export default async function AdminDashboard() {
     db.session.findMany({ where: { startsAt: { gte: todayFrom, lt: todayTo } }, orderBy: { startsAt: "asc" }, include: { student: { select: { name: true } }, mentor: { include: { user: { select: { name: true } } } } } }),
     db.order.aggregate({ where: { status: "PAID", createdAt: { gte: weekAgo } }, _sum: { amountPaise: true } }),
   ]);
+  const trendFrom = new Date(now.getTime() - 14 * 86_400_000);
+  const recentPaid = await db.order.findMany({ where: { status: "PAID", createdAt: { gte: trendFrom } }, select: { amountPaise: true, createdAt: true } });
+  const trend = Array.from({ length: 14 }, (_, i) => recentPaid.filter((o) => Math.floor((o.createdAt.getTime() - trendFrom.getTime()) / 86_400_000) === i).reduce((n, o) => n + o.amountPaise, 0) / 100);
 
   const revenue = revenueAgg._sum.amountPaise ?? 0;
   const gateway = gatewayCost(revenue);
@@ -57,13 +62,13 @@ export default async function AdminDashboard() {
   return (
     <PortalPage>
       <KpiGrid min={168}>
-        <Kpi label="Active students" value={activeStudents} />
-        <Kpi label="Sessions, 2wk window" value={sessionsThisWeek} note={`${unassignedCount} unassigned`} noteTone={unassignedCount ? "oxblood" : "muted"} />
-        <Kpi label="Feedback overdue" value={overdue.length} noteTone={overdue.length ? "oxblood" : "muted"} />
-        <Kpi label="Revenue, season" value={formatPaise(revenue)} note={`+${formatPaise(weekOrders._sum.amountPaise ?? 0)} this week`} noteTone="green" />
-        <Kpi label="Gateway cost" value={formatPaise(gateway.totalPaise)} note={`Razorpay ${GATEWAY_FEE_RATE * 100}% + ${GATEWAY_GST_RATE * 100}% GST (${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}%)`} noteTone="muted" />
-        <Kpi label="Payable to mentors" value={formatPaise(payable._sum.amountPaise ?? 0)} note={`${payable._count} accruals pending`} noteTone="amber" />
-        <Kpi label="Kept after gateway & mentors" value={formatPaise(revenue - gateway.totalPaise - (payable._sum.amountPaise ?? 0))} note="Before refunds and bonuses paid" noteTone="green" />
+        <Kpi label="Active students" value={activeStudents} icon={<GraduationCap />} accent="indigo" />
+        <Kpi label="Sessions, 2wk window" value={sessionsThisWeek} note={`${unassignedCount} unassigned`} noteTone={unassignedCount ? "oxblood" : "muted"} icon={<CalendarClock />} accent="teal" />
+        <Kpi label="Feedback overdue" value={overdue.length} noteTone={overdue.length ? "oxblood" : "muted"} icon={<Clock />} accent={overdue.length ? "oxblood" : "stone"} />
+        <Kpi label="Revenue, season" value={formatPaise(revenue)} note={<span className="flex items-center justify-between gap-2"><span>{`+${formatPaise(weekOrders._sum.amountPaise ?? 0)} this week`}</span><Sparkline data={trend} tone="teal" width={64} height={22} /></span>} noteTone="green" icon={<IndianRupee />} accent="teal" />
+        <Kpi label="Gateway cost" value={formatPaise(gateway.totalPaise)} note={`Razorpay ${GATEWAY_FEE_RATE * 100}% + ${GATEWAY_GST_RATE * 100}% GST (${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}%)`} noteTone="muted" icon={<Percent />} accent="stone" />
+        <Kpi label="Payable to mentors" value={formatPaise(payable._sum.amountPaise ?? 0)} note={`${payable._count} accruals pending`} noteTone="amber" icon={<Landmark />} accent="gold" />
+        <Kpi label="Kept after gateway & mentors" value={formatPaise(revenue - gateway.totalPaise - (payable._sum.amountPaise ?? 0))} note="Before refunds and bonuses paid" noteTone="green" icon={<PiggyBank />} accent="teal" />
       </KpiGrid>
 
       <Section cols={300}>

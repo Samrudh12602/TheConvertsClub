@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ButtonAnchor, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Confetti } from "@/components/ui/confetti";
 import { AutoRefresh } from "@/components/site/auto-refresh";
 import { db } from "@/lib/db";
 import { roleHome } from "@/lib/roles";
@@ -47,9 +48,15 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   const receiptHref = await createReceiptLink(order.id);
 
   return (
-    <div className="mx-auto max-w-[640px] px-5 py-10">
-      <Card className="rounded-[14px] p-8 text-center">
-        <div aria-hidden className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-tint font-display text-xl font-bold leading-none text-green">✓</div>
+    <div className="relative mx-auto max-w-[640px] px-5 py-10">
+      <Confetti />
+      <Card className="relative rounded-[14px] p-8 text-center shadow-lift">
+        <div aria-hidden className="relative mx-auto flex size-16 items-center justify-center">
+          <span className="absolute inset-0 animate-ring rounded-full bg-teal/25" />
+          <span className="relative flex size-16 animate-pop items-center justify-center rounded-full bg-teal text-white shadow-glow">
+            <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} strokeDasharray={1} className="animate-draw" /></svg>
+          </span>
+        </div>
         <h1 className="mt-[18px] font-display text-2xl font-bold leading-[1.25] text-ink">You&apos;re in</h1>
         <p className="mt-2.5 text-pretty text-sm leading-[1.7] text-ink-muted">
           {alreadyTheirs

@@ -6,6 +6,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { fmtDayNum, fmtMon, fmtTime, fmtWhen, relative } from "@/lib/format";
 import { SCORE_TEXT, scoreTone, sessionTitle } from "@/lib/labels";
+import { ProgressRing } from "@/components/ui/charts";
+import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
+import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -18,11 +21,13 @@ export default async function StudentDashboard() {
     if (bought) redirect("/student/onboarding");
   }
   const now = new Date();
-  const [upcoming, feedbackRows, enrolledCount] = await Promise.all([
+  const [upcoming, feedbackRows, enrolledCount, creditSummary] = await Promise.all([
     db.session.findMany({ where: { studentId: user.id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 5, include: { mentor: { include: { user: { select: { name: true } } } } } }),
     db.feedback.findMany({ where: { session: { studentId: user.id } }, orderBy: { submittedAt: "desc" }, take: 3, include: { session: true } }),
     db.enrollment.count({ where: { userId: user.id, status: "ACTIVE" } }),
+    getCreditSummary(db, user.id),
   ]);
+  const rings = CREDIT_KIND_ORDER.filter((k) => (creditSummary[k]?.granted ?? 0) > 0).map((k) => ({ kind: k, ...creditSummary[k]! }));
   const next = upcoming[0];
   const rest = upcoming.slice(1, 5);
   const mentorName = (m: (typeof upcoming)[number]["mentor"]) => (m ? `${m.user.name?.replace(/\s*\(demo\)/, "")}${m.college ? `, ${m.college}${m.batchYear ? ` '${String(m.batchYear).slice(2)}` : ""}` : ""}` : "your mentor");
@@ -31,14 +36,14 @@ export default async function StudentDashboard() {
   return (
     <PortalPage>
       {next ? (
-        <div className="flex flex-wrap items-center gap-5 rounded-xl bg-ink p-5">
+        <div className="flex flex-wrap items-center gap-5 rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <div className="min-w-0 flex-[1_1_260px]">
             <p className="type-eyebrow text-dark-muted">Next up · {relative(next.startsAt!)}</p>
             <h2 className="mt-2 font-display text-[25px] font-bold leading-[1.2] text-surface">{sessionTitle(next.type, next.focus)}</h2>
             <p className="mt-[7px] text-[13px] leading-normal text-dark-soft">{fmtWhen(next.startsAt!)} IST · with {mentorName(next.mentor)}</p>
             <div className="mt-3.5 flex flex-wrap gap-2">
               {next.status === "CONFIRMED" && next.meetingUrl && (
-                <a href={next.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-oxblood px-4 text-[13px] font-semibold leading-none text-white no-underline hover:bg-oxblood-hover hover:text-white hover:no-underline">Join meeting</a>
+                <a href={next.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 text-[13px] font-semibold leading-none text-white shadow-glow no-underline transition hover:brightness-110 hover:text-white hover:no-underline">Join meeting</a>
               )}
               {next.status === "REQUESTED" && <span className="inline-flex min-h-11 items-center rounded-lg bg-dark-active px-4 text-[13px] font-semibold text-dark-text">Awaiting confirmation</span>}
               <Link href={`/student/sessions/${next.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-[#3A332B] px-3.5 text-[13px] font-medium leading-none text-dark-text no-underline hover:border-dark-muted hover:text-dark-text hover:no-underline">Details &amp; reschedule</Link>
@@ -50,19 +55,29 @@ export default async function StudentDashboard() {
           </div>
         </div>
       ) : enrolledCount === 0 ? (
-        <div className="rounded-xl bg-ink p-5">
+        <div className="rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <p className="type-eyebrow text-dark-muted">Not enrolled yet</p>
           <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2] text-surface">Pick a plan to get started</h2>
           <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">Mock PIs, GDs, WAT and SOP review — credits show up here the moment you enrol.</p>
           <ButtonLink href="/packages" variant="onDark" className="mt-3.5">See packages</ButtonLink>
         </div>
       ) : (
-        <div className="rounded-xl bg-ink p-5">
+        <div className="rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <p className="type-eyebrow text-dark-muted">Nothing booked</p>
           <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2] text-surface">Book your next session</h2>
           <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">Pick a type, a focus and a time. Slots are released by mentors each Sunday.</p>
           <ButtonLink href="/student/book" variant="onDark" className="mt-3.5">Book a session</ButtonLink>
         </div>
+      )}
+
+      {rings.length > 0 && (
+        <Panel title="Your credits" action={<Link href="/student/book" className="text-xs font-semibold">Book a session</Link>} flush={false}>
+          <div className="flex flex-wrap gap-x-7 gap-y-5">
+            {rings.map((r, i) => (
+              <ProgressRing key={r.kind} value={r.available} max={r.granted} label={r.available} sub={`${CREDIT_LABEL[r.kind]}${r.reserved > 0 ? ` · ${r.reserved} held` : ""}`} tone={(["oxblood", "teal", "gold", "indigo"] as const)[i % 4]} size={78} stroke={7} />
+            ))}
+          </div>
+        </Panel>
       )}
 
       <Section cols={260}>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Bricolage_Grotesque } from "next/font/google";
 import { appUrl } from "@/lib/env";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", display: "swap" });
@@ -25,7 +26,9 @@ export const viewport: Viewport = { themeColor: "#F6F3EE" };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" className={`${archivo.variable} ${bricolage.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

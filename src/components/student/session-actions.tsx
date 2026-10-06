@@ -4,23 +4,29 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { cancelSessionAction, rateSessionAction } from "@/app/student/actions";
 
 export function SessionActions({ id, canMove, policyNote }: { id: string; canMove: boolean; policyNote: string }) {
   const router = useRouter();
   const [err, setErr] = useState<string | null>(null);
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         {canMove && <ButtonLink href={`/student/book?reschedule=${id}`} variant="secondary">Reschedule</ButtonLink>}
-        <Button variant="quiet" disabled={pending} onClick={() => start(async () => {
-          setErr(null);
-          if (!confirm(`Cancel this session? ${policyNote}`)) return;
-          const r = await cancelSessionAction(id);
-          if (!r.ok) setErr(r.error); else router.push("/student/sessions");
-        })}>{pending ? "Cancelling…" : "Cancel session"}</Button>
+        <Button variant="quiet" disabled={pending} onClick={() => setOpen(true)}>{pending ? "Cancelling…" : "Cancel session"}</Button>
       </div>
+      <ConfirmDialog open={open} onClose={() => setOpen(false)} danger title="Cancel this session?" body={policyNote} confirmLabel="Cancel session" busy={pending}
+        onConfirm={() => start(async () => {
+          setErr(null);
+          const r = await cancelSessionAction(id);
+          setOpen(false);
+          if (!r.ok) { setErr(r.error); toast.error(r.error); } else { toast.success("Session cancelled."); router.push("/student/sessions"); }
+        })} />
       <p className="text-[11.5px] leading-normal text-ink-faint">{policyNote}</p>
       {err && <p role="alert" className="text-xs text-oxblood">{err}</p>}
     </div>
@@ -28,6 +34,7 @@ export function SessionActions({ id, canMove, policyNote }: { id: string; canMov
 }
 
 export function RatingPicker({ sessionId, initial, initialComment = "", initialConsent = false }: { sessionId: string; initial: number | null; initialComment?: string; initialConsent?: boolean }) {
+  const toast = useToast();
   const [val, setVal] = useState(initial);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -54,7 +61,7 @@ export function RatingPicker({ sessionId, initial, initialComment = "", initialC
             </label>
           )}
           <div className="flex items-center gap-3">
-            <button type="button" disabled={pending} onClick={() => start(async () => { const r = await rateSessionAction(sessionId, val, comment, consent); if (r.ok) { setSaved(true); setErr(null); } else setErr(r.error); })} className="rounded-lg border border-line-strong bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:border-ink">Save comment</button>
+            <button type="button" disabled={pending} onClick={() => start(async () => { const r = await rateSessionAction(sessionId, val, comment, consent); if (r.ok) { setSaved(true); setErr(null); toast.success("Thanks, saved."); } else setErr(r.error); })} className="rounded-lg border border-line-strong bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:border-ink">Save comment</button>
             {saved && <span role="status" className="text-xs text-green">Saved. Thank you.</span>}
           </div>
         </div>

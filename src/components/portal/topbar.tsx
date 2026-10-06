@@ -25,7 +25,7 @@ export function PortalTopbar({
   const admin = role === "admin";
 
   return (
-    <header className="sticky top-0 z-[5] flex flex-wrap items-center gap-3 border-b border-line bg-surface px-5 py-[13px]">
+    <header className="glass sticky top-0 z-[5] flex flex-wrap items-center gap-3 border-b border-line px-5 py-[13px] shadow-xs">
       <div className="min-w-0 flex-[1_1_200px]">
         {admin && sub && <p className="type-label mb-1 text-ink-faint">{sub}</p>}
         <h1 className="font-display text-[19px] font-bold leading-[1.2] text-ink">{title}</h1>

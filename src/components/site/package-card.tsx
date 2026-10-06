@@ -7,11 +7,12 @@ import { Price, buyHref } from "@/components/site/price";
 export function PackageCard({ product, tone }: { product: CatalogProduct; tone: "light" | "dark" }) {
   const dark = tone === "dark";
   return (
-    <article className={clsx("flex flex-col rounded-xl border p-6", dark ? "border-ink bg-ink" : "border-line bg-card")}>
+    <article className={clsx("group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1", dark ? "border-white/10 bg-night shadow-lift hover:shadow-glow" : "border-line bg-card shadow-card hover:shadow-lift")}>
+      <span aria-hidden className={clsx("absolute inset-x-0 top-0 h-[3px]", dark ? "bg-gradient-to-r from-gold via-oxblood to-gold" : "bg-brand")} />
       <div className="flex items-start justify-between gap-2.5">
         <h3 className={clsx("font-display text-[19px] font-bold leading-[1.25]", dark ? "text-surface" : "text-ink")}>{product.name}</h3>
         {product.badge && (
-          <span className="whitespace-nowrap rounded-[5px] bg-oxblood px-2 py-[5px] text-[10.5px] font-semibold leading-none text-white">
+          <span className="whitespace-nowrap rounded-full bg-brand px-2.5 py-[5px] text-[10.5px] font-semibold leading-none text-white shadow-xs">
             {product.badge}
           </span>
         )}

@@ -32,8 +32,8 @@ export function SiteHeader({ account }: { account: { role: RoleName; home: strin
         href={n.href}
         aria-current={active ? "page" : undefined}
         className={clsx(
-          "rounded-[7px] px-[11px] py-2.5 text-[12.5px] leading-none no-underline hover:bg-line-soft hover:no-underline md:min-h-9",
-          active ? "bg-line-soft font-semibold text-ink" : "font-normal text-ink-muted hover:text-ink",
+          "relative whitespace-nowrap rounded-[7px] px-[11px] py-2.5 text-[12.5px] leading-none no-underline transition-colors hover:bg-line-soft hover:no-underline lg:min-h-9",
+          active ? "bg-white font-semibold text-ink shadow-card ring-1 ring-line" : "font-normal text-ink-muted hover:text-ink",
         )}
       >
         {n.label}
@@ -42,20 +42,20 @@ export function SiteHeader({ account }: { account: { role: RoleName; home: strin
   });
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-surface">
+    <header className="glass sticky top-0 z-20 border-b border-line shadow-xs">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 px-5 py-3">
         <Link href="/" className="mr-1.5 flex items-center gap-[9px] no-underline hover:no-underline" aria-label="The Convert Club, home">
-          <span aria-hidden className="flex size-[26px] items-center justify-center rounded-md bg-oxblood font-display text-[13px] font-bold leading-none text-white">
+          <span aria-hidden className="flex size-[28px] items-center justify-center rounded-lg bg-brand font-display text-[14px] font-bold leading-none text-white shadow-glow">
             C
           </span>
           <span className="font-display text-sm font-bold leading-tight text-ink">The Convert Club</span>
         </Link>
 
-        <nav aria-label="Main" className="hidden flex-1 flex-wrap gap-0.5 md:flex">
+        <nav aria-label="Main" className="hidden flex-1 flex-nowrap gap-0.5 lg:flex">
           {links}
         </nav>
 
-        <div className="ml-auto flex gap-2 md:ml-0">
+        <div className="ml-auto flex gap-2 lg:ml-0">
           <ButtonLink href={account ? account.home : "/login"} variant="secondary" size="sm" className="hidden sm:inline-flex">
             {account ? PORTAL_LABEL[account.role] : "Log in"}
           </ButtonLink>
@@ -64,7 +64,7 @@ export function SiteHeader({ account }: { account: { role: RoleName; home: strin
           </ButtonLink>
           <button
             type="button"
-            className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-white px-3 text-[12.5px] font-medium text-ink-2 md:hidden"
+            className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-white px-3 text-[12.5px] font-medium text-ink-2 lg:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpenAt(open ? null : pathname)}
@@ -75,7 +75,7 @@ export function SiteHeader({ account }: { account: { role: RoleName; home: strin
       </div>
 
       {open && (
-        <nav id="mobile-nav" aria-label="Main" className="flex flex-col gap-0.5 border-t border-line px-5 py-3 md:hidden">
+        <nav id="mobile-nav" aria-label="Main" className="flex animate-fade-up flex-col gap-0.5 border-t border-line px-5 py-3 lg:hidden">
           {links}
           <Link href={account ? account.home : "/login"} className="rounded-[7px] px-[11px] py-2.5 text-[12.5px] leading-none text-ink-muted no-underline sm:hidden">
             {account ? PORTAL_LABEL[account.role] : "Log in"}

@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
 import type { NavGroup, PortalRole } from "@/lib/portal-nav";
+import { NavIcon } from "@/components/portal/nav-icons";
 
 const BRAND: Record<PortalRole, { mark: string; sub: string | null }> = {
-  student: { mark: "bg-oxblood", sub: null },
-  mentor: { mark: "bg-ink", sub: "Mentor" },
-  admin: { mark: "bg-oxblood", sub: "Admin console" },
+  student: { mark: "bg-brand shadow-glow", sub: null },
+  mentor: { mark: "bg-gradient-to-b from-[#2a241e] to-ink shadow-card", sub: "Mentor" },
+  admin: { mark: "bg-brand shadow-glow", sub: "Admin console" },
 };
 
 function isActive(pathname: string, href: string, match: string[] = []) {
@@ -35,7 +36,7 @@ export function PortalSidebar({ role, groups, footer }: { role: PortalRole; grou
     <aside
       className={clsx(
         "md:sticky md:top-0 md:flex md:h-screen md:w-[232px] md:flex-none md:flex-col md:overflow-y-auto",
-        dark ? "bg-ink text-dark-text" : "border-b border-line bg-surface md:border-b-0 md:border-r",
+        dark ? "bg-night text-dark-text" : "border-b border-line bg-surface md:border-b-0 md:border-r md:shadow-[1px_0_0_rgba(60,35,10,0.03),6px_0_24px_rgba(60,35,10,0.04)]",
       )}
     >
       <div className="flex items-center justify-between gap-3 px-5 py-3 md:px-5 md:pb-4 md:pt-5">
@@ -80,13 +81,14 @@ export function PortalSidebar({ role, groups, footer }: { role: PortalRole; grou
                         href={it.href}
                         aria-current={active ? "page" : undefined}
                         className={clsx(
-                          "flex min-h-10 items-center gap-2 rounded-lg px-2.5 py-2 leading-[1.2] no-underline hover:no-underline",
+                          "group relative flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 leading-[1.2] no-underline transition-all duration-150 hover:no-underline",
                           dark
-                            ? clsx("text-[12.5px] font-medium", active ? "bg-dark-active text-surface" : "text-dark-soft hover:bg-dark-hover hover:text-surface")
-                            : clsx("text-[13px]", active ? "bg-line-soft font-semibold text-ink" : "font-normal text-ink-muted hover:bg-line-soft hover:text-ink"),
+                            ? clsx("text-[12.5px] font-medium", active ? "bg-white/[0.08] text-surface shadow-inset" : "text-dark-soft hover:bg-white/[0.05] hover:text-surface")
+                            : clsx("text-[13px]", active ? "bg-white font-semibold text-ink shadow-card ring-1 ring-line" : "font-normal text-ink-muted hover:bg-white/70 hover:text-ink"),
                         )}
                       >
-                        {dark && <span aria-hidden className={clsx("size-[5px] flex-none rounded-full", active ? "bg-oxblood" : "bg-dark-dot")} />}
+                        {active && <span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-oxblood shadow-[0_0_10px_rgba(147,40,54,0.7)]" />}
+                        <NavIcon href={it.href} className={clsx("size-[17px] flex-none transition-colors", active ? (dark ? "text-[#e7a0a8]" : "text-oxblood") : "opacity-75 group-hover:opacity-100")} />
                         <span className="min-w-0 flex-1 truncate">{it.label}</span>
                       </Link>
                     </li>
