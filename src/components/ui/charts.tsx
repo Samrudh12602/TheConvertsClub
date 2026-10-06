@@ -41,3 +41,41 @@ export function Sparkline({ data, tone = "oxblood", width = 120, height = 36, cl
     </svg>
   );
 }
+
+/** A radar (spider) chart for a few 0–max scores, e.g. the feedback rubric. Pure SVG. */
+export function RadarChart({ labels, values, compare, max = 10, size = 260, tone = "oxblood" }: { labels: string[]; values: number[]; compare?: number[]; max?: number; size?: number; tone?: keyof typeof TONE }) {
+  const n = labels.length;
+  if (n < 3) return null;
+  const c = size / 2, R = size / 2 - 46;
+  const pt = (i: number, v: number) => { const a = (-Math.PI / 2) + (2 * Math.PI * i) / n; const r = (Math.max(0, Math.min(max, v)) / max) * R; return [c + r * Math.cos(a), c + r * Math.sin(a)] as const; };
+  const poly = (vals: number[]) => vals.map((v, i) => pt(i, v).map((x) => x.toFixed(1)).join(",")).join(" ");
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" style={{ maxWidth: size }} role="img" aria-label={`Scores: ${labels.map((l, i) => `${l} ${values[i]?.toFixed(1)}`).join(", ")}`}>
+      {[0.25, 0.5, 0.75, 1].map((f) => <polygon key={f} points={labels.map((_, i) => pt(i, max * f).map((x) => x.toFixed(1)).join(",")).join(" ")} fill="none" stroke="var(--color-line)" strokeWidth="1" />)}
+      {labels.map((_, i) => { const [x, y] = pt(i, max); return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="var(--color-line)" strokeWidth="1" />; })}
+      {compare && <polygon points={poly(compare)} fill="none" stroke="var(--color-ink-faint)" strokeWidth="1.5" strokeDasharray="4 3" />}
+      <polygon points={poly(values)} fill={TONE[tone]} fillOpacity="0.16" stroke={TONE[tone]} strokeWidth="2" strokeLinejoin="round" />
+      {values.map((v, i) => { const [x, y] = pt(i, v); return <circle key={i} cx={x} cy={y} r="3.4" fill={TONE[tone]} />; })}
+      {labels.map((l, i) => { const [x, y] = pt(i, max * 1.2); return <text key={l} x={x} y={y} textAnchor={x < c - 4 ? "end" : x > c + 4 ? "start" : "middle"} dominantBaseline="middle" fontSize="10.5" fontWeight="600" fill="var(--color-ink-2)">{l}</text>; })}
+    </svg>
+  );
+}
+
+/** Score-over-time line with a dashed target line. Points are labelled underneath. */
+export function ScoreLine({ points, target, height = 190 }: { points: { label: string; score: number }[]; target?: number; height?: number }) {
+  const w = 640, padX = 28, padT = 16, padB = 28;
+  const y = (v: number) => padT + (1 - v / 10) * (height - padT - padB);
+  const x = (i: number) => padX + (points.length === 1 ? (w - 2 * padX) / 2 : (i / (points.length - 1)) * (w - 2 * padX));
+  const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.score).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(points.length - 1).toFixed(1)},${height - padB} L${x(0).toFixed(1)},${height - padB} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" role="img" aria-label={`Scores: ${points.map((p) => `${p.label} ${p.score.toFixed(1)}`).join(", ")}`}>
+      <defs><linearGradient id="score-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={TONE.oxblood} stopOpacity="0.25" /><stop offset="100%" stopColor={TONE.oxblood} stopOpacity="0" /></linearGradient></defs>
+      {[0, 2.5, 5, 7.5, 10].map((g) => <g key={g}><line x1={padX} x2={w - padX} y1={y(g)} y2={y(g)} stroke="var(--color-line-soft)" /><text x={4} y={y(g)} fontSize="9.5" dominantBaseline="middle" fill="var(--color-ink-faint)">{g}</text></g>)}
+      {target !== undefined && <g><line x1={padX} x2={w - padX} y1={y(target)} y2={y(target)} stroke={TONE.teal} strokeDasharray="5 4" strokeWidth="1.5" /><text x={w - padX} y={y(target) - 6} textAnchor="end" fontSize="10" fontWeight="600" fill={TONE.teal}>Target {target}</text></g>}
+      {points.length > 1 && <path d={area} fill="url(#score-fill)" />}
+      <path d={line} fill="none" stroke={TONE.oxblood} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={1} pathLength={1} className="animate-draw" />
+      {points.map((p, i) => <g key={i}><circle cx={x(i)} cy={y(p.score)} r="4.5" fill="white" stroke={TONE.oxblood} strokeWidth="2.5" /><text x={x(i)} y={y(p.score) - 11} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-ink)">{p.score.toFixed(1)}</text><text x={x(i)} y={height - 8} textAnchor="middle" fontSize="10" fill="var(--color-ink-faint)">{p.label}</text></g>)}
+    </svg>
+  );
+}

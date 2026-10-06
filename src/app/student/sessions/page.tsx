@@ -1,9 +1,10 @@
 import { PortalPage } from "@/components/portal/portal-page";
+import { KpiGrid, Kpi } from "@/components/portal/ui";
+import { CalendarCheck, CheckCircle2, Star } from "lucide-react";
+import { SessionBoard, type BoardRow } from "@/components/student/session-board";
 import { nowMs } from "@/lib/datetime";
-import { DateBadge, Empty, StatusPill } from "@/components/portal/ui";
-import Link from "next/link";
 import { db } from "@/lib/db";
-import { fmtDayNum, fmtMon, fmtTime } from "@/lib/format";
+import { fmtDayNum, fmtMon, fmtTime, relative } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { requireStudent } from "@/server/session";
 
@@ -15,29 +16,26 @@ export default async function SessionsPage() {
   const sessions = await db.session.findMany({
     where: { studentId: user.id, startsAt: { not: null } },
     orderBy: { startsAt: "desc" },
-    include: { mentor: { include: { user: { select: { name: true } } } }, feedback: { select: { id: true } } },
+    include: { mentor: { include: { user: { select: { name: true } } } }, feedback: { select: { id: true, overall: true } } },
   });
   const now = nowMs();
-  const upcoming = sessions.filter((s) => s.startsAt!.getTime() >= now && ["CONFIRMED", "REQUESTED"].includes(s.status)).reverse();
-  const past = sessions.filter((s) => !upcoming.includes(s));
-  const row = (s: (typeof sessions)[number]) => {
-    const st = s.status === "COMPLETED" && s.feedback ? { label: "Feedback ready", tone: "indigo" as const } : SESSION_STATUS[s.status];
-    return (
-      <Link key={s.id} href={`/student/sessions/${s.id}`} className="flex flex-wrap items-center gap-3.5 rounded-[10px] border border-line bg-card p-3.5 text-inherit no-underline hover:border-ink hover:no-underline">
-        <DateBadge day={fmtDayNum(s.startsAt!)} mon={fmtMon(s.startsAt!)} w="w-[52px]" />
-        <div className="min-w-0 flex-[1_1_200px]">
-          <p className="text-[13.5px] font-semibold leading-[1.3] text-ink">{sessionTitle(s.type, s.focus)}</p>
-          <p className="mt-[3px] text-xs leading-[1.4] text-ink-faint">{fmtTime(s.startsAt!)}{s.mentor?.user.name ? ` · ${s.mentor.user.name.replace(/\s*\(demo\)/, "")}` : ""}</p>
-        </div>
-        <StatusPill tone={st.tone}>{st.label}</StatusPill>
-      </Link>
-    );
-  };
+  const isUpcoming = (s: (typeof sessions)[number]) => s.startsAt!.getTime() >= now && ["CONFIRMED", "REQUESTED"].includes(s.status);
+  const rows: BoardRow[] = [...sessions.filter(isUpcoming).reverse(), ...sessions.filter((s) => !isUpcoming(s))].map((s) => {
+    const up = isUpcoming(s);
+    const ready = s.status === "COMPLETED" && s.feedback;
+    const st = ready ? { label: "Feedback ready", tone: "indigo" as const } : SESSION_STATUS[s.status];
+    return { id: s.id, title: sessionTitle(s.type, s.focus), day: fmtDayNum(s.startsAt!), mon: fmtMon(s.startsAt!), time: fmtTime(s.startsAt!), mentor: s.mentor?.user.name?.replace(/\s*\(demo\)/, "") ?? null, group: up ? "upcoming" : ready ? "feedback" : "past", label: st.label, tone: st.tone, score: s.feedback?.overall ?? null, when: up ? relative(s.startsAt!) : null };
+  });
+  const scored = sessions.filter((s) => s.feedback).map((s) => s.feedback!.overall);
+  const avg = scored.length ? scored.reduce((a, b) => a + b, 0) / scored.length : null;
   return (
-    <PortalPage width="max-w-[820px]">
-      {sessions.length === 0 && <Empty>No sessions yet. <Link href="/student/book">Book your first one.</Link></Empty>}
-      {upcoming.length > 0 && <><h2 className="type-label text-ink-faint">Upcoming</h2><div className="flex flex-col gap-2.5">{upcoming.map(row)}</div></>}
-      {past.length > 0 && <><h2 className="type-label mt-2 text-ink-faint">Past</h2><div className="flex flex-col gap-2.5">{past.map(row)}</div></>}
+    <PortalPage width="max-w-[860px]">
+      <KpiGrid>
+        <Kpi label="Upcoming" value={rows.filter((r) => r.group === "upcoming").length} note="Booked sessions" icon={<CalendarCheck />} accent="indigo" />
+        <Kpi label="Completed" value={sessions.filter((s) => s.status === "COMPLETED").length} note="Sessions done" icon={<CheckCircle2 />} accent="teal" />
+        <Kpi label="Average score" value={avg !== null ? avg.toFixed(1) : "\u2014"} note={scored.length ? `Across ${scored.length} feedback` : "After your first feedback"} icon={<Star />} accent="gold" />
+      </KpiGrid>
+      <SessionBoard rows={rows} />
     </PortalPage>
   );
 }

@@ -1,3 +1,4 @@
+import { CommandPalette, PaletteButton } from "@/components/portal/command-palette";
 import { PortalSidebar } from "@/components/portal/sidebar";
 import { PortalTopbar } from "@/components/portal/topbar";
 import { portals, type NavGroup, type PortalRole } from "@/lib/portal-nav";
@@ -57,8 +58,9 @@ export function PortalFrame({
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink md:flex-row">
       <PortalSidebar role={role} groups={navGroups ?? portals[role].groups} footer={footer} />
+      <CommandPalette groups={navGroups ?? portals[role].groups} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <PortalTopbar role={role} titleOverrides={titleOverrides}>{topRight}</PortalTopbar>
+        <PortalTopbar role={role} titleOverrides={titleOverrides}><PaletteButton />{topRight}</PortalTopbar>
         {children}
       </div>
     </div>

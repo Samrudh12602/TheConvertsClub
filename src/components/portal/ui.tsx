@@ -95,11 +95,11 @@ export function Empty({ children }: { children: React.ReactNode }) {
 }
 
 /** Coloured-edge insight card (feedback blocks, progress notes, messages). */
-export function Insight({ title, tone, children }: { title: string; tone: "green" | "oxblood" | "amber" | "indigo" | "stone"; children: React.ReactNode }) {
+export function Insight({ title, tone, icon, children }: { title: string; tone: "green" | "oxblood" | "amber" | "indigo" | "stone"; icon?: React.ReactNode; children: React.ReactNode }) {
   const edge: Record<string, string> = { green: "border-l-green text-green", oxblood: "border-l-oxblood text-oxblood", amber: "border-l-amber text-amber", indigo: "border-l-indigo text-indigo", stone: "border-l-ink-muted text-ink-muted" };
   return (
     <div className={clsx("rounded-xl border border-line border-l-[3px] bg-card p-[15px] shadow-card", edge[tone].split(" ")[0])}>
-      <p className={clsx("type-label", edge[tone].split(" ")[1])}>{title}</p>
+      <p className={clsx("type-label flex items-center gap-1.5 [&>svg]:size-3.5", edge[tone].split(" ")[1])}>{icon}{title}</p>
       <div className="mt-[9px] flex flex-col gap-[9px] text-[13px] leading-[1.55] text-ink-body">{children}</div>
     </div>
   );
@@ -112,4 +112,12 @@ export function Section({ children, cols = 260 }: { children: React.ReactNode; c
 export function Flash({ tone = "amber", children }: { tone?: "amber" | "green" | "oxblood"; children: React.ReactNode }) {
   const t = { amber: "border-amber-line bg-amber-tint text-amber-ink", green: "border-green/20 bg-green-tint text-green", oxblood: "border-oxblood-line bg-oxblood-tint text-oxblood" };
   return <div role={tone === "oxblood" ? "alert" : "status"} className={clsx("rounded-xl border px-4 py-3 text-[12.5px] leading-[1.55] shadow-xs", t[tone])}>{children}</div>;
+}
+
+const AVATAR_TONES = ["bg-oxblood-tint text-oxblood", "bg-teal-tint text-teal", "bg-gold-tint text-gold-deep", "bg-indigo-tint text-indigo", "bg-plum-tint text-plum"];
+/** Initials in a soft coloured circle; the colour is stable per name so a person is recognisable at a glance. */
+export function Avatar({ name, size = 36, className }: { name: string; size?: number; className?: string }) {
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
+  const tone = AVATAR_TONES[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % AVATAR_TONES.length];
+  return <span aria-hidden className={clsx("flex flex-none items-center justify-center rounded-full font-display font-bold", tone, className)} style={{ width: size, height: size, fontSize: size * 0.36 }}>{initials}</span>;
 }

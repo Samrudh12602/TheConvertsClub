@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CalendarCheck, IndianRupee, Star, Trophy } from "lucide-react";
+import { AlarmClock, CalendarCheck, ChevronRight, IndianRupee, Medal, Star, Trophy } from "lucide-react";
+import { Sparkline } from "@/components/ui/charts";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, Kpi, KpiGrid, Meter, Panel, Row, Section } from "@/components/portal/ui";
 import { db } from "@/lib/db";
@@ -32,6 +33,12 @@ export default async function MentorDashboard() {
   ]);
   // The owner's own mentor mode earns no pay and isn't listed publicly, so only 'publish your hours' applies.
   const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots }).filter((i) => !mentor.isAdminMentor || i.key === "availability");
+  const dueMs = settings.feedbackDueHours * 3_600_000;
+  const [needFeedback, accrualRows] = await Promise.all([
+    db.session.findMany({ where: { mentorId: mentor.id, status: "CONFIRMED", feedback: null, startsAt: { lt: now } }, orderBy: { startsAt: "asc" }, take: 5, include: { student: { select: { name: true } } } }),
+    db.payoutAccrual.findMany({ where: { mentorId: mentor.id, createdAt: { gte: new Date(now.getTime() - 56 * 86_400_000) } }, select: { amountPaise: true, createdAt: true } }),
+  ]);
+  const weeks = Array.from({ length: 8 }, (_, i) => accrualRows.filter((a) => Math.floor((a.createdAt.getTime() - (now.getTime() - 56 * 86_400_000)) / (7 * 86_400_000)) === i).reduce((n, a) => n + a.amountPaise, 0) / 100);
   const progress = checklistProgress(checklist);
   const first = assigned[0];
   const nm = (n?: string | null) => n?.replace(/\s*\(demo\)/, "") ?? "Student";
@@ -57,7 +64,7 @@ export default async function MentorDashboard() {
       <KpiGrid>
         <Kpi label="This week" value={`${bookedWeek} / ${bookedWeek + openWeek}`} note={`${openWeek} slot${openWeek === 1 ? "" : "s"} still open`} icon={<CalendarCheck />} accent="indigo" />
         <Kpi label="Mocks, season" value={mocks} note="Completed sessions" noteTone="muted" icon={<Trophy />} accent="gold" />
-        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note="Awaiting payout" icon={<IndianRupee />} accent="teal" />
+        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note={<span className="flex items-center justify-between gap-2"><span>Awaiting payout</span><Sparkline data={weeks} tone="teal" width={60} height={20} /></span>} icon={<IndianRupee />} accent="teal" />
         <Kpi label="Avg rating" value={ratings._avg.rating ? ratings._avg.rating.toFixed(1) : "—"} note={`Across ${ratings._count} rated sessions`} noteTone="green" icon={<Star />} accent="gold" />
       </KpiGrid>
 
@@ -75,12 +82,31 @@ export default async function MentorDashboard() {
         </div>
       ) : <Panel><Empty>No sessions assigned right now.</Empty></Panel>}
 
+      {needFeedback.length > 0 && (
+        <Panel title={`Feedback due \u00b7 ${needFeedback.length}`} action={<Link href="/mentor/sessions" className="text-xs font-semibold">All sessions</Link>}>
+          {needFeedback.map((a) => {
+            const left = (a.startsAt ? a.startsAt.getTime() : now.getTime()) + dueMs - now.getTime();
+            const late = left < 0;
+            const hrs = Math.abs(Math.round(left / 3_600_000));
+            return (
+              <Row key={a.id} href={`/mentor/feedback/${a.id}`}>
+                <span className={`flex size-9 flex-none items-center justify-center rounded-xl ${late ? "bg-oxblood-tint text-oxblood" : "bg-gold-tint text-gold-deep"}`}><AlarmClock aria-hidden className="size-[18px]" /></span>
+                <div className="min-w-0 flex-1"><p className="text-[13px] font-medium leading-[1.3] text-ink-body">{nm(a.student?.name)}</p><p className="mt-0.5 text-[11.5px] leading-[1.35] text-ink-faint">{sessionTitle(a.type, a.focus)}</p></div>
+                <span className={`tnum flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold ${late ? "bg-oxblood-tint text-oxblood" : "bg-gold-tint text-gold-deep"}`}>{(() => { const t = hrs >= 48 ? `${Math.round(hrs / 24)}d` : `${hrs}h`; return late ? `${t} overdue` : `${t} left`; })()}</span>
+                <ChevronRight aria-hidden className="size-4 flex-none text-ink-faint" />
+              </Row>
+            );
+          })}
+        </Panel>
+      )}
+
       <Section cols={280}>
         <Panel title="Assigned to you" action={<Link href="/mentor/sessions" className="text-xs font-semibold">All</Link>}>
           {assigned.length === 0 ? <Empty>Nothing assigned yet.</Empty> : assigned.map((a) => (
             <Row key={a.id} href={`/mentor/sessions/${a.id}`}>
-              <span className="tnum w-[70px] flex-none text-[11.5px] font-semibold leading-[1.3] text-ink-faint">{fmtWhen(a.startsAt!).replace(/^\w+ /, "")}</span>
+              <span aria-hidden className="flex size-9 flex-none items-center justify-center rounded-full bg-indigo-tint font-display text-[13px] font-bold text-indigo">{nm(a.student?.name).slice(0, 1).toUpperCase()}</span>
               <div className="min-w-0 flex-1"><p className="text-[13px] font-medium leading-[1.3] text-ink-body">{nm(a.student?.name)}</p><p className="mt-0.5 text-[11.5px] leading-[1.35] text-ink-faint">{sessionTitle(a.type, a.focus)}</p></div>
+              <span className="tnum flex-none text-right text-[11.5px] font-semibold leading-[1.3] text-ink-2">{fmtWhen(a.startsAt!).replace(/^\w+ /, "")}</span>
             </Row>
           ))}
         </Panel>
@@ -110,7 +136,7 @@ export default async function MentorDashboard() {
 function BoardRow({ b, me }: { b: Awaited<ReturnType<typeof mentorBoard>>[number]; me: boolean }) {
   return (
     <li className={`flex items-center gap-3 border-b border-line-soft py-2.5 text-[13px] last:border-b-0 ${me ? "font-semibold text-oxblood" : "text-ink-body"}`}>
-      <span className="tnum w-6 flex-none text-ink-faint">#{b.rank}</span>
+      {b.rank <= 3 ? <Medal aria-label={`Rank ${b.rank}`} className={`size-5 flex-none ${["text-gold", "text-ink-faint", "text-[#a8643a]"][b.rank - 1]}`} /> : <span className="tnum w-5 flex-none text-center text-ink-faint">#{b.rank}</span>}
       <span className="min-w-0 flex-1 truncate">{b.name}{me ? " (you)" : ""}</span>
       <span className="tnum flex-none text-ink-2">{b.mocks} {b.mocks === 1 ? "session" : "sessions"}</span>
       <span className="tnum w-10 flex-none text-right text-ink-faint">{b.rating ? `★ ${b.rating.toFixed(1)}` : "—"}</span>

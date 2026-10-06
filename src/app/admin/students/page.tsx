@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, StatusPill } from "@/components/portal/ui";
+import { ChevronRight, GraduationCap, Search, UserCheck, UserX, Video } from "lucide-react";
+import { Avatar, Empty, Kpi, KpiGrid, StatusPill } from "@/components/portal/ui";
 import { adminDb } from "@/server/demo";
 
 export const dynamic = "force-dynamic";
@@ -25,36 +26,52 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
     db.product.findMany({ where: { enrollments: { some: {} } }, select: { slug: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
+  const enrolled = students.filter((s) => s.enrollments.length > 0).length;
+  const totalSessions = students.reduce((n, s) => n + s._count.studentSessions, 0);
   return (
     <PortalPage width="max-w-[1100px]">
+      <KpiGrid>
+        <Kpi label="Students shown" value={students.length} note={q || plan ? "Filtered" : "Newest first"} icon={<GraduationCap />} accent="indigo" />
+        <Kpi label="Enrolled" value={enrolled} note="Hold at least one plan" noteTone="green" icon={<UserCheck />} accent="teal" />
+        <Kpi label="Not enrolled" value={students.length - enrolled} note="Signed up, no plan yet" noteTone={students.length - enrolled ? "amber" : "muted"} icon={<UserX />} accent="gold" />
+        <Kpi label="Sessions taken" value={totalSessions} note="Across these students" icon={<Video />} accent="oxblood" />
+      </KpiGrid>
       <form className="flex flex-wrap gap-2">
-        <input name="q" defaultValue={q} placeholder="Search name or email" className="min-h-11 flex-1 rounded-lg border border-line-strong bg-white px-3 text-base text-ink md:max-w-xs md:text-[13px]" />
-        <select name="plan" defaultValue={plan ?? ""} className="min-h-11 rounded-lg border border-line-strong bg-white px-3 text-[13px] text-ink">
+        <div className="relative min-w-[220px] flex-1 md:max-w-sm">
+          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+          <input name="q" defaultValue={q} placeholder="Search name or email" className="min-h-11 w-full rounded-xl border border-line-strong bg-white pl-9 pr-3 text-base text-ink shadow-xs transition focus:border-oxblood focus:ring-2 focus:ring-oxblood/15 md:text-[13px]" />
+        </div>
+        <select name="plan" defaultValue={plan ?? ""} className="min-h-11 rounded-xl border border-line-strong bg-white px-3 text-[13px] text-ink shadow-xs">
           <option value="">All plans</option>
           {plans.map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
         </select>
-        <button type="submit" className="min-h-11 rounded-lg border border-line-strong bg-white px-4 text-[12.5px] font-semibold text-ink-2">Filter</button>
+        <button type="submit" className="min-h-11 rounded-xl bg-ink px-5 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-ink-2">Filter</button>
         {(q || plan) && <Link href="/admin/students" className="inline-flex min-h-11 items-center px-2 text-[12.5px] font-medium text-ink-faint no-underline">Clear</Link>}
       </form>
       {students.length === 0 ? <Empty>No students found.</Empty> : (
-        <div className="overflow-x-auto rounded-[10px] border border-line bg-card">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-card shadow-card">
           <table className="w-full min-w-[760px] border-collapse text-left text-[12.5px]">
-            <thead><tr className="border-b border-line">{["Name", "Enrolled in", "College", "Sessions", "Status", ""].map((h) => <th key={h} className="type-label px-3.5 py-2.5 text-ink-faint">{h}</th>)}</tr></thead>
+            <thead><tr className="border-b border-line bg-surface/60">{["Student", "Enrolled in", "College", "Sessions", "Status", ""].map((h) => <th key={h} className="type-label px-4 py-3 text-ink-faint">{h}</th>)}</tr></thead>
             <tbody>
               {students.map((s) => (
-                <tr key={s.id} className="border-b border-line-soft last:border-b-0 hover:bg-surface">
-                  <td className="px-3.5 py-2.5"><p className="font-medium text-ink-body">{nm(s.name)}{s.isDemo && <span className="ml-1.5 text-[10px] font-semibold uppercase text-ink-faint">demo</span>}</p><p className="text-[11px] text-ink-faint">{s.email}</p></td>
-                  <td className="px-3.5 py-2.5">
+                <tr key={s.id} className="group border-b border-line-soft transition-colors last:border-b-0 hover:bg-oxblood-tint/30">
+                  <td className="px-4 py-3">
+                    <Link href={`/admin/students/${s.id}`} className="flex items-center gap-3 text-inherit no-underline hover:no-underline">
+                      <Avatar name={nm(s.name)} />
+                      <span><span className="block font-semibold text-ink">{nm(s.name)}{s.isDemo && <span className="ml-1.5 rounded bg-line-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-ink-faint">demo</span>}</span><span className="block text-[11px] text-ink-faint">{s.email}</span></span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
                     {s.enrollments.length === 0 ? (
                       <span className="text-ink-faint">Not enrolled</span>
                     ) : (
-                      <div className="flex flex-wrap gap-1">{s.enrollments.map((e) => <span key={e.id} className="rounded-md bg-line-soft px-2 py-1 text-[11px] font-semibold text-ink-2">{e.product.name}</span>)}</div>
+                      <div className="flex flex-wrap gap-1">{s.enrollments.map((e) => <span key={e.id} className="rounded-full border border-line bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-2">{e.product.name}</span>)}</div>
                     )}
                   </td>
-                  <td className="px-3.5 py-2.5 text-ink-muted">{s.studentProfile?.college ?? "—"}</td>
-                  <td className="tnum px-3.5 py-2.5 text-ink-muted">{s._count.studentSessions}</td>
-                  <td className="px-3.5 py-2.5"><StatusPill tone={s.status === "ACTIVE" ? "green" : "oxblood"}>{s.status === "ACTIVE" ? "Active" : "Suspended"}</StatusPill></td>
-                  <td className="px-3.5 py-2.5"><Link href={`/admin/students/${s.id}`} className="text-xs font-semibold">Open</Link></td>
+                  <td className="px-4 py-3 text-ink-muted">{s.studentProfile?.college ?? "—"}</td>
+                  <td className="tnum px-4 py-3 font-semibold text-ink-2">{s._count.studentSessions}</td>
+                  <td className="px-4 py-3"><StatusPill tone={s.status === "ACTIVE" ? "green" : "oxblood"}>{s.status === "ACTIVE" ? "Active" : "Suspended"}</StatusPill></td>
+                  <td className="px-4 py-3 text-right"><Link href={`/admin/students/${s.id}`} aria-label={`Open ${nm(s.name)}`} className="inline-flex text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-oxblood"><ChevronRight className="size-4" /></Link></td>
                 </tr>
               ))}
             </tbody>

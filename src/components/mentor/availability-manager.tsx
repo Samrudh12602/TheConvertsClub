@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { Check, Crown, Lock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { useMode } from "@/components/mentor/availability-mode";
@@ -18,7 +19,7 @@ export function WindowForm({ defaultDate, weekStart }: { defaultDate: string; we
   const run = (fn: () => Promise<{ ok: boolean; message?: string; error?: string }>) => start(async () => { const r = await fn(); setMsg({ ok: r.ok, text: r.ok ? r.message ?? "Done." : r.error ?? "Failed." }); if (r.ok) router.refresh(); });
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end gap-3 rounded-[11px] border border-line bg-card p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-card p-4 shadow-card">
         <div className="min-w-[140px] flex-[1_1_140px]"><Field label="Date" type="date" value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} /></div>
         <div className="min-w-[110px] flex-[1_1_110px]"><Field label="From" type="time" step={3600} value={v.from} onChange={(e) => setV({ ...v, from: e.target.value })} /></div>
         <div className="min-w-[110px] flex-[1_1_110px]"><Field label="To" type="time" step={3600} value={v.to} onChange={(e) => setV({ ...v, to: e.target.value })} /></div>
@@ -57,12 +58,12 @@ export function WeekGrid({ days, rows }: { days: string[]; rows: { hour: string;
               <div className="tnum flex items-center px-2.5 py-[7px] text-[10.5px] font-medium leading-none text-ink-faint">{r.hour}</div>
               {r.cells.map((c) => (
                 <div key={c.iso} className="p-[3px]">
-                  {c.state === "booked" ? <div className="min-h-[30px] overflow-hidden text-ellipsis whitespace-nowrap rounded-[5px] bg-oxblood px-[5px] py-1.5 text-[9.5px] font-semibold leading-[1.2] text-white" title="Booked. Ask Samrudh to move it.">{c.label}</div>
-                  : c.state === "open" ? <button aria-label={direct ? "Free-time slot, click to turn it into a special paid slot" : "Open slot, click to remove"} onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-[#DED3C4] bg-[#EFE7DC] hover:bg-[#E3D9CA]" />
-                  : c.state === "special" ? <button aria-label={direct ? "Special paid slot, click to remove" : "Special paid slot, click to turn it into free time"} onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-[#C9A96A] bg-[#F2E4C4] text-[9.5px] font-semibold text-[#6B5420] hover:bg-[#EAD9B0]">₹</button>
-                  : c.state === "blocked" ? <div className="min-h-[30px] rounded-[5px] border border-[#DED3C4] bg-[repeating-linear-gradient(45deg,#F0EBE4,#F0EBE4_4px,#E5DFD7_4px,#E5DFD7_8px)]" title="Blocked" />
-                  : c.state === "past" ? <div className="min-h-[30px]" />
-                  : <button aria-label="Not offered, click to open this hour" onClick={() => click(c)} className="min-h-[30px] w-full rounded-[5px] border border-dashed border-line hover:border-[#B9AF9F]" />}
+                  {c.state === "booked" ? <div className="flex min-h-[34px] items-center gap-1 overflow-hidden rounded-lg bg-brand px-2 py-1.5 text-[10px] font-semibold leading-[1.2] text-white shadow-xs" title="Booked. Ask Samrudh to move it."><Lock aria-hidden className="size-3 flex-none" /><span className="truncate">{c.label ?? "Booked"}</span></div>
+                  : c.state === "open" ? <button aria-label={direct ? "Free-time slot, click to turn it into a special paid slot" : "Open slot, click to remove"} onClick={() => click(c)} className="flex min-h-[34px] w-full items-center justify-center rounded-lg border border-teal-line bg-teal-tint text-teal transition hover:border-teal hover:shadow-card"><Check aria-hidden className="size-4" /></button>
+                  : c.state === "special" ? <button aria-label={direct ? "Special paid slot, click to remove" : "Special paid slot, click to turn it into free time"} onClick={() => click(c)} className="flex min-h-[34px] w-full items-center justify-center rounded-lg border border-gold-line bg-gold-tint text-gold-deep transition hover:border-gold hover:shadow-card"><Crown aria-hidden className="size-4" /></button>
+                  : c.state === "blocked" ? <div className="min-h-[34px] rounded-lg border border-line bg-[repeating-linear-gradient(45deg,#F0EBE4,#F0EBE4_4px,#E5DFD7_4px,#E5DFD7_8px)]" title="Blocked" />
+                  : c.state === "past" ? <div className="min-h-[34px] rounded-lg bg-line-soft/40" />
+                  : <button aria-label="Not offered, click to open this hour" onClick={() => click(c)} className="group flex min-h-[34px] w-full items-center justify-center rounded-lg border border-dashed border-line text-transparent transition hover:border-oxblood hover:bg-oxblood-tint hover:text-oxblood"><Plus aria-hidden className="size-4" /></button>}
                 </div>
               ))}
             </div>

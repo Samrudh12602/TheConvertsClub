@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { Star } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
@@ -43,12 +44,15 @@ export function RatingPicker({ sessionId, initial, initialComment = "", initialC
   const [saved, setSaved] = useState(false);
   return (
     <div className="w-full">
-      <div className="flex gap-1.5" role="radiogroup" aria-label="Rate this session">
+      <div className="flex items-center gap-1" role="radiogroup" aria-label="Rate this session">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} role="radio" aria-checked={val === n} disabled={pending}
+          <button key={n} role="radio" aria-checked={val === n} aria-label={`${n} star${n === 1 ? "" : "s"}`} disabled={pending}
             onClick={() => start(async () => { const r = await rateSessionAction(sessionId, n); if (r.ok) { setVal(n); setErr(null); } else setErr(r.error); })}
-            className={clsx("flex size-10 items-center justify-center rounded-lg border text-[13px] font-semibold", val !== null && n <= val ? "border-ink bg-ink text-surface" : "border-line-strong bg-white text-ink-faint hover:border-ink")}>{n}</button>
+            className="rounded-md p-0.5 transition-transform hover:scale-110 active:scale-95">
+            <Star className={clsx("size-8 transition-colors", val !== null && n <= val ? "fill-gold stroke-gold" : "stroke-line-strong")} />
+          </button>
         ))}
+        {val !== null && <span className="ml-2 text-xs font-medium text-ink-muted">{["", "Not helpful", "Okay", "Good", "Very good", "Excellent"][val]}</span>}
       </div>
       {val !== null && (
         <div className="mt-3 flex flex-col gap-2">
