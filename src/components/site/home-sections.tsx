@@ -1,16 +1,18 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { ArrowRight, CalendarClock, ClipboardList, Clock, Crown, FileText, IndianRupee, MessageSquareText, ShieldCheck, ShoppingBag, Sparkles, Star, Video } from "lucide-react";
+import { ArrowRight, CalendarClock, ClipboardList, Clock, Crown, IndianRupee, MessageSquareText, ShieldCheck, ShoppingBag, Sparkles, Star, Video } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { CountUp, Reveal } from "@/components/ui/motion";
 import { Price, buyHref } from "@/components/site/price";
 import type { CatalogProduct } from "@/lib/pricing";
-import { describeCredit } from "@/lib/pricing";
+import { priceView } from "@/lib/pricing";
 import type { PublicMentor } from "@/lib/content";
 
 /* ---------------------------------------------------------------- hero */
 
-export function Hero({ featured, seatsLeft, feedbackHours }: { featured: CatalogProduct | null; seatsLeft: number | null; feedbackHours: number }) {
+const priceLabel = (p: CatalogProduct) => `₹${Math.round(priceView(p).payablePaise / 100)}`;
+
+export function Hero({ featured, seatsLeft, feedbackHours, trials }: { featured: CatalogProduct | null; seatsLeft: number | null; feedbackHours: number; trials: CatalogProduct[] }) {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-line bg-hero shadow-lift">
       <div className="grid items-center gap-10 px-6 py-10 sm:px-10 sm:py-14 lg:grid-cols-[1.15fr_0.85fr]">
@@ -29,6 +31,13 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
             <ButtonLink href="/packages" size="lg" className="px-6">See packages <ArrowRight className="size-4" /></ButtonLink>
             <ButtonLink href="/free-guide" variant="secondary" size="lg" className="px-5">Free interview checklist</ButtonLink>
           </div>
+          {trials.length > 0 && (
+            <a href="#try-us" className="mt-4 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-teal-line bg-teal-tint px-3.5 py-2.5 text-[12.5px] font-semibold leading-[1.35] text-teal no-underline shadow-xs transition hover:shadow-card hover:no-underline">
+              <Sparkles aria-hidden className="size-4 flex-none" />
+              Not sure yet? Try us first: {trials.map((t) => `${t.name.replace("Trial ", "").replace(/^./, (c) => c.toUpperCase())} ${priceLabel(t)}`).join(" · ")}
+              <ArrowRight aria-hidden className="size-3.5 flex-none" />
+            </a>
+          )}
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-[12.5px] font-medium text-ink-2">
             {[[ShieldCheck, "Mentors who converted"], [Clock, `Feedback within ${feedbackHours} hours`], [IndianRupee, "Prices in the open"]].map(([I, t]) => {
               const Icon = I as typeof ShieldCheck;
@@ -42,23 +51,35 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
           )}
         </div>
 
-        <div className="relative mx-auto w-full max-w-[380px] lg:max-w-none">
-          {/* A glimpse of what you get. The floating cards are illustrations of the product, labelled as such. */}
-          <div aria-hidden className="absolute -bottom-6 -left-5 z-10 hidden w-[176px] animate-float rounded-2xl border border-line bg-white p-3 shadow-lift sm:block">
-            <p className="type-label text-ink-faint">Sample feedback</p>
-            <div className="mt-2 flex items-center gap-2"><span className="flex size-8 items-center justify-center rounded-lg bg-teal-tint text-teal"><FileText className="size-4" /></span><div><p className="text-[12px] font-semibold leading-none text-ink">Clear structure</p><p className="mt-1 text-[10.5px] leading-none text-ink-faint">Strengths · Fix · Next</p></div></div>
-          </div>
-          <div aria-hidden className="absolute -right-3 -top-6 z-10 hidden w-[168px] animate-float-slow rounded-2xl border border-line bg-white p-3 shadow-lift sm:block">
-            <p className="type-label text-ink-faint">Sample session</p>
-            <div className="mt-2 flex items-center gap-2"><span className="flex size-8 items-center justify-center rounded-lg bg-oxblood-tint text-oxblood"><Video className="size-4" /></span><div><p className="text-[12px] font-semibold leading-none text-ink">Mock PI · 1 hr</p><p className="mt-1 text-[10.5px] leading-none text-ink-faint">Live, one-to-one</p></div></div>
-          </div>
-          {featured && (
-            <div className="relative overflow-hidden rounded-2xl bg-night p-6 text-surface shadow-pop ring-1 ring-white/10 sm:rotate-[2deg] sm:transition-transform sm:duration-500 sm:hover:rotate-0">
-              <span aria-hidden className="absolute -right-10 -top-10 size-36 rounded-full bg-oxblood/40 blur-3xl" />
+        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
+          {trials.length > 0 ? (
+            <div id="try-us" className="relative scroll-mt-24 overflow-hidden rounded-2xl bg-night p-6 text-surface shadow-pop ring-1 ring-white/10">
+              <span aria-hidden className="absolute -right-10 -top-10 size-40 rounded-full bg-teal/30 blur-3xl" />
+              <span aria-hidden className="absolute -bottom-12 -left-8 size-36 rounded-full bg-oxblood/40 blur-3xl" />
+              <p className="type-eyebrow relative text-gold">Try us first</p>
+              <h2 className="relative mt-2.5 font-display text-[23px] font-bold leading-[1.2]">Feel the quality before you commit.</h2>
+              <p className="relative mt-2.5 text-[12.5px] leading-[1.65] text-dark-soft">Same sessions, same standard, taken by Samrudh himself. Pay a token amount and see how good we really are.</p>
+              <ul className="relative mt-5 flex flex-col gap-2.5">
+                {trials.map((t) => (
+                  <li key={t.slug} className="flex items-center gap-3 rounded-xl bg-white/[0.07] p-3.5 ring-1 ring-white/10">
+                    <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-white/10 text-gold">{t.slug === "trial-guidance" ? <MessageSquareText className="size-5" aria-hidden /> : <Video className="size-5" aria-hidden />}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-semibold leading-[1.25]">{t.slug === "trial-guidance" ? "Guidance call" : "Mock PI"}</span>
+                      <span className="mt-0.5 block text-[11.5px] leading-[1.35] text-dark-soft">{t.slug === "trial-guidance" ? "25 minutes with Samrudh" : "A real mock with feedback"}</span>
+                    </span>
+                    <span className="tnum font-display text-[24px] font-bold leading-none">{priceLabel(t)}</span>
+                    <ButtonLink href={buyHref(t)} variant="onDark" size="sm" className="flex-none">Book</ButtonLink>
+                  </li>
+                ))}
+              </ul>
+              <p className="relative mt-4 text-[11.5px] leading-[1.6] text-dark-muted">It&apos;s a paid trial, not free, because good sessions cost real time and a small price keeps the slot for people who show up. One of each per person.</p>
+              {featured && <Link href={buyHref(featured)} className="relative mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-[12.5px] font-semibold text-dark-text no-underline hover:text-white hover:no-underline">Ready to go all in? {featured.name} · <Price product={featured} className="text-[14px] text-surface" strikeSize="text-[11px]" strikeClassName="text-dark-muted" onDark /><ArrowRight aria-hidden className="size-4" /></Link>}
+            </div>
+          ) : featured && (
+            <div className="relative overflow-hidden rounded-2xl bg-night p-6 text-surface shadow-pop ring-1 ring-white/10">
               <p className="type-eyebrow relative text-dark-muted">Most bought</p>
               <h2 className="relative mt-2.5 font-display text-[21px] font-bold leading-[1.2]">{featured.name}</h2>
               <div className="relative mt-3"><Price product={featured} className="text-[36px] text-surface" strikeSize="text-sm" strikeClassName="text-dark-muted" onDark /></div>
-              <p className="relative mt-3 text-[12.5px] leading-[1.65] text-dark-soft">{featured.credits.map((c) => describeCredit(c)).join(" · ")}</p>
               <ButtonLink href={buyHref(featured)} variant="onDark" size="lg" block className="relative mt-5 min-h-[46px]">Buy now <ArrowRight className="size-4" /></ButtonLink>
             </div>
           )}

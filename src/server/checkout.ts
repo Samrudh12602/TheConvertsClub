@@ -73,6 +73,12 @@ export async function startCheckout(input: { slug: string; name: string; email: 
     if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
   }
   const email = parsed.data.email.toLowerCase();
+  // Trial offers (Rs 10 / Rs 50) are a first taste: one per person, per trial, counted by email and by phone.
+  if (q.product.slug.startsWith("trial-")) {
+    const phoneDigits = normalizeIndianPhone(parsed.data.phone);
+    const used = await db.order.count({ where: { product: { slug: q.product.slug }, status: { in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] }, OR: [{ guestEmail: { equals: email, mode: "insensitive" } }, ...(phoneDigits ? [{ guestPhone: { endsWith: phoneDigits.slice(-10) } }] : [])] } });
+    if (used > 0) throw new CheckoutError("You've already used this trial. Pick one of the full sessions instead.");
+  }
   if (q.couponId) {
     // A mentor can't use their own referral code (the Terms say so; this is where it is enforced).
     const owner = await db.coupon.findUnique({ where: { id: q.couponId }, select: { mentor: { select: { userId: true, user: { select: { email: true } } } } } });

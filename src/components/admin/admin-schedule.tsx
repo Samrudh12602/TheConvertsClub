@@ -51,7 +51,7 @@ export function AdminHoursForm({ mentorId }: { mentorId: string }) {
   );
 }
 
-const TYPES = [["MOCK_PI", "Mock PI"], ["STRATEGY_CALL", "Strategy call"], ["GUIDANCE", "Guidance call"], ["PI_DIRECT", "PI with Samrudh"], ["STRATEGY_DIRECT", "Strategy call with Samrudh"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI"], ["STRATEGY_CALL", "Strategy call"], ["GUIDANCE", "Guidance call"], ["PI_DIRECT", "PI with Samrudh"], ["STRATEGY_DIRECT", "Strategy call with Samrudh"], ["TRIAL_GUIDANCE", "Trial guidance call"], ["TRIAL_PI", "Trial mock PI"]] as const;
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
 
 /** Admin books a session for a student: normal rules, the student's own credit, the student gets the email. */

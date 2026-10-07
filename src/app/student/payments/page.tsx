@@ -33,7 +33,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // products belong here, and only once actually enrolled. Everyone else buys singles at full price
   // from /services, same as a public visitor. Everything shows at MRP; a mentor's referral code (or
   // any other coupon) is what brings the price down, entered on the buy button below.
-  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin)) : [];
+  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin) && !p.slug.startsWith("trial-")) : [];
 
   return (
     <PortalPage width="max-w-[820px]">

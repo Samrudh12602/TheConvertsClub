@@ -16,7 +16,9 @@ export type CreditKind =
   | "STRATEGY"
   | "GUIDANCE"
   | "PI_DIRECT"
-  | "STRATEGY_DIRECT";
+  | "STRATEGY_DIRECT"
+  | "TRIAL_GUIDANCE"
+  | "TRIAL_PI";
 
 export interface Credit {
   kind: CreditKind;
@@ -86,6 +88,8 @@ const LABELS: Record<CreditKind, { long: [string, string]; short: [string, strin
   GUIDANCE: { long: ["guidance call", "guidance calls"], short: ["guidance call", "guidance call"] },
   PI_DIRECT: { long: ["PI with Samrudh", "PIs with Samrudh"], short: ["PI with Samrudh", "PI with Samrudh"] },
   STRATEGY_DIRECT: { long: ["strategy call with Samrudh", "strategy calls with Samrudh"], short: ["Strategy with Samrudh", "Strategy with Samrudh"] },
+  TRIAL_GUIDANCE: { long: ["trial guidance call", "trial guidance calls"], short: ["Trial guidance", "Trial guidance"] },
+  TRIAL_PI: { long: ["trial mock PI", "trial mock PIs"], short: ["Trial mock PI", "Trial mock PI"] },
 };
 
 /** "4 mock PIs" (long) or "4 Mock PI" (short chip). */

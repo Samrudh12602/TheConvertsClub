@@ -10,7 +10,7 @@ export interface Chip { slotId: string; mentorId: string; mentor: string; status
 export interface CalRow { hour: string; cells: { iso: string; chips: Chip[]; past: boolean }[] }
 export interface StudentOpt { id: string; label: string; credits: Record<string, number> }
 
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Trial guidance call · 25 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"]] as const;
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
 const field = "min-h-10 rounded-lg border border-line-strong bg-white px-2.5 text-[12.5px]";
 const IST = "Asia/Kolkata";

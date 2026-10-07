@@ -19,7 +19,7 @@ const fail = (e: unknown): { ok: false; error: string } => {
   return { ok: false, error: "Something went wrong. Please try again." };
 };
 
-const typeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT"]);
+const typeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "TRIAL_GUIDANCE", "TRIAL_PI"]);
 const focusSchema = z.enum(["HR_PROFILE", "ACADEMICS", "STRESS", "INSTITUTE_FINAL", "CURRENT_AFFAIRS", "CROSS_QUESTIONING"]).nullable();
 
 async function guard(scope: string) {
@@ -30,22 +30,22 @@ async function guard(scope: string) {
 }
 
 /** All bookable times in the next 14 days for a type/focus. Grouped by day on the client. */
-export async function getTimesAction(type: string, focus: string | null): Promise<Ok<{ times: string[] }>> {
+export async function getTimesAction(type: string, focus: string | null, mentorId?: string | null): Promise<Ok<{ times: string[] }>> {
   try {
     const user = await guard("times");
     const t = typeSchema.parse(type);
     const f = focusSchema.parse(t === "MOCK_PI" ? focus : null);
     const now = new Date();
-    const times = await availableTimesRange(user.id, t, f as PiFocus | null, now, new Date(now.getTime() + 15 * 24 * HOUR));
+    const times = await availableTimesRange(user.id, t, f as PiFocus | null, now, new Date(now.getTime() + 15 * 24 * HOUR), mentorId ? z.string().max(40).parse(mentorId) : null);
     return { ok: true, times: times.map((d) => d.toISOString()) };
   } catch (e) { return fail(e); }
 }
 
-export async function holdAction(type: string, focus: string | null, iso: string): Promise<Ok<{ slotId: string; heldUntil: string }>> {
+export async function holdAction(type: string, focus: string | null, iso: string, mentorId?: string | null): Promise<Ok<{ slotId: string; heldUntil: string }>> {
   try {
     const user = await guard("hold");
     const t = typeSchema.parse(type);
-    const h = await holdSlot(user.id, t as SessionType, focusSchema.parse(t === "MOCK_PI" ? focus : null) as PiFocus | null, new Date(iso));
+    const h = await holdSlot(user.id, t as SessionType, focusSchema.parse(t === "MOCK_PI" ? focus : null) as PiFocus | null, new Date(iso), mentorId ? z.string().max(40).parse(mentorId) : null);
     return { ok: true, slotId: h.slotId, heldUntil: h.heldUntil.toISOString() };
   } catch (e) { return fail(e); }
 }

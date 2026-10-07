@@ -476,7 +476,7 @@ export async function adminAddHoursAction(mentorId: string, input: unknown): Pro
   } catch (e) { return fail(e); }
 }
 
-const bookTypeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT"]);
+const bookTypeSchema = z.enum(["MOCK_PI", "STRATEGY_CALL", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "TRIAL_GUIDANCE", "TRIAL_PI"]);
 const bookFocusSchema = z.enum(["HR_PROFILE", "ACADEMICS", "STRESS", "INSTITUTE_FINAL", "CURRENT_AFFAIRS", "CROSS_QUESTIONING"]).nullable();
 export async function adminTimesForStudentAction(studentId: string, type: unknown, focus: unknown): Promise<Result & { times?: string[] }> {
   try {

@@ -1,0 +1,7 @@
+-- AlterEnum
+ALTER TYPE "CreditKind" ADD VALUE 'TRIAL_GUIDANCE';
+ALTER TYPE "CreditKind" ADD VALUE 'TRIAL_PI';
+
+-- AlterEnum
+ALTER TYPE "SessionType" ADD VALUE 'TRIAL_GUIDANCE';
+ALTER TYPE "SessionType" ADD VALUE 'TRIAL_PI';

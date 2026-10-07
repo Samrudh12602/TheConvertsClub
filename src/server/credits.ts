@@ -9,7 +9,7 @@ export class InsufficientCreditsError extends Error {
 }
 
 export const sessionCreditKind = (t: SessionType): CreditKind =>
-  ({ MOCK_PI: "PI", STRATEGY_CALL: "STRATEGY", GUIDANCE: "GUIDANCE", GD_BATCH: "GD", PI_DIRECT: "PI_DIRECT", STRATEGY_DIRECT: "STRATEGY_DIRECT" } as const)[t];
+  ({ MOCK_PI: "PI", STRATEGY_CALL: "STRATEGY", GUIDANCE: "GUIDANCE", GD_BATCH: "GD", PI_DIRECT: "PI_DIRECT", STRATEGY_DIRECT: "STRATEGY_DIRECT", TRIAL_GUIDANCE: "TRIAL_GUIDANCE", TRIAL_PI: "TRIAL_PI" } as const)[t];
 
 export const reviewCreditKind = (k: ReviewKind): CreditKind =>
   ({ WAT: "WAT", SOP_BASIC: "SOP_BASIC", SOP_DETAILED: "SOP_DETAILED" } as const)[k];

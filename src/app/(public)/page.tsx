@@ -12,14 +12,15 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [products, featured, policy, how, questions, mentors] = await Promise.all([getProducts(), getProduct(FEATURED_SLUG), getPolicy(), steps(), faqs(), getPublicMentors()]);
-  const direct = products.filter((p) => p.withAdmin);
+  const trials = products.filter((p) => p.slug.startsWith("trial-")).sort((a, b) => a.pricePaise - b.pricePaise);
+  const direct = products.filter((p) => p.withAdmin && !p.slug.startsWith("trial-"));
   const seats = direct.map((p) => p.earlyBird?.seatsLeft ?? 0);
-  const cheapest = Math.min(...products.filter((p) => !p.enrolledOnly).map((p) => priceView(p).payablePaise));
+  const cheapest = Math.min(...products.filter((p) => !p.enrolledOnly && !p.slug.startsWith("trial-")).map((p) => priceView(p).payablePaise));
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-8 px-5 pb-6 pt-5 sm:gap-10">
       <ReferralBanner next="/" />
-      <Hero featured={featured} seatsLeft={seats.length ? Math.max(...seats) : null} feedbackHours={policy.feedbackDueHours} />
+      <Hero featured={featured} seatsLeft={seats.length ? Math.max(...seats) : null} feedbackHours={policy.feedbackDueHours} trials={trials} />
       <StatsStrip feedbackHours={policy.feedbackDueHours} fromPaise={Number.isFinite(cheapest) ? cheapest : 9900} />
       <HowItWorks steps={how} />
 
@@ -29,7 +30,7 @@ export default async function HomePage() {
           <h2 id="everything" className="type-display mt-3 text-ink">Pick one session, or the whole season</h2>
         </Reveal>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.filter((p) => !p.withAdmin).map((p, i) => (
+          {products.filter((p) => !p.withAdmin && !p.slug.startsWith("trial-")).map((p, i) => (
             <Reveal key={p.slug} delay={Math.min(i, 6) * 60} className="h-full"><ProductTile product={p} /></Reveal>
           ))}
         </div>

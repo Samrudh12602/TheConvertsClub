@@ -61,7 +61,7 @@ export interface Candidate {
 }
 
 /** Session types only the owner takes: strategy calls and PIs bought "with Samrudh". No regular mentor is ever matched to these. */
-export const ADMIN_ONLY_TYPES: ReadonlySet<string> = new Set(["STRATEGY_CALL", "PI_DIRECT", "STRATEGY_DIRECT"]);
+export const ADMIN_ONLY_TYPES: ReadonlySet<string> = new Set(["STRATEGY_CALL", "PI_DIRECT", "STRATEGY_DIRECT", "TRIAL_GUIDANCE", "TRIAL_PI"]);
 export const isAdminOnly = (type: string) => ADMIN_ONLY_TYPES.has(type);
 
 /**

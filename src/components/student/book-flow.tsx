@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CalendarClock, CheckCircle2, Clock3, Compass, Crown, Lightbulb, Mic, Moon, Sun, Sunset, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, UserCheck, CalendarClock, CheckCircle2, Clock3, Compass, Crown, Lightbulb, Mic, Moon, Sun, Sunset, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/charts";
 import { nowMs } from "@/lib/datetime";
@@ -21,16 +21,20 @@ const parts = (iso: string) => {
 
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
 const FOCUS_HINT: Record<string, string> = { HR_PROFILE: "Your story, why MBA, work-ex", ACADEMICS: "Subjects, projects, marks", STRESS: "Pushback and pressure", INSTITUTE_FINAL: "Full panel dry-run", CURRENT_AFFAIRS: "News and opinions", CROSS_QUESTIONING: "Defend every claim" };
-const TYPE_ICON: Record<string, React.ReactNode> = { MOCK_PI: <Mic />, STRATEGY_CALL: <Compass />, GUIDANCE: <Lightbulb />, PI_DIRECT: <Crown />, STRATEGY_DIRECT: <Crown /> };
+const TYPE_ICON: Record<string, React.ReactNode> = { MOCK_PI: <Mic />, STRATEGY_CALL: <Compass />, GUIDANCE: <Lightbulb />, PI_DIRECT: <Crown />, STRATEGY_DIRECT: <Crown />, TRIAL_GUIDANCE: <Lightbulb />, TRIAL_PI: <Mic /> };
 const PART = (iso: string) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: IST, hour: "numeric", hour12: false }).format(new Date(iso))) % 24;
 const DAYPARTS = [["Morning", <Sun key="m" />, (h: number) => h < 12], ["Afternoon", <Sunset key="a" />, (h: number) => h >= 12 && h < 17], ["Evening", <Moon key="e" />, (h: number) => h >= 17]] as const;
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Trial guidance call · 25 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"]] as const;
 
 interface Props {
   credits: Record<string, number>;
   guidancePrice: string;
   /** Reschedule mode: type and focus are fixed by the existing session. */
   reschedule?: { sessionId: string; type: string; focus: string | null; label: string };
+  /** Rebooking a mentor the student has already had a session with. */
+  rebook?: { mentorId: string; name: string };
+  initialType?: string;
+  initialFocus?: string;
 }
 
 function StepHead({ n, title, hint }: { n: number; title: string; hint?: string }) {
@@ -42,10 +46,10 @@ function StepHead({ n, title, hint }: { n: number; title: string; hint?: string 
   );
 }
 
-export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
+export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialType, initialFocus }: Props) {
   const router = useRouter();
-  const [type, setType] = useState(reschedule?.type ?? TYPES.find(([, , k]) => (credits[k] ?? 0) > 0)?.[0] ?? "MOCK_PI");
-  const [focus, setFocus] = useState<string | null>(reschedule?.focus ?? "HR_PROFILE");
+  const [type, setType] = useState(reschedule?.type ?? initialType ?? TYPES.find(([, , k]) => (credits[k] ?? 0) > 0)?.[0] ?? "MOCK_PI");
+  const [focus, setFocus] = useState<string | null>(reschedule?.focus ?? initialFocus ?? "HR_PROFILE");
   const [data, setData] = useState<{ key: string; times: string[] } | null>(null);
   const [reloadN, setReloadN] = useState(0);
   const [day, setDay] = useState<string | null>(null);
@@ -56,19 +60,21 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
   const [busy, setBusy] = useState(false);
   const holdRef = useRef<string | null>(null);
 
-  const key = `${type}|${type === "MOCK_PI" ? focus : ""}`;
+  const [anyMentor, setAnyMentor] = useState(false);
+  const mentorId = rebook && !anyMentor ? rebook.mentorId : null;
+  const key = `${type}|${type === "MOCK_PI" ? focus : ""}|${mentorId ?? ""}`;
   const times = data?.key === key ? data.times : null;
 
   // Fetch bookable times whenever the choice changes (state is set only after the await).
   useEffect(() => {
     let cancelled = false;
-    getTimesAction(type, type === "MOCK_PI" ? focus : null).then((r) => {
+    getTimesAction(type, type === "MOCK_PI" ? focus : null, mentorId).then((r) => {
       if (cancelled) return;
       if (!r.ok) { setError(r.error); setData({ key, times: [] }); return; }
       setData({ key, times: r.times });
     });
     return () => { cancelled = true; };
-  }, [key, reloadN, type, focus]);
+  }, [key, reloadN, type, focus, mentorId]);
 
   const dropHold = useCallback(() => {
     if (holdRef.current) void releaseHoldAction(holdRef.current);
@@ -98,7 +104,7 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
 
   async function pick(iso: string) {
     setError(null); setBusy(true);
-    const r = await holdAction(type, type === "MOCK_PI" ? focus : null, iso);
+    const r = await holdAction(type, type === "MOCK_PI" ? focus : null, iso, mentorId);
     setBusy(false);
     if (!r.ok) { setError(r.error); reload(); return; }
     holdRef.current = r.slotId;
@@ -139,6 +145,13 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
       <div className="flex min-w-0 flex-col gap-4">
         {reschedule && <Flash>Moving <strong>{reschedule.label}</strong>. Your credit stays reserved; pick a new time below.</Flash>}
         {error && <Flash tone="oxblood">{error}</Flash>}
+        {rebook && !reschedule && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-teal-line bg-teal-tint p-3.5">
+            <span className="flex size-9 flex-none items-center justify-center rounded-full bg-teal text-white"><UserCheck aria-hidden className="size-[18px]" /></span>
+            <p className="min-w-0 flex-1 text-[13px] leading-[1.45] text-ink-2">{anyMentor ? <>Showing times with <strong>any mentor</strong>.</> : <>Booking <strong>{rebook.name}</strong> again. Only their open times show below.</>}</p>
+            <button type="button" onClick={() => { dropHold(); setAnyMentor((v) => !v); }} className="rounded-lg border border-teal-line bg-white px-3 py-1.5 text-xs font-semibold text-teal transition hover:border-teal">{anyMentor ? `Back to ${rebook.name}` : "Show any mentor"}</button>
+          </div>
+        )}
 
         {!reschedule && (
           <div className={card}>
@@ -147,7 +160,7 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
               {TYPES.map(([id, label, kind]) => {
                 const n = credits[kind] ?? 0;
                 const on = type === id;
-                if (n === 0 && (kind === "PI_DIRECT" || kind === "STRATEGY_DIRECT")) return null; // only shown to people who bought it
+                if (n === 0 && (kind === "PI_DIRECT" || kind === "STRATEGY_DIRECT" || kind === "TRIAL_GUIDANCE" || kind === "TRIAL_PI")) return null; // only shown to people who bought it
                 const inner = (sub: React.ReactNode, active: boolean) => (
                   <>
                     <span className={clsx("flex size-10 flex-none items-center justify-center rounded-xl [&>svg]:size-5", active ? "bg-white/15 text-white" : "bg-oxblood-tint text-oxblood")}>{TYPE_ICON[id]}</span>
@@ -197,7 +210,7 @@ export function BookFlow({ credits, guidancePrice, reschedule }: Props) {
             <div className="mt-4 flex flex-col items-center rounded-xl bg-surface px-4 py-8 text-center">
               <span className="flex size-11 items-center justify-center rounded-full bg-line-soft text-ink-faint"><CalendarClock className="size-5" /></span>
               <p className="mt-3 text-[13.5px] font-semibold text-ink">No open slots in the next two weeks</p>
-              <p className="mt-1 max-w-[40ch] text-[12.5px] leading-normal text-ink-muted">Mentors release new hours every Sunday. Try another focus or check back then.</p>
+              <p className="mt-1 max-w-[40ch] text-[12.5px] leading-normal text-ink-muted">{mentorId ? `${rebook?.name} has no open times that fit right now. Try “Show any mentor”, or check back after Sunday.` : "Mentors release new hours every Sunday. Try another focus or check back then."}</p>
             </div>
           ) : (
             <>

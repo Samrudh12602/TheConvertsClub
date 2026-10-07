@@ -20,15 +20,28 @@ const now = () => new Date();
 const openOrExpiredHold = (t: Date) => ({ OR: [{ status: "OPEN" as const }, { status: "HELD" as const, heldUntil: { lt: t } }] });
 
 /** Mentors whose slots can serve this session type. Strategy calls are Samrudh's; everything else any active mentor. */
-export const mentorFilter = (type: SessionType, demo: boolean) => ({ status: "ACTIVE" as const, user: { isDemo: demo }, ...(isAdminOnly(type) ? { isAdminMentor: true } : {}) });
+export const mentorFilter = (type: SessionType, demo: boolean, preferMentorId?: string | null) => ({
+  status: "ACTIVE" as const, user: { isDemo: demo }, ...(isAdminOnly(type) ? { isAdminMentor: true } : {}),
+  // "Rebook the same mentor": only ever that one mentor's slots. Admin-only types ignore the preference (they are the owner's anyway).
+  ...(preferMentorId && !isAdminOnly(type) ? { id: preferMentorId } : {}),
+});
+
+/**
+ * A student can ask for a mentor again only if that mentor has already completed a session with them. This stops the
+ * preference being used to pick, or probe, mentors the student has never met.
+ */
+export async function assertCanRebook(studentId: string, mentorId: string) {
+  const met = await db.session.count({ where: { studentId, mentorId, status: "COMPLETED" } });
+  if (!met) throw new BookingError("You can rebook a mentor you've already had a session with.", "NOT_ALLOWED");
+}
 
 /** Real students are only ever matched to real mentors, and demo students to demo mentors, so a fake demo mentor can never get a real booking. */
 const isDemoStudent = async (client: Pick<typeof db, "user">, studentId: string) => Boolean((await client.user.findUnique({ where: { id: studentId }, select: { isDemo: true } }))?.isDemo);
 
-async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean): Promise<Candidate[]> {
+async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean, preferMentorId?: string | null): Promise<Candidate[]> {
   const t = now();
   const slots = await tx.slot.findMany({
-    where: { startsAt, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, demo) },
+    where: { startsAt, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, demo, preferMentorId) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
   });
   if (!slots.length) return [];
@@ -42,13 +55,14 @@ async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: Sessi
 }
 
 /** Bookable start times between two instants (mentor identity and tier are never exposed). Sorted ascending. */
-export async function availableTimesRange(studentId: string, type: SessionType, focus: PiFocus | null, rangeFrom: Date, rangeTo: Date) {
+export async function availableTimesRange(studentId: string, type: SessionType, focus: PiFocus | null, rangeFrom: Date, rangeTo: Date, preferMentorId?: string | null) {
+  if (preferMentorId) await assertCanRebook(studentId, preferMentorId);
   const s = await getSettings();
   const t = now();
   const earliest = new Date(Math.max(rangeFrom.getTime(), t.getTime() + s.minLeadHours * HOUR));
   if (earliest >= rangeTo) return [];
   const slots = await db.slot.findMany({
-    where: { startsAt: { gte: earliest, lt: rangeTo }, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId)) },
+    where: { startsAt: { gte: earliest, lt: rangeTo }, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId), preferMentorId) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
     orderBy: { startsAt: "asc" },
   });
@@ -71,7 +85,8 @@ export async function availableTimes(studentId: string, type: SessionType, focus
 }
 
 /** Step 1: put one mentor's slot on a short hold for this student. Replaces any earlier hold they had. */
-export async function holdSlot(studentId: string, type: SessionType, focus: PiFocus | null, startsAt: Date) {
+export async function holdSlot(studentId: string, type: SessionType, focus: PiFocus | null, startsAt: Date, preferMentorId?: string | null) {
+  if (preferMentorId) await assertCanRebook(studentId, preferMentorId);
   const s = await getSettings();
   if (startsAt.getTime() < now().getTime() + s.minLeadHours * HOUR) throw new BookingError("That time is too soon to book.", "POLICY");
   return db.$transaction(async (tx) => {
@@ -82,7 +97,7 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
 
     await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
 
-    let cands = await candidatesAt(tx, type, startsAt, await isDemoStudent(tx, studentId));
+    let cands = await candidatesAt(tx, type, startsAt, await isDemoStudent(tx, studentId), preferMentorId);
     const seniorRequired = needsSenior(type, focus, s.seniorRequiredFocuses);
     const heldUntil = new Date(now().getTime() + s.holdMinutes * 60_000);
     while (cands.length) {

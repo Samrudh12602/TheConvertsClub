@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { AlertTriangle, CalendarClock, CheckCircle2, Lightbulb, PlayCircle, Sparkles, Target, TrendingDown, TrendingUp, Video } from "lucide-react";
+import { AlertTriangle, CalendarClock, Repeat, CheckCircle2, Lightbulb, PlayCircle, Sparkles, Target, TrendingDown, TrendingUp, Video } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { ProgressRing, RadarChart } from "@/components/ui/charts";
 import { AddToCalendar } from "@/components/student/add-to-calendar";
 import { PortalPage } from "@/components/portal/portal-page";
@@ -124,6 +125,16 @@ export default async function SessionDetail({ params, searchParams }: { params: 
             <RatingPicker sessionId={s.id} initial={s.rating?.rating ?? null} initialComment={s.rating?.comment ?? ""} initialConsent={s.rating?.featureConsent ?? false} />
           </div>
         </>
+      )}
+      {s.status === "COMPLETED" && s.mentorId && ["MOCK_PI", "GUIDANCE"].includes(s.type) && mentor && (
+        <div className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-teal-line bg-gradient-to-br from-teal-tint to-white p-5 shadow-card">
+          <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-teal text-white"><Repeat aria-hidden className="size-5" /></span>
+          <div className="min-w-[220px] flex-1">
+            <h2 className="text-[14px] font-bold leading-[1.3] text-ink">Liked this session? Book {mentor.split(" ")[0]} again.</h2>
+            <p className="mt-0.5 text-xs leading-[1.45] text-ink-muted">Same mentor, a fresh time. Uses one {s.type === "GUIDANCE" ? "guidance" : "mock PI"} credit.</p>
+          </div>
+          <ButtonLink href={`/student/book?mentor=${s.mentorId}&type=${s.type}${s.focus ? `&focus=${s.focus}` : ""}`}>Book {mentor.split(" ")[0]} again</ButtonLink>
+        </div>
       )}
       {s.status === "COMPLETED" && !f && <Flash>Your mentor is writing up feedback. It&apos;s due {settings.feedbackDueHours} hours after the session.</Flash>}
     </PortalPage>

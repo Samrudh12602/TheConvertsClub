@@ -13,6 +13,12 @@ describe("which mentors can serve which session type", () => {
   it("leaves ordinary sessions open to every active mentor", () => {
     for (const t of ["MOCK_PI", "GUIDANCE", "GD_BATCH"] as const) expect(mentorFilter(t, false)).not.toHaveProperty("isAdminMentor");
   });
+  it("narrows to one mentor when rebooking, except for the owner's own types", () => {
+    expect(mentorFilter("MOCK_PI", false, "m1")).toMatchObject({ id: "m1" });
+    expect(mentorFilter("MOCK_PI", false)).not.toHaveProperty("id");
+    expect(mentorFilter("STRATEGY_CALL", false, "m1")).not.toHaveProperty("id");
+    expect(mentorFilter("TRIAL_PI", false, "m1")).toMatchObject({ isAdminMentor: true });
+  });
   it("keeps demo and real apart", () => {
     expect(mentorFilter("MOCK_PI", false)).toMatchObject({ user: { isDemo: false } });
     expect(mentorFilter("MOCK_PI", true)).toMatchObject({ user: { isDemo: true } });

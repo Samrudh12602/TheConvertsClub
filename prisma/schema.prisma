@@ -46,6 +46,10 @@ enum CreditKind {
   PI_DIRECT
   /// A 30-minute strategy call bought as a standalone service with the owner.
   STRATEGY_DIRECT
+  /// Rs 10 trial: a 25-minute guidance call with the owner. Sold once per person.
+  TRIAL_GUIDANCE
+  /// Rs 50 trial: a mock PI with the owner. Sold once per person.
+  TRIAL_PI
 }
 enum OrderStatus {
   CREATED
@@ -85,6 +89,10 @@ enum SessionType {
   PI_DIRECT
   /// A 30-minute strategy call bought as a standalone service with the owner.
   STRATEGY_DIRECT
+  /// Rs 10 trial: a 25-minute guidance call with the owner.
+  TRIAL_GUIDANCE
+  /// Rs 50 trial: a mock PI with the owner.
+  TRIAL_PI
 }
 enum PiFocus {
   HR_PROFILE
