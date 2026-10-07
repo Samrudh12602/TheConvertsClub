@@ -481,6 +481,20 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     sessions). Students see "Watch the recording"; mentors and admin see it too. Nothing auto-completes a session and
     nothing locks one; the admin "feedback overdue" flags remain as information only.
 
+45. **Rebook the same mentor.** After a completed Mock PI or Guidance session the student sees "Book <mentor> again",
+    which opens the booking flow with only that mentor's open times (`mentorFilter(..., preferMentorId)`). It is allowed
+    only for a mentor the student has already finished a session with (`assertCanRebook`), so the preference can't be
+    used to pick or probe strangers. "Show any mentor" drops the preference. Owner-only types ignore it. All the usual
+    rules (credit, senior-only focuses, 1-hour holds) still apply.
+
+46. **Trial offers: Rs 10 guidance call (25 min) and Rs 50 mock PI, owner-only (owner's instructions).** Two products
+    (`trial-guidance`, `trial-mock-pi`) with their own credit and session types (`TRIAL_GUIDANCE`, `TRIAL_PI`). Like the
+    other "with Samrudh" products they are served only by the owner's mentor profile, mentor referral codes don't apply,
+    and no mentor pay accrues, so the whole amount stays with the owner. They use the owner's ordinary (free-time)
+    hours, not the special paid hours. One of each per person, enforced at checkout by email and by phone. They are
+    shown on the home hero ("Try us first"), kept out of the packages grid, the home product grid and the enrolled
+    students' top-up shop. Data was inserted after the code went live (new enum values first, product rows last).
+
 ## Assumptions
 
 | # | Topic | Default | Where |
