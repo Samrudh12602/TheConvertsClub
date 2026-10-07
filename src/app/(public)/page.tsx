@@ -1,4 +1,4 @@
-import { DirectSpotlight, FaqTeaser, FinalCta, Hero, HowItWorks, MentorShowcase, StatsStrip } from "@/components/site/home-sections";
+import { DirectSpotlight, FaqTeaser, FinalCta, Hero, HowItWorks, MentorShowcase, StatsStrip, TrialStrip } from "@/components/site/home-sections";
 import { ProductTile } from "@/components/site/product-tile";
 import { ReferralBanner } from "@/components/site/referral-banner";
 import { Reveal } from "@/components/ui/motion";
@@ -20,7 +20,8 @@ export default async function HomePage() {
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-8 px-5 pb-6 pt-5 sm:gap-10">
       <ReferralBanner next="/" />
-      <Hero featured={featured} seatsLeft={seats.length ? Math.max(...seats) : null} feedbackHours={policy.feedbackDueHours} trials={trials} />
+      <Hero featured={featured} seatsLeft={seats.length ? Math.max(...seats) : null} feedbackHours={policy.feedbackDueHours} />
+      <TrialStrip trials={trials} />
       <StatsStrip feedbackHours={policy.feedbackDueHours} fromPaise={Number.isFinite(cheapest) ? cheapest : 9900} />
       <HowItWorks steps={how} />
 

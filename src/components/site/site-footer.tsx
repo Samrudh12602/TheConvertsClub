@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
 
 const GROUPS = [
-  { title: "Prepare", links: [{ href: "/packages", label: "Packages" }, { href: "/how-it-works", label: "How it works" }, { href: "/mentors", label: "Mentors" }, { href: "/free-guide", label: "Free checklist" }, { href: "/faq", label: "FAQ" }] },
+  { title: "Prepare", links: [{ href: "/packages", label: "Packages" }, { href: "/how-it-works", label: "How it works" }, { href: "/mentors", label: "Mentors" }, { href: "/faq", label: "FAQ" }] },
   { title: "Company", links: [{ href: "/become-a-mentor", label: "Become a mentor" }, { href: "/contact", label: "Contact" }] },
   { title: "Legal", links: [{ href: "/terms", label: "Terms" }, { href: "/privacy", label: "Privacy" }, { href: "/refunds", label: "Refunds" }, { href: "/mentor-agreement", label: "Mentor Agreement" }] },
 ];

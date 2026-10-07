@@ -15,6 +15,8 @@ const schema = z.object({
 
 /** Free-checklist sign-up: stores the email (and whether they want occasional tips) and emails the checklist. */
 export async function POST(req: NextRequest) {
+  // The free checklist is no longer offered: stop collecting emails and stop sending it.
+  if (process.env.FREE_GUIDE_ENABLED !== "true") return NextResponse.json({ error: "This is no longer available." }, { status: 410 });
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!(await rateLimit(`lead:${ip}`, 6, 3600)).ok) return NextResponse.json({ error: "Too many requests from this connection. Try again later." }, { status: 429 });
   const parsed = schema.safeParse(await req.json().catch(() => null));

@@ -495,6 +495,10 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     shown on the home hero ("Try us first"), kept out of the packages grid, the home product grid and the enrolled
     students' top-up shop. Data was inserted after the code went live (new enum values first, product rows last).
 
+47. **The free interview checklist is withdrawn (owner's instruction).** The home button, footer link and sitemap entry are
+    gone, `/free-guide` redirects to the home page, and `/api/lead` answers 410 (it only works again if
+    `FREE_GUIDE_ENABLED=true` is set). No more emails are collected or sent for it. Stored leads are kept.
+
 ## Assumptions
 
 | # | Topic | Default | Where |
