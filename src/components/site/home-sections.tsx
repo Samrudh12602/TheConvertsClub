@@ -73,7 +73,7 @@ export function Hero({ featured, seatsLeft, feedbackHours, trials }: { featured:
                 ))}
               </ul>
               <p className="relative mt-4 text-[11.5px] leading-[1.6] text-dark-muted">It&apos;s a paid trial, not free, because good sessions cost real time and a small price keeps the slot for people who show up. One of each per person.</p>
-              {featured && <Link href={buyHref(featured)} className="relative mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-[12.5px] font-semibold text-dark-text no-underline hover:text-white hover:no-underline">Ready to go all in? {featured.name} · <Price product={featured} className="text-[14px] text-surface" strikeSize="text-[11px]" strikeClassName="text-dark-muted" onDark /><ArrowRight aria-hidden className="size-4" /></Link>}
+              {featured && <Link href={buyHref(featured)} className="relative mt-4 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-[12.5px] font-semibold text-dark-text no-underline hover:text-white hover:no-underline"><span>Ready to go all in? <span className="text-white">{featured.name}</span></span><span className="tnum flex items-center gap-2 text-[15px] text-white">{priceLabel(featured)}<ArrowRight aria-hidden className="size-4" /></span></Link>}
             </div>
           ) : featured && (
             <div className="relative overflow-hidden rounded-2xl bg-night p-6 text-surface shadow-pop ring-1 ring-white/10">
