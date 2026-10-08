@@ -25,7 +25,11 @@ export const viewport: Viewport = { themeColor: "#F6F3EE" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${archivo.variable} ${bricolage.variable}`}>
+    <html lang="en-IN" className={`${archivo.variable} ${bricolage.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Applies the saved dark theme before first paint (no flash). Portals only: the public site always stays light. */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(/^\\/(student|mentor|admin)(\\/|$)/.test(location.pathname)&&localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}` }} />
+      </head>
       <body>
         <ToastProvider>{children}</ToastProvider>
       </body>

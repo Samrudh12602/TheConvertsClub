@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cronGuard } from "@/server/cron-auth";
+import { trialFollowUps } from "@/server/automations";
 import { runNudges } from "@/server/nudges";
 
 export const runtime = "nodejs";
@@ -7,5 +8,6 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const denied = cronGuard(req);
   if (denied) return denied;
-  return NextResponse.json({ ok: true, ...(await runNudges()) });
+  const trial = await trialFollowUps().catch((e) => { console.error("trial follow-up failed", e); return { error: true }; });
+  return NextResponse.json({ ok: true, ...(await runNudges()), trial });
 }

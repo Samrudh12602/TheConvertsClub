@@ -126,6 +126,7 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
           "Technical data: IP address, device and browser type, and security logs, used to keep the service safe.",
           "For mentors, in addition: professional photo, institute, LinkedIn profile, availability, session history, and payout details (kept encrypted).",
           "We use only essential cookies that keep you signed in and secure. We do not use advertising or cross-site tracking cookies.",
+          "On our public pages we count visits and button clicks with a privacy-friendly analytics tool that sets no cookies and does not identify you. It tells us which pages and offers people use, nothing more.",
         ] },
         { heading: "Why we use it, and on what basis", items: [
           "To create your account, take payment, deliver sessions and feedback, match you with a mentor, send reminders and receipts, and give you support. We do this because you ask us to and consent to it when you accept our Terms.",

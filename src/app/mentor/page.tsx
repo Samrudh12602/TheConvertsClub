@@ -80,7 +80,7 @@ export default async function MentorDashboard() {
             {first.meetingUrl && <a href={first.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-oxblood px-[17px] text-[13px] font-semibold leading-none text-white no-underline hover:bg-oxblood-hover hover:text-white hover:no-underline">Start session</a>}
           </div>
         </div>
-      ) : <Panel><Empty>No sessions assigned right now.</Empty></Panel>}
+      ) : <Panel><Empty art="calendar">No sessions assigned right now.</Empty></Panel>}
 
       {needFeedback.length > 0 && (
         <Panel title={`Feedback due \u00b7 ${needFeedback.length}`} action={<Link href="/mentor/sessions" className="text-xs font-semibold">All sessions</Link>}>
@@ -102,7 +102,7 @@ export default async function MentorDashboard() {
 
       <Section cols={280}>
         <Panel title="Assigned to you" action={<Link href="/mentor/sessions" className="text-xs font-semibold">All</Link>}>
-          {assigned.length === 0 ? <Empty>Nothing assigned yet.</Empty> : assigned.map((a) => (
+          {assigned.length === 0 ? <Empty art="sessions">Nothing assigned yet.</Empty> : assigned.map((a) => (
             <Row key={a.id} href={`/mentor/sessions/${a.id}`}>
               <span aria-hidden className="flex size-9 flex-none items-center justify-center rounded-full bg-indigo-tint font-display text-[13px] font-bold text-indigo">{nm(a.student?.name).slice(0, 1).toUpperCase()}</span>
               <div className="min-w-0 flex-1"><p className="text-[13px] font-medium leading-[1.3] text-ink-body">{nm(a.student?.name)}</p><p className="mt-0.5 text-[11.5px] leading-[1.35] text-ink-faint">{sessionTitle(a.type, a.focus)}</p></div>

@@ -77,7 +77,10 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   if (q.product.slug.startsWith("trial-")) {
     const phoneDigits = normalizeIndianPhone(parsed.data.phone);
     const used = await db.order.count({ where: { product: { slug: q.product.slug }, status: { in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] }, OR: [{ guestEmail: { equals: email, mode: "insensitive" } }, ...(phoneDigits ? [{ guestPhone: { endsWith: phoneDigits.slice(-10) } }] : [])] } });
-    if (used > 0) throw new CheckoutError("You've already used this trial. Pick one of the full sessions instead.");
+    if (used > 0) {
+      await audit({ actorId: buyer?.id ?? null, action: "checkout.trial_blocked", entity: "Product", entityId: email, after: { slug: q.product.slug }, ip: input.ip ?? null });
+      throw new CheckoutError("You've already used this trial. Pick one of the full sessions instead.");
+    }
   }
   if (q.couponId) {
     // A mentor can't use their own referral code (the Terms say so; this is where it is enforced).

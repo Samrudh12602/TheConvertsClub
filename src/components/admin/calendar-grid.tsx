@@ -96,14 +96,14 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
           </div>
           <div className="mt-3 flex flex-wrap items-end gap-2.5">
             <div className="min-w-[220px] flex-1"><label className="type-label mb-1.5 block text-ink-faint">Student</label>
-              <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className={clsx(field, "w-full")}>
+              <select aria-label="Student" value={studentId} onChange={(e) => setStudentId(e.target.value)} className={clsx(field, "w-full")}>
                 <option value="">Choose a student…</option>
                 {students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select></div>
             <div><label className="type-label mb-1.5 block text-ink-faint">Session</label>
-              <select value={effType} onChange={(e) => setType(e.target.value)} className={field}>{allowed.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+              <select aria-label="Session" value={effType} onChange={(e) => setType(e.target.value)} className={field}>{allowed.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
             {effType === "MOCK_PI" && <div><label className="type-label mb-1.5 block text-ink-faint">Focus</label>
-              <select value={focus} onChange={(e) => setFocus(e.target.value)} className={field}>{FOCUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>}
+              <select aria-label="Focus" value={focus} onChange={(e) => setFocus(e.target.value)} className={field}>{FOCUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>}
             <Button size="sm" disabled={!studentId || busy} onClick={book}>{busy ? "Booking…" : "Book"}</Button>
           </div>
           {student && <p className="mt-2 text-[12px] text-ink-faint">{student.label.split(" · ")[0]} has <strong className="text-ink-2">{student.credits[creditKind] ?? 0}</strong> {TYPES.find((t) => t[0] === effType)![1].toLowerCase()} credit(s) left.</p>}

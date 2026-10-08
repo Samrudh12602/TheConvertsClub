@@ -44,6 +44,28 @@ export async function assignSessionAction(sessionId: string, mentorId: string): 
   try { const actor = await guard("assign"); await assignSession(actor, sessionId, mentorId); refreshAll(); return { ok: true, message: "Assigned." }; } catch (e) { return fail(e); }
 }
 
+/**
+ * Bulk: move every upcoming session from one mentor to another (e.g. when a mentor goes on leave). Each move goes through the
+ * same checks, emails and audit entry as a single assignment; the ones that can't move (a clash, a different kind of hour)
+ * are left where they are and reported.
+ */
+export async function reassignMentorSessionsAction(fromMentorId: string, toMentorId: string): Promise<Result> {
+  try {
+    const actor = await guard("reassign-all");
+    if (fromMentorId === toMentorId) throw new AdminError("Pick a different mentor to move them to.");
+    const sessions = await db.session.findMany({ where: { mentorId: fromMentorId, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date() } }, orderBy: { startsAt: "asc" }, select: { id: true } });
+    if (!sessions.length) throw new AdminError("That mentor has no upcoming sessions to move.");
+    let moved = 0; const stuck: string[] = [];
+    for (const s of sessions) {
+      try { await assignSession(actor, s.id, toMentorId); moved++; } catch (e) { stuck.push(e instanceof AdminError ? e.message : "failed"); }
+    }
+    await audit({ actorId: actor.id, action: "mentor.reassign_all", entity: "MentorProfile", entityId: fromMentorId, after: { toMentorId, moved, stuck: stuck.length } });
+    refreshAll();
+    if (!moved) return { ok: false, error: `Nothing could be moved. ${[...new Set(stuck)][0]}` };
+    return { ok: true, message: `Moved ${moved} session${moved === 1 ? "" : "s"}.${stuck.length ? ` ${stuck.length} couldn't move (${[...new Set(stuck)][0]}); they're still with the original mentor.` : ""}` };
+  } catch (e) { return fail(e); }
+}
+
 export async function confirmRequestedAction(sessionId: string): Promise<Result> {
   try { const actor = await guard("confirm"); await confirmRequested(actor, sessionId); refreshAll(); return { ok: true, message: "Confirmed." }; } catch (e) { return fail(e); }
 }

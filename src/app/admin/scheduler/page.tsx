@@ -55,7 +55,7 @@ export default async function SchedulerPage() {
         </>
       )}
       <Flash>Upcoming sessions, next 7 days. Reassign anyone, including to yourself as a mentor.</Flash>
-      {upcoming.length === 0 ? <Empty>Nothing scheduled in the next 7 days.</Empty> : upcoming.map((s) => (
+      {upcoming.length === 0 ? <Empty art="calendar">Nothing scheduled in the next 7 days.</Empty> : upcoming.map((s) => (
         <div key={s.id} className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-line bg-card p-3.5 shadow-card">
           {s.startsAt && <div className="w-12 flex-none text-center"><p className="font-display text-[20px] font-bold leading-none text-ink">{fmtDayNum(s.startsAt)}</p><p className="mt-1 text-[10px] font-semibold uppercase leading-none tracking-[0.06em] text-ink-faint">{fmtMon(s.startsAt)}</p></div>}
           <Avatar name={nm(s.student?.name) || "GD"} />

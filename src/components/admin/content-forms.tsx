@@ -89,7 +89,7 @@ export function ResourceForm() {
   return (
     <form className="flex flex-col gap-2.5" onSubmit={async (e) => { e.preventDefault(); setBusy(true); const r = await addResourceAction(v); setBusy(false); setMsg(r.ok ? "Added." : r.error); if (r.ok) { setV({ ...v, kind: "", title: "", meta: "", url: "" }); router.refresh(); } }}>
       <div className="flex gap-2">
-        <select value={v.audience} onChange={(e) => setV({ ...v, audience: e.target.value as "STUDENT" | "MENTOR" })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">
+        <select aria-label="Audience" value={v.audience} onChange={(e) => setV({ ...v, audience: e.target.value as "STUDENT" | "MENTOR" })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">
           <option value="STUDENT">Student library</option>
           <option value="MENTOR">Mentor resources</option>
         </select>

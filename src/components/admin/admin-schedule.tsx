@@ -41,10 +41,10 @@ export function AdminHoursForm({ mentorId }: { mentorId: string }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   return (
     <form className="flex flex-wrap items-end gap-2.5" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setMsg(null); const r = await adminAddHoursAction(mentorId, v); setBusy(false); setMsg({ ok: r.ok, text: r.ok ? (r.message ?? "Added.") : r.error }); if (r.ok) router.refresh(); }}>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Date</label><input type="date" required value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} className={input} /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">From (IST)</label><input type="time" required value={v.from} onChange={(e) => setV({ ...v, from: e.target.value })} className={input} /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">To (IST)</label><input type="time" required value={v.to} onChange={(e) => setV({ ...v, to: e.target.value })} className={input} /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Repeat weekly until</label><input type="date" value={v.repeatUntil} onChange={(e) => setV({ ...v, repeatUntil: e.target.value })} className={input} /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Date</label><input aria-label="Date" type="date" required value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} className={input} /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">From (IST)</label><input aria-label="From (IST)" type="time" required value={v.from} onChange={(e) => setV({ ...v, from: e.target.value })} className={input} /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">To (IST)</label><input aria-label="To (IST)" type="time" required value={v.to} onChange={(e) => setV({ ...v, to: e.target.value })} className={input} /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Repeat weekly until</label><input aria-label="Repeat weekly until" type="date" value={v.repeatUntil} onChange={(e) => setV({ ...v, repeatUntil: e.target.value })} className={input} /></div>
       <Button type="submit" size="sm" disabled={busy}>{busy ? "…" : "Add hours"}</Button>
       {msg && <p role={msg.ok ? "status" : "alert"} className={`w-full text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
     </form>
@@ -83,8 +83,8 @@ export function BookForStudent({ studentId }: { studentId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-2.5">
-        <div><label className="type-label mb-1.5 block text-ink-faint">Session</label><select value={type} onChange={(e) => { setType(e.target.value); setTimes(null); setPick(null); }} className={input}>{TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
-        {type === "MOCK_PI" && <div><label className="type-label mb-1.5 block text-ink-faint">Focus</label><select value={focus} onChange={(e) => { setFocus(e.target.value); setTimes(null); setPick(null); }} className={input}>{FOCUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>}
+        <div><label className="type-label mb-1.5 block text-ink-faint">Session</label><select aria-label="Session" value={type} onChange={(e) => { setType(e.target.value); setTimes(null); setPick(null); }} className={input}>{TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+        {type === "MOCK_PI" && <div><label className="type-label mb-1.5 block text-ink-faint">Focus</label><select aria-label="Focus" value={focus} onChange={(e) => { setFocus(e.target.value); setTimes(null); setPick(null); }} className={input}>{FOCUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>}
         <Button size="sm" variant="secondary" disabled={busy} onClick={find}>{busy && !times ? "…" : "Find times"}</Button>
       </div>
       {times && (times.length === 0 ? <p className="text-[12.5px] text-ink-faint">No open times in the next 15 days. A mentor needs to publish hours first (see the mentor&apos;s page).</p> : (

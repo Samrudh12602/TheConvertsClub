@@ -13,9 +13,9 @@ export function ProductRow({ id, name, pricePaise, mrpPaise, mentorPricePaise, e
   return (
     <tr className="border-b border-line-soft last:border-b-0">
       <td className="px-3.5 py-2.5 text-ink-body">{name}</td>
-      <td className="px-3.5 py-2"><input type="number" value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
-      <td className="px-3.5 py-2"><input type="number" value={v.mrp} onChange={(e) => setV({ ...v, mrp: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
-      <td className="px-3.5 py-2"><input type="number" value={v.mentorPrice} onChange={(e) => setV({ ...v, mentorPrice: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
+      <td className="px-3.5 py-2"><input type="number" aria-label="Price in rupees" value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
+      <td className="px-3.5 py-2"><input type="number" aria-label="MRP in rupees" value={v.mrp} onChange={(e) => setV({ ...v, mrp: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
+      <td className="px-3.5 py-2"><input type="number" aria-label="Mentor code price in rupees" value={v.mentorPrice} onChange={(e) => setV({ ...v, mentorPrice: e.target.value })} placeholder="—" className="w-24 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" /></td>
       <td className="px-3.5 py-2">
         <div className="flex items-center gap-1.5">
           <input type="number" aria-label="Early-bird price" value={v.earlyPrice} onChange={(e) => setV({ ...v, earlyPrice: e.target.value })} placeholder="₹" className="w-20 rounded-lg border border-line-strong bg-white px-2 py-1.5 text-[12.5px]" />
@@ -24,7 +24,7 @@ export function ProductRow({ id, name, pricePaise, mrpPaise, mentorPricePaise, e
         </div>
         {earlyBirdSeats ? <p className="mt-1 text-[10.5px] text-ink-faint">{earlyBirdTaken} of {earlyBirdSeats} taken</p> : null}
       </td>
-      <td className="px-3.5 py-2"><input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /></td>
+      <td className="px-3.5 py-2"><input type="checkbox" aria-label="Active" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /></td>
       <td className="px-3.5 py-2">
         <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { setBusy(true); const r = await updateProductAction({ id, pricePaise: Math.round(Number(v.price) * 100), mrpPaise: v.mrp ? Math.round(Number(v.mrp) * 100) : undefined, mentorPricePaise: v.mentorPrice ? Math.round(Number(v.mentorPrice) * 100) : undefined, earlyBirdPricePaise: v.earlyPrice ? Math.round(Number(v.earlyPrice) * 100) : undefined, earlyBirdSeats: v.earlySeats ? Number(v.earlySeats) : undefined, active: v.active }); setBusy(false); setMsg(r.ok ? "Saved" : r.error); if (r.ok) router.refresh(); }}>{busy ? "…" : "Save"}</Button>
         {msg && <span className={`ml-2 text-[11px] ${msg === "Saved" ? "text-green" : "text-oxblood"}`}>{msg}</span>}
@@ -40,11 +40,11 @@ export function CouponForm() {
   const [busy, setBusy] = useState(false);
   return (
     <form className="flex flex-wrap items-end gap-2.5" onSubmit={async (e) => { e.preventDefault(); setBusy(true); const r = await createCouponAction(v); setBusy(false); setMsg({ ok: r.ok, text: r.ok ? "Created." : r.error }); if (r.ok) { setV({ code: "", type: "PERCENT", value: "10", maxUses: "", expiresAt: "" }); router.refresh(); } }}>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Code</label><input required value={v.code} onChange={(e) => setV({ ...v, code: e.target.value.toUpperCase() })} className="min-h-11 w-32 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Type</label><select value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="PERCENT">Percent</option><option value="FLAT">Flat (₹)</option></select></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Value</label><input type="number" required value={v.value} onChange={(e) => setV({ ...v, value: e.target.value })} className="min-h-11 w-20 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Max uses</label><input type="number" value={v.maxUses} onChange={(e) => setV({ ...v, maxUses: e.target.value })} placeholder="∞" className="min-h-11 w-20 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Expires</label><input type="date" value={v.expiresAt} onChange={(e) => setV({ ...v, expiresAt: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Code</label><input aria-label="Code" required value={v.code} onChange={(e) => setV({ ...v, code: e.target.value.toUpperCase() })} className="min-h-11 w-32 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Type</label><select aria-label="Type" value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="PERCENT">Percent</option><option value="FLAT">Flat (₹)</option></select></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Value</label><input aria-label="Value" type="number" required value={v.value} onChange={(e) => setV({ ...v, value: e.target.value })} className="min-h-11 w-20 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Max uses</label><input aria-label="Max uses" type="number" value={v.maxUses} onChange={(e) => setV({ ...v, maxUses: e.target.value })} placeholder="∞" className="min-h-11 w-20 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Expires</label><input aria-label="Expires" type="date" value={v.expiresAt} onChange={(e) => setV({ ...v, expiresAt: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]" /></div>
       <Button type="submit" disabled={busy}>{busy ? "…" : "Create coupon"}</Button>
       {msg && <p className={`w-full text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
     </form>

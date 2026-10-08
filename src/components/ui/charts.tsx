@@ -1,6 +1,7 @@
 import clsx from "clsx";
 
-const TONE: Record<string, string> = { oxblood: "#7a1f2b", teal: "#17665f", gold: "#b07a1e", indigo: "#2b2a7a", ink: "#16130f" };
+/** Chart colours follow the theme tokens, so they re-colour in dark mode. */
+const TONE: Record<string, string> = { oxblood: "var(--color-oxblood)", teal: "var(--color-teal)", gold: "var(--color-gold)", indigo: "var(--color-indigo)", ink: "var(--color-ink)" };
 
 /** A circular progress ring with the value in the middle. Pure SVG, no library. */
 export function ProgressRing({ value, max, label, sub, tone = "oxblood", size = 84, stroke = 8 }: { value: number; max: number; label?: React.ReactNode; sub?: string; tone?: keyof typeof TONE; size?: number; stroke?: number }) {
@@ -76,6 +77,28 @@ export function ScoreLine({ points, target, height = 190 }: { points: { label: s
       {points.length > 1 && <path d={area} fill="url(#score-fill)" />}
       <path d={line} fill="none" stroke={TONE.oxblood} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={1} pathLength={1} className="animate-draw" />
       {points.map((p, i) => <g key={i}><circle cx={x(i)} cy={y(p.score)} r="4.5" fill="white" stroke={TONE.oxblood} strokeWidth="2.5" /><text x={x(i)} y={y(p.score) - 11} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-ink)">{p.score.toFixed(1)}</text><text x={x(i)} y={height - 8} textAnchor="middle" fontSize="10" fill="var(--color-ink-faint)">{p.label}</text></g>)}
+    </svg>
+  );
+}
+
+/** Simple vertical bars with a label under each and the value above. Values are already formatted by the caller. */
+export function BarChart({ data, height = 170, tone = "oxblood" }: { data: { label: string; value: number; text: string }[]; height?: number; tone?: keyof typeof TONE }) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const w = 640, padB = 24, padT = 22, gap = 10;
+  const bw = (w - gap * (data.length + 1)) / data.length;
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" role="img" aria-label={`Bars: ${data.map((d) => `${d.label} ${d.text}`).join(", ")}`}>
+      {data.map((d, i) => {
+        const h = Math.max(2, (d.value / max) * (height - padB - padT));
+        const x = gap + i * (bw + gap), y = height - padB - h;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={bw} height={h} rx="6" fill={TONE[tone]} fillOpacity={d.value === 0 ? 0.2 : 0.9} />
+            <text x={x + bw / 2} y={y - 6} textAnchor="middle" fontSize="10.5" fontWeight="700" fill="var(--color-ink)">{d.value ? d.text : ""}</text>
+            <text x={x + bw / 2} y={height - 7} textAnchor="middle" fontSize="10" fill="var(--color-ink-faint)">{d.label}</text>
+          </g>
+        );
+      })}
     </svg>
   );
 }

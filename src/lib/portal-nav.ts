@@ -93,6 +93,7 @@ export const adminPortal: PortalConfig = {
       label: "Overview",
       items: [
         { href: "/admin", label: "Dashboard", title: "Overview", sub: "Dashboard" },
+        { href: "/admin/inbox", label: "Inbox", title: "Inbox", sub: "Everything waiting on you" },
         { href: "/admin/analytics", label: "Analytics", title: "Analytics", sub: "Overview" },
       ],
     },

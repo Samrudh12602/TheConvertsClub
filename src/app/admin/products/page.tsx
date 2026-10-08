@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Panel } from "@/components/portal/ui";
+import { Package, Sparkles, Tag, TicketPercent } from "lucide-react";
+import { Avatar, Empty, Kpi, KpiGrid, Panel } from "@/components/portal/ui";
 import { CouponForm, CouponToggle, ProductRow } from "@/components/admin/product-controls";
 import { db } from "@/lib/db";
 import { fmtDate } from "@/lib/format";
@@ -20,6 +21,12 @@ export default async function ProductsPage() {
   const taken = await earlyBirdTaken();
   return (
     <PortalPage width="max-w-[1000px]">
+      <KpiGrid>
+        <Kpi label="Active products" value={products.filter((p) => p.active).length} note={`${products.length} in the catalog`} icon={<Package />} accent="indigo" />
+        <Kpi label="Plans sold" value={products.reduce((n, p) => n + p._count.enrollments, 0)} note="All time" icon={<Tag />} accent="teal" />
+        <Kpi label="Early-bird seats taken" value={[...taken.values()].reduce((n, v) => n + v, 0)} note="Across early-bird products" icon={<Sparkles />} accent="gold" />
+        <Kpi label="Coupons live" value={coupons.filter((c) => c.active).length} note={`${coupons.reduce((n, c) => n + c.usedCount, 0)} uses in total`} icon={<TicketPercent />} accent="oxblood" />
+      </KpiGrid>
       <Panel title="Catalog" flush={false}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-[12.5px]">
@@ -37,12 +44,12 @@ export default async function ProductsPage() {
               <tbody>
                 {coupons.map((c) => (
                   <tr key={c.id} className="border-b border-line-soft last:border-b-0">
-                    <td className="tnum px-3.5 py-2.5 font-semibold text-ink">{c.code}</td>
+                    <td className="px-3.5 py-2.5"><span className="tnum rounded-lg border border-dashed border-line-strong bg-surface px-2.5 py-1 font-semibold tracking-wide text-ink">{c.code}</span></td>
                     <td className="px-3.5 py-2.5 text-ink-2">
-                      {c.mentor ? <Link href={`/admin/mentors/${c.mentor.id}`} className="font-medium text-oxblood no-underline hover:underline">{nm(c.mentor.user.name)}</Link> : <span className="text-ink-faint">General</span>}
+                      {c.mentor ? <Link href={`/admin/mentors/${c.mentor.id}`} className="inline-flex items-center gap-2 font-medium text-oxblood no-underline hover:underline"><Avatar name={nm(c.mentor.user.name)} size={24} />{nm(c.mentor.user.name)}</Link> : <span className="text-ink-faint">General</span>}
                     </td>
                     <td className="px-3.5 py-2.5 text-ink-2">{c.type === "PERCENT" ? `${c.value}%` : `₹${c.value / 100}`}</td>
-                    <td className="tnum px-3.5 py-2.5 text-ink-body">{c.usedCount}{c.maxUses ? ` / ${c.maxUses}` : ""}{c.expiresAt ? ` · expires ${fmtDate(c.expiresAt)}` : ""}</td>
+                    <td className="px-3.5 py-2.5 text-ink-body"><span className="tnum font-semibold">{c.usedCount}{c.maxUses ? ` / ${c.maxUses}` : ""}</span>{c.maxUses ? <span className="mt-1 block h-1.5 w-24 overflow-hidden rounded-full bg-line-soft"><span className="block h-full rounded-full bg-oxblood" style={{ width: `${Math.min(100, (c.usedCount / c.maxUses) * 100)}%` }} /></span> : null}{c.expiresAt ? <span className="text-[11px] text-ink-faint"> · expires {fmtDate(c.expiresAt)}</span> : null}</td>
                     <td className="px-3.5 py-2.5"><CouponToggle id={c.id} active={c.active} /></td>
                   </tr>
                 ))}

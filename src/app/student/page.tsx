@@ -87,7 +87,7 @@ export default async function StudentDashboard() {
 
       <Section cols={260}>
         <Panel title="Upcoming" action={<Link href="/student/sessions" className="text-xs font-semibold">All sessions</Link>}>
-          {rest.length === 0 ? <Empty>No other sessions booked.</Empty> : rest.map((u) => (
+          {rest.length === 0 ? <Empty art="calendar">No other sessions booked.</Empty> : rest.map((u) => (
             <Row key={u.id} href={`/student/sessions/${u.id}`}>
               <DateBadge day={fmtDayNum(u.startsAt!)} mon={fmtMon(u.startsAt!)} />
               <div className="min-w-0 flex-1">

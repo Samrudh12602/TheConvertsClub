@@ -26,7 +26,7 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
             One mock or the whole season. Real panel-style interviews, written feedback you can act on, and no sales call, no bundle you didn&apos;t want.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <ButtonLink href="/packages" size="lg" className="px-6">See packages <ArrowRight className="size-4" /></ButtonLink>
+            <ButtonLink href="/packages" size="lg" className="px-6" data-track="hero_see_packages">See packages <ArrowRight className="size-4" /></ButtonLink>
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-[12.5px] font-medium text-ink-2">
             {[[ShieldCheck, "Mentors who converted"], [Clock, `Feedback within ${feedbackHours} hours`], [IndianRupee, "Prices in the open"]].map(([I, t]) => {
@@ -58,7 +58,7 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
               <h2 className="relative mt-2.5 font-display text-[21px] font-bold leading-[1.2]">{featured.name}</h2>
               <div className="relative mt-3"><Price product={featured} className="text-[36px] text-surface" strikeSize="text-sm" strikeClassName="text-dark-muted" onDark /></div>
               <p className="relative mt-3 text-[12.5px] leading-[1.65] text-dark-soft">{featured.credits.map((c) => describeCredit(c)).join(" · ")}</p>
-              <ButtonLink href={buyHref(featured)} variant="onDark" size="lg" block className="relative mt-5 min-h-[46px]">Buy now <ArrowRight className="size-4" /></ButtonLink>
+              <ButtonLink href={buyHref(featured)} variant="onDark" size="lg" block className="relative mt-5 min-h-[46px]" data-track="hero_buy_featured">Buy now <ArrowRight className="size-4" /></ButtonLink>
             </div>
           )}
         </div>
@@ -93,7 +93,7 @@ export function TrialStrip({ trials }: { trials: CatalogProduct[] }) {
                 <span className="mt-0.5 block text-[11.5px] leading-[1.35] text-dark-soft">{t.slug === "trial-guidance" ? "25 minutes with Samrudh" : "A real mock with feedback"}</span>
               </span>
               <span className="tnum font-display text-[26px] font-bold leading-none">{trialPrice(t)}</span>
-              <ButtonLink href={buyHref(t)} variant="onDark" size="sm" className="flex-none">Book</ButtonLink>
+              <ButtonLink href={buyHref(t)} variant="onDark" size="sm" className="flex-none" data-track={`trial_book_${t.slug}`}>Book</ButtonLink>
             </div>
           ))}
         </div>

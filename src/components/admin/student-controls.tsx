@@ -17,7 +17,7 @@ export function CreditAdjustForm({ userId }: { userId: string }) {
     <form className="flex flex-wrap items-end gap-2.5" onSubmit={async (e) => { e.preventDefault(); setBusy(true); const r = await adjustCreditAction({ userId, ...v }); setBusy(false); setMsg({ ok: r.ok, text: r.ok ? "Adjusted." : r.error }); if (r.ok) { setV({ ...v, reason: "" }); router.refresh(); } }}>
       <div>
         <label className="type-label mb-1.5 block text-ink-faint">Credit</label>
-        <select value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
+        <select aria-label="Credit" value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
       </div>
       <div className="w-20"><Field label="Delta" type="number" value={v.delta} onChange={(e) => setV({ ...v, delta: e.target.value })} /></div>
       <div className="min-w-[200px] flex-1"><Field label="Reason" value={v.reason} onChange={(e) => setV({ ...v, reason: e.target.value })} required /></div>

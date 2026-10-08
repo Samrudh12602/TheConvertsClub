@@ -14,7 +14,7 @@ export function InviteMentorForm() {
       <div className="min-w-[220px] flex-1"><Field label="Invite a mentor by email" type="email" required value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} placeholder="mentor@example.com" /></div>
       <div>
         <label className="type-label mb-1.5 block text-ink-faint">Tier</label>
-        <select value={v.tier} onChange={(e) => setV({ ...v, tier: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="JUNIOR">Junior</option><option value="SENIOR">Senior</option></select>
+        <select aria-label="Tier" value={v.tier} onChange={(e) => setV({ ...v, tier: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="JUNIOR">Junior</option><option value="SENIOR">Senior</option></select>
       </div>
       <Button type="submit" disabled={busy}>{busy ? "Sending…" : "Send invite"}</Button>
       {msg && <p role={msg.ok ? "status" : "alert"} className={`w-full text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}

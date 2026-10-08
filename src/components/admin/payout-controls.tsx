@@ -31,7 +31,7 @@ export function CreateRunForm() {
   const { pending, msg, run } = useAction();
   return (
     <form className="flex flex-wrap items-end gap-2.5" onSubmit={(e) => { e.preventDefault(); run(() => createPayoutRunAction(label)); }}>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Run label</label><input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. January payout" className="min-h-11 rounded-lg border border-line-strong bg-white px-3 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Run label</label><input aria-label="Run label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. January payout" className="min-h-11 rounded-lg border border-line-strong bg-white px-3 text-[13px]" /></div>
       <Button type="submit" disabled={pending}>{pending ? "…" : "Create payout run from approved"}</Button>
       {msg && <p className={`w-full text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
     </form>

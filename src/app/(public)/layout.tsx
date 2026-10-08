@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site/site-header";
+import { SiteAnalytics } from "@/components/site/analytics";
 import { SiteFooter } from "@/components/site/site-footer";
 import { roleHome } from "@/lib/roles";
 
@@ -17,6 +18,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <SiteHeader account={account} />
       <main id="main">{children}</main>
       <SiteFooter account={account} />
+      <SiteAnalytics />
     </div>
   );
 }

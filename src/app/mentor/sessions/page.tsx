@@ -40,7 +40,7 @@ export default async function MentorSessions({ searchParams }: { searchParams: P
         <Link href="/mentor/sessions" role="tab" aria-selected={!dueOnly} className={tab(!dueOnly)}>All sessions</Link>
         <Link href="/mentor/sessions?status=feedback-due" role="tab" aria-selected={dueOnly} className={tab(dueOnly)}>Feedback due{dueCount > 0 && <span className="tnum rounded-full bg-oxblood px-1.5 py-0.5 text-[10.5px] leading-none text-white">{dueCount}</span>}</Link>
       </div>
-      {rows.length === 0 ? <Empty>{dueOnly ? "You're all caught up on feedback." : "No sessions assigned yet."}</Empty> : groups.map((g) => (
+      {rows.length === 0 ? <Empty art="sessions">{dueOnly ? "You're all caught up on feedback." : "No sessions assigned yet."}</Empty> : groups.map((g) => (
         <section key={g.m} className="flex flex-col gap-2.5">
           <h2 className="type-label sticky top-[60px] z-[1] bg-surface/90 py-1 text-ink-faint backdrop-blur">{g.m}</h2>
           {g.items.map((s) => {

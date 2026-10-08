@@ -1,6 +1,6 @@
 import clsx from "clsx";
+import { EmptyArt } from "@/components/ui/empty-art";
 import Link from "next/link";
-import { Inbox } from "lucide-react";
 import { Pill } from "@/components/ui/pill";
 import type { Tone } from "@/lib/labels";
 
@@ -9,7 +9,7 @@ export function Panel({ title, action, children, className, flush = true }: { ti
   return (
     <section className={clsx("overflow-hidden rounded-xl border border-line bg-card shadow-card", className)}>
       {title && (
-        <header className="flex items-center justify-between gap-3 border-b border-line bg-gradient-to-b from-white to-surface px-4 py-3">
+        <header className="flex items-center justify-between gap-3 border-b border-line bg-gradient-to-b from-card to-surface px-4 py-3">
           <h2 className="text-[13.5px] font-bold leading-none text-ink">{title}</h2>
           {action}
         </header>
@@ -85,10 +85,10 @@ export function DateBadge({ day, mon, w = "w-11" }: { day: string; mon: string; 
   );
 }
 
-export function Empty({ children }: { children: React.ReactNode }) {
+export function Empty({ children, art = "inbox" }: { children: React.ReactNode; art?: "inbox" | "calendar" | "chart" | "sessions" | "search" }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-3.5 py-8 text-center">
-      <span aria-hidden className="flex size-10 items-center justify-center rounded-full bg-line-soft text-ink-faint"><Inbox className="size-[18px]" /></span>
+    <div className="flex flex-col items-center gap-1.5 px-3.5 py-8 text-center">
+      <EmptyArt art={art} />
       <p className="max-w-[44ch] text-[13px] leading-normal text-ink-faint">{children}</p>
     </div>
   );

@@ -3,7 +3,7 @@ import { BarChart3, BookOpen, CalendarCheck, CalendarClock, CalendarDays, Calend
 const ICONS: Record<string, LucideIcon> = {
   "": LayoutDashboard, book: CalendarPlus, gd: Users, sessions: Video, reviews: FileText, progress: TrendingUp, calls: PhoneCall, library: BookOpen,
   messages: MessageSquare, payments: CreditCard, onboarding: ClipboardList, settings: Settings, help: LifeBuoy, availability: CalendarClock,
-  earnings: Wallet, resources: BookOpen, profile: UserRound, analytics: BarChart3, students: GraduationCap, mentors: Users, applications: Inbox,
+  earnings: Wallet, resources: BookOpen, profile: UserRound, analytics: BarChart3, inbox: Inbox, students: GraduationCap, mentors: Users, applications: Inbox,
   calendar: CalendarDays, scheduler: CalendarCheck, payouts: Wallet, finance: Landmark, products: Package, communications: Mail, content: PenSquare, audit: ScrollText,
 };
 

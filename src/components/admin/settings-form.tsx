@@ -24,7 +24,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
       <fieldset className="rounded-2xl border border-line bg-card p-5 shadow-card">
         <legend className="type-label rounded-full bg-oxblood-tint px-2.5 py-1 text-oxblood">Booking</legend>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-          <div><label className="type-label mb-1.5 block text-ink-faint">Booking mode</label><select value={v.bookingMode} onChange={(e) => setV({ ...v, bookingMode: e.target.value as Settings["bookingMode"] })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="AUTO_CONFIRM">Auto-confirm</option><option value="ADMIN_APPROVAL">Admin approval</option></select></div>
+          <div><label className="type-label mb-1.5 block text-ink-faint">Booking mode</label><select aria-label="Booking mode" value={v.bookingMode} onChange={(e) => setV({ ...v, bookingMode: e.target.value as Settings["bookingMode"] })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="AUTO_CONFIRM">Auto-confirm</option><option value="ADMIN_APPROVAL">Admin approval</option></select></div>
           <Field label="Hold minutes" type="number" {...num("holdMinutes")} />
           <Field label="Minimum lead time (hours)" type="number" {...num("minLeadHours")} />
           <Field label="Cancel notice (hours)" type="number" {...num("cancelNoticeHours")} />

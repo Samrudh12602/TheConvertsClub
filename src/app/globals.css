@@ -6,7 +6,7 @@
  * for variety and status, gradients for the hero and dark panels, and a small motion system. Every animation is
  * switched off for people who ask their device to reduce motion (see the media query at the bottom of the base layer).
  */
-@theme inline {
+@theme static {
   --color-paper: #f6f3ee;
   --color-surface: #fbf9f6;
   --color-card: #ffffff;
@@ -69,6 +69,9 @@
   --shadow-glow: 0 6px 18px rgba(122, 31, 43, 0.32);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 
+}
+
+@theme inline {
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
 
@@ -94,6 +97,79 @@
 @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(20, 71, 47, 0.35); } 100% { box-shadow: 0 0 0 16px rgba(20, 71, 47, 0); } }
 @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes confetti-fall { 0% { transform: translate3d(0, -10vh, 0) rotate(0); opacity: 1; } 100% { transform: translate3d(var(--dx, 0), 105vh, 0) rotate(var(--rot, 540deg)); opacity: 0.9; } }
+
+
+/* ------------------------------------------------------------------ dark theme
+ * Opt-in: a toggle in the portal top bar sets data-theme="dark" on <html> (remembered on this device, never forced).
+ * The tokens above are real CSS variables, so re-pointing them re-colours everything built from them. The few places
+ * that use Tailwind's literal white are mapped below.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #141110;
+  --color-surface: #1a1613;
+  --color-card: #1f1a16;
+  --color-line: #38302a;
+  --color-line-soft: #2b2520;
+  --color-line-strong: #453c34;
+  --color-ink: #f3eee7;
+  --color-ink-body: #e3dcd2;
+  --color-ink-2: #cbc2b5;
+  --color-ink-muted: #aaa194;
+  --color-ink-faint: #a0978a;
+
+  --color-oxblood: #d8707d;
+  --color-oxblood-deep: #e9929c;
+  --color-oxblood-hover: #e48390;
+  --color-oxblood-tint: #3a1f24;
+  --color-oxblood-line: #5c2f37;
+  --color-oxblood-pale: #4a2a2f;
+
+  --color-green: #72cc9b;
+  --color-green-tint: #1e2c24;
+  --color-amber: #e29a58;
+  --color-amber-tint: #33261a;
+  --color-amber-line: #5a4126;
+  --color-amber-ink: #efb783;
+  --color-indigo: #9a99f2;
+  --color-indigo-tint: #25253d;
+
+  --color-sand: #2a241e;
+  --color-sand-line: #453c34;
+
+  --color-gold: #d9a441;
+  --color-gold-deep: #e8b957;
+  --color-gold-tint: #342a16;
+  --color-gold-line: #5b4820;
+  --color-teal: #55b9ad;
+  --color-teal-tint: #17302d;
+  --color-teal-line: #28524c;
+  --color-plum: #d08ac8;
+  --color-plum-tint: #33223a;
+
+  --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 4px 8px rgba(0, 0, 0, 0.45), 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .bg-white { background-color: var(--color-card); }
+:root[data-theme="dark"] .bg-white\/80, :root[data-theme="dark"] .bg-white\/60 { background-color: color-mix(in srgb, var(--color-card) 80%, transparent); }
+:root[data-theme="dark"] .bg-night .text-surface, :root[data-theme="dark"] .bg-night.text-surface { color: #fbf9f6; }
+:root[data-theme="dark"] .bg-night .text-ink, :root[data-theme="dark"] .bg-night.text-ink { color: #fbf9f6; }
+:root[data-theme="dark"] .to-white { --tw-gradient-to: var(--color-card); }
+:root[data-theme="dark"] .glass { background: rgba(26, 22, 19, 0.78); }
+:root[data-theme="dark"] .bg-hero {
+  background:
+    radial-gradient(60% 80% at 8% 0%, rgba(216, 112, 125, 0.16), transparent 60%),
+    radial-gradient(50% 70% at 100% 10%, rgba(217, 164, 65, 0.14), transparent 62%),
+    var(--color-card);
+}
+:root[data-theme="dark"] .bg-shimmer { background: linear-gradient(100deg, var(--color-line-soft) 30%, #3a322b 50%, var(--color-line-soft) 70%); background-size: 200% 100%; }
+:root[data-theme="dark"] .bg-brand { background: linear-gradient(180deg, #a73040 0%, #7c1f2c 100%); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea { color: var(--color-ink); }
+:root[data-theme="dark"] ::placeholder { color: var(--color-ink-faint); opacity: 0.7; }
+:root[data-theme="dark"] [class*="bg-[#F"], :root[data-theme="dark"] [class*="bg-[#E"] { background-color: var(--color-surface); }
+:root[data-theme="dark"] [class*="border-[#D"], :root[data-theme="dark"] [class*="border-[#E"], :root[data-theme="dark"] [class*="border-[#C"] { border-color: var(--color-line-strong); }
 
 @layer base {
   html {

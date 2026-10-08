@@ -4,6 +4,7 @@ import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { AdminHoursForm } from "@/components/admin/admin-schedule";
 import { MentorCouponEditor, PublicVisibleToggle, ResendLoginButton, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
+import { ReassignAll } from "@/components/admin/reassign-all";
 import { LegalRecord } from "@/components/admin/legal-record";
 import { db } from "@/lib/db";
 import { fmtDate, fmtWhen } from "@/lib/format";
@@ -38,6 +39,10 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
       : Promise.resolve([]),
   ]);
   const settings = await getSettings();
+  const [upcomingCount, others] = await Promise.all([
+    db.session.count({ where: { mentorId: id, status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date() } } }),
+    db.mentorProfile.findMany({ where: { status: "ACTIVE", id: { not: id }, user: { isDemo: m.user.isDemo } }, include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } }),
+  ]);
   const pendingAccrued = accruals.filter((a) => a.status !== "PAID").reduce((n, a) => n + a.amountPaise, 0);
 
   return (
@@ -103,6 +108,10 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
 
       <Panel title="Terms accepted" flush={false}><LegalRecord userId={m.userId} role="MENTOR" /></Panel>
 
+      <Panel title="Going on leave? Move their sessions" flush={false}>
+        <p className="mb-3 text-[12.5px] leading-[1.55] text-ink-muted">Hands every upcoming session to one other active mentor in one step. Students and mentors are emailed as usual.</p>
+        <ReassignAll fromMentorId={id} upcoming={upcomingCount} options={others.map((o) => ({ id: o.id, label: nm(o.user.name) }))} />
+      </Panel>
       <Section cols={280}>
         <Panel title={`Pay structure · ${m.tier}`} flush={false}>
           {rates.map((r) => <div key={r.id} className="tnum flex justify-between gap-2.5 border-b border-line-soft py-2 text-[12.5px] last:border-b-0"><span className="text-ink-2">{SERVICE[r.service]}</span><span className="font-semibold text-ink">{formatPaise(r.amountPaise)}</span></div>)}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { ChevronRight, GraduationCap, Search, UserCheck, UserX, Video } from "lucide-react";
+import { ExportLinks } from "@/components/admin/reassign-all";
 import { Avatar, Empty, Kpi, KpiGrid, StatusPill } from "@/components/portal/ui";
 import { adminDb } from "@/server/demo";
 
@@ -41,14 +42,15 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
           <input name="q" defaultValue={q} placeholder="Search name or email" className="min-h-11 w-full rounded-xl border border-line-strong bg-white pl-9 pr-3 text-base text-ink shadow-xs transition focus:border-oxblood focus:ring-2 focus:ring-oxblood/15 md:text-[13px]" />
         </div>
-        <select name="plan" defaultValue={plan ?? ""} className="min-h-11 rounded-xl border border-line-strong bg-white px-3 text-[13px] text-ink shadow-xs">
+        <select name="plan" aria-label="Filter by plan" defaultValue={plan ?? ""} className="min-h-11 rounded-xl border border-line-strong bg-white px-3 text-[13px] text-ink shadow-xs">
           <option value="">All plans</option>
           {plans.map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
         </select>
         <button type="submit" className="min-h-11 rounded-xl bg-ink px-5 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-ink-2">Filter</button>
         {(q || plan) && <Link href="/admin/students" className="inline-flex min-h-11 items-center px-2 text-[12.5px] font-medium text-ink-faint no-underline">Clear</Link>}
+        <span className="ml-auto"><ExportLinks types={[{ type: "students", label: "Export students (CSV)" }, { type: "payments", label: "Export payments (CSV)" }]} /></span>
       </form>
-      {students.length === 0 ? <Empty>No students found.</Empty> : (
+      {students.length === 0 ? <Empty art="search">No students found.</Empty> : (
         <>
         <ul className="flex flex-col gap-2.5 md:hidden">
           {students.map((s) => (

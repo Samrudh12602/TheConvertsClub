@@ -32,7 +32,7 @@ export function AddMentorForm() {
         <Field label="Email" name="email" type="email" required placeholder="mentor@example.com" />
         <div>
           <label className="type-label mb-1.5 block text-ink-faint">Tier</label>
-          <select name="tier" value={tier} onChange={(e) => setTier(e.target.value)} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">
+          <select aria-label="Tier" name="tier" value={tier} onChange={(e) => setTier(e.target.value)} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-2.5 text-[13px]">
             <option value="JUNIOR">Junior</option>
             <option value="SENIOR">Senior</option>
           </select>
@@ -44,12 +44,12 @@ export function AddMentorForm() {
       </div>
       <div>
         <label className="type-label mb-1.5 block text-ink-faint">Bio (two lines, shown on the public mentors page)</label>
-        <textarea name="bio" maxLength={300} rows={2} className="w-full rounded-lg border border-line-strong bg-white p-2.5 text-[13px] leading-normal" />
+        <textarea aria-label="Bio (two lines, shown on the public mentors page)" name="bio" maxLength={300} rows={2} className="w-full rounded-lg border border-line-strong bg-white p-2.5 text-[13px] leading-normal" />
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <div>
           <label className="type-label mb-1.5 block text-ink-faint">Professional photo</label>
-          <input name="photo" type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} className="block w-full text-[12.5px] text-ink-2 file:mr-3 file:min-h-10 file:rounded-lg file:border-0 file:bg-ink file:px-3 file:text-[11.5px] file:font-semibold file:text-white" />
+          <input aria-label="Professional photo" name="photo" type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} className="block w-full text-[12.5px] text-ink-2 file:mr-3 file:min-h-10 file:rounded-lg file:border-0 file:bg-ink file:px-3 file:text-[11.5px] file:font-semibold file:text-white" />
           {fileName && <p className="mt-1 text-[11px] text-ink-faint">{fileName}</p>}
         </div>
         <Field label="…or paste a photo URL instead" name="photoUrl" type="url" placeholder="https://…" />

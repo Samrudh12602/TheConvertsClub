@@ -1,5 +1,6 @@
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Kpi, KpiGrid, Panel, StatusPill } from "@/components/portal/ui";
+import { ArrowRight, CheckCheck, Clock3, Wallet } from "lucide-react";
+import { Avatar, Empty, Kpi, KpiGrid, Panel, StatusPill } from "@/components/portal/ui";
 import { ApproveAccrualsButton, ApproveBonusesButton, CreateRunForm, MarkPaidForm, PreviewBonusesButton } from "@/components/admin/payout-controls";
 import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
@@ -24,19 +25,25 @@ export default async function PayoutsPage() {
   return (
     <PortalPage width="max-w-[1000px]">
       <KpiGrid>
-        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note={`${accrued._count} items`} />
-        <Kpi label="Approved" value={formatPaise(approved._sum.amountPaise ?? 0)} note={`${approved._count} items`} />
-        <Kpi label="Paid, season" value={formatPaise(paid._sum.amountPaise ?? 0)} note={`${paid._count} items`} />
+        <Kpi label="Accrued" value={formatPaise(accrued._sum.amountPaise ?? 0)} note={`${accrued._count} items waiting for approval`} icon={<Clock3 />} accent="gold" />
+        <Kpi label="Approved" value={formatPaise(approved._sum.amountPaise ?? 0)} note={`${approved._count} items ready for a run`} icon={<CheckCheck />} accent="indigo" />
+        <Kpi label="Paid, season" value={formatPaise(paid._sum.amountPaise ?? 0)} note={`${paid._count} items`} noteTone="green" icon={<Wallet />} accent="teal" />
       </KpiGrid>
 
-      <div className="flex flex-wrap gap-2.5 rounded-[11px] border border-line bg-card p-4">
-        <ApproveAccrualsButton /><ApproveBonusesButton /><PreviewBonusesButton />
+      <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px] font-semibold text-ink-faint">
+          <span className="rounded-full bg-gold-tint px-3 py-1 text-gold-deep">1 · Accrued</span><ArrowRight aria-hidden className="size-3.5" />
+          <span className="rounded-full bg-indigo-tint px-3 py-1 text-indigo">2 · Approved</span><ArrowRight aria-hidden className="size-3.5" />
+          <span className="rounded-full bg-oxblood-tint px-3 py-1 text-oxblood">3 · Payout run</span><ArrowRight aria-hidden className="size-3.5" />
+          <span className="rounded-full bg-teal-tint px-3 py-1 text-teal">4 · Paid</span>
+        </div>
+        <div className="flex flex-wrap gap-2.5"><ApproveAccrualsButton /><ApproveBonusesButton /><PreviewBonusesButton /></div>
       </div>
 
       <Panel title="Accrued & approved, awaiting a run">
         {accrualRows.length === 0 ? <Empty>Nothing pending.</Empty> : accrualRows.map((a) => (
-          <div key={a.id} className="flex items-center justify-between gap-3 border-b border-line-soft px-3.5 py-2.5 text-[12.5px] last:border-b-0">
-            <span className="text-ink-body">{nm(a.mentor.user.name)} · {SERVICE[a.service]} · {fmtDate(a.createdAt)}</span>
+          <div key={a.id} className="flex items-center justify-between gap-3 border-b border-line-soft px-3.5 py-2.5 text-[12.5px] transition-colors last:border-b-0 hover:bg-surface">
+            <span className="flex min-w-0 items-center gap-2.5 text-ink-body"><Avatar name={nm(a.mentor.user.name)} size={30} /><span className="min-w-0 truncate"><span className="font-medium text-ink">{nm(a.mentor.user.name)}</span> · {SERVICE[a.service]} · {fmtDate(a.createdAt)}</span></span>
             <div className="flex items-center gap-2.5"><span className="tnum font-semibold text-ink">{formatPaise(a.amountPaise)}</span><StatusPill tone={ACCRUAL_STATUS[a.status].tone}>{ACCRUAL_STATUS[a.status].label}</StatusPill></div>
           </div>
         ))}
@@ -46,12 +53,12 @@ export default async function PayoutsPage() {
 
       <Panel title="Payout runs">
         {runs.length === 0 ? <Empty>No runs yet.</Empty> : runs.map((run) => (
-          <div key={run.id} className="border-b border-line-soft px-3.5 py-3 last:border-b-0">
+          <div key={run.id} className="border-b border-line-soft px-3.5 py-3.5 last:border-b-0">
             <div className="flex items-center justify-between gap-3"><p className="text-[13px] font-semibold text-ink">{run.label}</p><StatusPill tone={run.status === "PAID" ? "green" : run.status === "APPROVED" ? "amber" : "stone"}>{run.status}</StatusPill></div>
             <div className="mt-2 flex flex-col gap-1.5">
               {run.payouts.map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 text-[12px]">
-                  <span className="text-ink-2">{nm(p.mentor.user.name)}</span>
+                  <span className="flex items-center gap-2 text-ink-2"><Avatar name={nm(p.mentor.user.name)} size={24} />{nm(p.mentor.user.name)}</span>
                   <div className="flex items-center gap-2.5">
                     <span className="tnum font-medium text-ink">{formatPaise(p.amountPaise)}</span>
                     {p.paidAt ? <span className="text-[11px] text-green">Paid · {p.reference}</span> : <MarkPaidForm payoutId={p.id} />}

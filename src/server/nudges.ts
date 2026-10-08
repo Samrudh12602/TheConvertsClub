@@ -54,7 +54,10 @@ export async function runNudges(now = new Date()) {
     const u = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
     if (!u) continue;
     const list = left.map((c) => describeCredit(c, "short")).join(", ");
-    await sendEmail({ template: "nudge_credits", to: u.email, vars: { name: first(u.name), credits: list }, url: "/student/book" });
+    // "...and your call is in 14 days": the one piece of context that turns a reminder into urgency.
+    const call = await db.callTracker.findFirst({ where: { studentId: userId, outcome: "SCHEDULED", interviewDate: { gt: now } }, orderBy: { interviewDate: "asc" } });
+    const days = call?.interviewDate ? Math.ceil((call.interviewDate.getTime() - now.getTime()) / DAY) : null;
+    await sendEmail({ template: "nudge_credits", to: u.email, vars: { name: first(u.name), credits: list }, url: "/student/book", details: call && days !== null ? [{ k: "Your next call", v: `${call.institute} in ${days} day${days === 1 ? "" : "s"}` }] : undefined });
     await notify(userId, { title: `You have credits waiting: ${list}`, href: "/student/book" });
     out.credits++;
   }

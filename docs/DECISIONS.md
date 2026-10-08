@@ -499,6 +499,28 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     gone, `/free-guide` redirects to the home page, and `/api/lead` answers 410 (it only works again if
     `FREE_GUIDE_ENABLED=true` is set). No more emails are collected or sent for it. Stored leads are kept.
 
+48. **Automations (owner's request).** All email, all idempotent (each message leaves a marker, so reruns never duplicate), real
+    accounts only. (a) Mentors get a 24h and a 1h reminder with the student's profile and the meeting link (one per GD batch).
+    (b) Feedback chaser: a nudge at 12h after the session, a firm one at the due time, a final one a day later that also emails
+    the owner once (grouped). The owner's own sessions are never chased. (c) Two days after a paid trial, one follow-up with the
+    flagship plan and any open early-bird seats, skipped if they already bought something. (d) Abandoned checkout: one email an
+    hour after payment was opened and not finished, at most one per 3 days. (e) The idle-credits nudge now names the student's
+    next call. (f) Sundays 18:30 IST the owner gets a weekly digest (revenue, sessions, open slots, trials and conversion, what
+    needs them). WhatsApp is not used (it needs a paid provider). Student 24h/1h reminders already existed.
+
+49. **Admin Inbox, exports, bulk move, watchlist.** `/admin/inbox` gathers everything waiting on the owner (overdue feedback,
+    unassigned sessions, paid sessions with the owner not yet booked, applications, reviews, messages, failed payments,
+    deletion requests) plus a watchlist of patterns (3+ failed payments in 7 days, repeated blocked trial attempts, many
+    unfinished carts). Calendar and Scheduler are one "Schedule" item. A mentor's page can hand all their upcoming sessions to
+    another mentor in one step (each move goes through the normal assignment checks and emails). Students and payments can
+    be exported as CSV (admin only, formula-safe, audited). Analytics shows revenue by week and by product and trial-to-paid.
+
+50. **Page analytics, dark mode, accessibility.** Vercel Web Analytics runs on the public site only (no cookies, no personal
+    data; click names such as `trial_book_trial-mock-pi`); it needs switching on once in the Vercel dashboard. The privacy
+    policy says so (a clarification, so the legal version was not bumped). Dark mode is an opt-in toggle in the portals, saved
+    per device, and never applied to the public site. An axe-core audit of the public pages and all three portals found only
+    unlabeled form controls, now labelled.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

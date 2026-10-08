@@ -23,10 +23,10 @@ export function BroadcastForm() {
       <ConfirmDialog open={ask} onClose={() => setAsk(false)} title="Send this broadcast?" body={`It goes by email to ${who}.`} confirmLabel="Send" busy={busy} onConfirm={send} />
       <div>
         <label className="type-label mb-1.5 block text-ink-faint">Audience</label>
-        <select value={v.audience} onChange={(e) => setV({ ...v, audience: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="ALL_STUDENTS">All students</option><option value="ALL_MENTORS">All mentors</option></select>
+        <select aria-label="Audience" value={v.audience} onChange={(e) => setV({ ...v, audience: e.target.value })} className="min-h-11 rounded-lg border border-line-strong bg-white px-2.5 text-[13px]"><option value="ALL_STUDENTS">All students</option><option value="ALL_MENTORS">All mentors</option></select>
       </div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Subject</label><input required value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-[13px]" /></div>
-      <div><label className="type-label mb-1.5 block text-ink-faint">Message</label><textarea required rows={5} value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13px] leading-normal" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Subject</label><input aria-label="Subject" required value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} className="min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-[13px]" /></div>
+      <div><label className="type-label mb-1.5 block text-ink-faint">Message</label><textarea aria-label="Message" required rows={5} value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13px] leading-normal" /></div>
       <Button type="submit" disabled={busy}>{busy ? "Sending…" : "Send broadcast"}</Button>
       {msg && <p className={`text-xs ${msg.ok ? "text-green" : "text-oxblood"}`}>{msg.text}</p>}
     </form>
