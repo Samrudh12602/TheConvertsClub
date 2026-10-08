@@ -78,7 +78,7 @@ export function PanelSpotlight({ product }: { product: CatalogProduct | null }) 
       <section id="panel-pi" aria-labelledby="panel-title" className="relative scroll-mt-24 overflow-hidden rounded-3xl border border-line bg-card p-6 shadow-lift sm:p-9">
         <span aria-hidden className="absolute -right-16 -top-16 size-64 rounded-full bg-oxblood/10 blur-3xl" />
         <span aria-hidden className="absolute -bottom-20 left-10 size-56 rounded-full bg-gold/15 blur-3xl" />
-        <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-oxblood-line bg-oxblood-tint px-3 py-1.5 text-[11.5px] font-semibold leading-none text-oxblood"><Sparkles className="size-3.5" aria-hidden />Closest to live</span>
             <h2 id="panel-title" className="type-display mt-4 text-ink">Panel PI: three interviewers, one hour.</h2>
