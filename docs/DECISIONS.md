@@ -521,17 +521,18 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     per device, and never applied to the public site. An axe-core audit of the public pages and all three portals found only
     unlabeled form controls, now labelled.
 
-51. **Panel PI (owner's instructions).** A ₹999 mock (MRP ₹1,499, "closest to live") with three interviewers and one hour in
-    total, interview and live debrief included. The owner always leads; two other active mentors with an open slot at the
-    same hour make up the panel (`SessionPanelist`), chosen by the usual rule (least busy juniors first, then seniors). A
-    time is offered only when all three are free, and the three slots are held, booked and released together. It can't be
-    moved, only cancelled (same notice rules). It is not part of any plan. Call Convert Plus students (6 PIs) can swap an
-    unused PI for a Panel PI for ₹199, at most twice (`panel-pi-upgrade`); if the PI was used between paying and
-    fulfilment, nothing is swapped and the owner is emailed to refund. Mentor codes don't apply. Internal split of ₹999:
-    owner ₹399 (no accrual, the remainder), ₹300 to each of the two other panelists, accrued when the lead submits the
-    feedback (`PayService.PANEL`, `PANEL_PANELIST_PAISE`). The lead submits one combined feedback. Panelists see the
-    session in their portal, get the email, the calendar entry and the 24h/1h reminders. Lead slots may be the owner's
-    free time or special paid hours (either). No college dossier for now.
+51. **Panel PI (owner's instructions, revised).** A ₹999 mock (MRP ₹1,499, "closest to live"), one hour in total including the
+    live debrief, not part of any plan. It is booked like the other owner sessions: the student picks one of the owner's
+    special paid hours, and the owner is the lead (Session.mentorId). The owner then picks the other two panelists
+    (Admin > Schedule). Each chosen mentor gets that hour put on their calendar automatically (a slot is created if they
+    hadn't offered it) and an invite by email, calendar file and in-app notice, which they accept or decline in their
+    portal; a decline frees the hour and tells the owner to pick someone else. The student is told when both have
+    accepted. The student booking can't be moved, only cancelled (a cancel frees every panelist's hour). Promotion shows
+    "Panelist 1, 2 and 3" with no names. Call Convert Plus students can swap an unused PI for a Panel PI for ₹199, at most
+    twice (`panel-pi-upgrade`); if the PI was used between paying and fulfilment nothing is swapped and the owner is
+    emailed to refund. Mentor codes don't apply. Split of ₹999: owner ₹399 (the remainder, no accrual), ₹300 to each
+    panelist who accepted, accrued when the lead submits the one combined feedback (`PayService.PANEL`). Only accepted
+    panelists get reminders and pay. No college dossier for now.
 
 ## Assumptions
 

@@ -9,11 +9,13 @@ import { AvailabilityError, addWindow, blockDate, copyPreviousWeek, toggleSlot, 
 import { FeedbackError, markNoShow, submitReviewFeedback, submitSessionFeedback, type FeedbackInput } from "@/server/feedback";
 import { encryptJson } from "@/server/crypto";
 import { audit } from "@/server/audit";
+import { respondToPanel } from "@/server/panel";
+import { BookingError } from "@/server/booking-shared";
 import { RUBRIC } from "@/lib/labels";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 const fail = (e: unknown): Result => {
-  if (e instanceof AvailabilityError || e instanceof FeedbackError) return { ok: false, error: e.message };
+  if (e instanceof AvailabilityError || e instanceof FeedbackError || e instanceof BookingError) return { ok: false, error: e.message };
   console.error(e);
   return { ok: false, error: "Something went wrong. Please try again." };
 };
@@ -106,5 +108,16 @@ export async function updateMyCouponCodeAction(input: unknown): Promise<Result> 
     await db.coupon.update({ where: { mentorId: mentor.id }, data: { code } });
     revalidatePath("/mentor/profile");
     return { ok: true, message: "Code updated." };
+  } catch (e) { return fail(e); }
+}
+
+/** A panelist accepts or declines the owner's invite to a Panel PI. */
+export async function respondPanelAction(sessionId: string, accept: boolean): Promise<Result> {
+  try {
+    const { mentor, user } = await guard();
+    await respondToPanel(mentor.id, z.string().min(1).max(40).parse(sessionId), Boolean(accept));
+    await audit({ actorId: user.id, action: accept ? "panel.accept" : "panel.decline", entity: "Session", entityId: sessionId });
+    refresh();
+    return { ok: true };
   } catch (e) { return fail(e); }
 }

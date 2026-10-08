@@ -69,17 +69,24 @@ export default async function SessionDetail({ params, searchParams }: { params: 
       {sp.moved && <Flash tone="green">Session moved. We&apos;ve told your mentor.</Flash>}
       {header}
 
-      {s.type === "PANEL_PI" && s.panelists.length > 0 && (
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
-          <p className="type-label text-ink-faint">Your panel</p>
-          <ul className="mt-3 grid gap-2.5 sm:grid-cols-3">
-            {[s.mentor?.user.name, ...s.panelists.map((x) => x.mentor.user.name)].filter(Boolean).map((n, i) => (
-              <li key={i} className="flex items-center gap-2.5 rounded-xl border border-line bg-surface p-3"><Avatar name={(n as string).replace(/\s*\(demo\)/, "")} size={34} /><span className="text-[13px] font-semibold text-ink">{(n as string).replace(/\s*\(demo\)/, "")}</span></li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs leading-[1.55] text-ink-muted">Three interviewers, one hour in total, the interview and a live debrief. You&apos;ll get one combined feedback report afterwards.</p>
-        </div>
-      )}
+      {s.type === "PANEL_PI" && (() => {
+        const accepted = s.panelists.filter((x) => x.status === "ACCEPTED");
+        const seats = [{ n: s.mentor?.user.name, ok: true }, ...[0, 1].map((i) => ({ n: accepted[i]?.mentor.user.name, ok: Boolean(accepted[i]) }))];
+        return (
+          <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+            <p className="type-label text-ink-faint">Your panel</p>
+            <ul className="mt-3 grid gap-2.5 sm:grid-cols-3">
+              {seats.map((p, i) => (
+                <li key={i} className="flex items-center gap-2.5 rounded-xl border border-line bg-surface p-3">
+                  <Avatar name={p.ok && p.n ? p.n.replace(/\s*\(demo\)/, "") : `P${i + 1}`} size={34} />
+                  <span><span className="block text-[13px] font-semibold text-ink">Panelist {i + 1}</span><span className="block text-[11.5px] text-ink-faint">{p.ok && p.n ? p.n.replace(/\s*\(demo\)/, "") : "being confirmed"}</span></span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs leading-[1.55] text-ink-muted">{accepted.length >= 2 ? "Your panel is confirmed." : "We're confirming your panelists and will email you the moment they're set."} Three interviewers, one hour in total, the interview and a live debrief. You&apos;ll get one combined feedback report afterwards.</p>
+          </div>
+        );
+      })()}
 
       {upcoming && s.startsAt && (
         <div className="grid gap-4 md:grid-cols-[1fr_1fr]">

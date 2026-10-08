@@ -266,7 +266,7 @@ export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialTy
         )}
         <ul className="flex flex-col gap-1.5 text-[12px] leading-[1.45] text-dark-soft">
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />{reschedule ? "Keeps your reserved credit" : `Uses 1 credit · ${Math.max(0, left0 - (picked ? 1 : 0))} left ${picked ? "after this" : ""}`}</li>
-          {type === "PANEL_PI" ? <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Three panelists, one hour in total with the live debrief. Times show only when all three are free. It can&apos;t be moved, only cancelled.</li> : <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>}
+          {type === "PANEL_PI" ? <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Three panelists, one hour in total with the live debrief. We confirm your panelists after you book. It can&apos;t be moved, only cancelled.</li> : <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>}
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Written feedback after the session</li>
         </ul>
         <Button variant="onDark" size="lg" disabled={!hold || busy} onClick={confirm} className="min-h-12 w-full">{busy ? "Working…" : reschedule ? "Confirm new time" : "Confirm booking"}</Button>

@@ -62,7 +62,7 @@ export async function sendMentorReminders(now = new Date()) {
     for (const s of await loadDue(w)) {
       if (!s.mentor) continue;
       await remind(w, s, s.mentor.user, s.gdBatchId ?? s.id);
-      for (const p of s.panelists) await remind(w, s, p.mentor.user, `${s.id}-${p.mentorId}`);
+      for (const p of s.panelists.filter((x) => x.status === "ACCEPTED")) await remind(w, s, p.mentor.user, `${s.id}-${p.mentorId}`);
     }
   }
   return out;

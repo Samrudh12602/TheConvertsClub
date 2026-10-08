@@ -15,7 +15,7 @@ export async function loadInbox(isDemoViewer: boolean, now = new Date()): Promis
   const db = await adminDb();
   const settings = await getSettings();
   const cutoff = new Date(now.getTime() - settings.feedbackDueHours * HOUR);
-  const [overdue, unassigned, applications, reviews, unspent, convos, failed, deletions] = await Promise.all([
+  const [overdue, unassigned, applications, reviews, unspent, convos, failed, panels, deletions] = await Promise.all([
     db.session.findMany({ where: { status: "CONFIRMED", feedback: null, startsAt: { lt: cutoff } }, orderBy: { startsAt: "asc" }, take: 200, include: { mentor: { include: { user: { select: { name: true } } } }, student: { select: { name: true } } } }),
     db.session.findMany({ where: { status: { in: ["CONFIRMED", "REQUESTED"] }, mentorId: null, startsAt: { gt: now } }, orderBy: { startsAt: "asc" }, include: { student: { select: { name: true } } } }),
     db.mentorApplication.findMany({ where: { stage: { in: ["NEW", "SCREENING", "TRIAL_MOCK"] } }, orderBy: { createdAt: "asc" } }),
@@ -24,6 +24,7 @@ export async function loadInbox(isDemoViewer: boolean, now = new Date()): Promis
     db.creditLedger.groupBy({ by: ["userId", "kind"], _sum: { delta: true, reservedDelta: true }, where: { kind: { in: ["TRIAL_GUIDANCE", "TRIAL_PI", "PI_DIRECT", "STRATEGY_DIRECT"] } } }),
     getInbox(isDemoViewer),
     db.order.findMany({ where: { status: "FAILED", createdAt: { gte: new Date(now.getTime() - 7 * 24 * HOUR) } }, orderBy: { createdAt: "desc" }, take: 20, include: { product: { select: { name: true } } } }),
+    db.session.findMany({ where: { type: "PANEL_PI", status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: now } }, orderBy: { startsAt: "asc" }, include: { student: { select: { name: true } }, panelists: { select: { status: true } } } }),
     realDb.auditLog.findMany({ where: { action: "account.deletion_requested", createdAt: { gte: new Date(now.getTime() - 30 * 24 * HOUR) } }, orderBy: { createdAt: "desc" }, take: 20, include: { actor: { select: { id: true, name: true, email: true, deletedAt: true } } } }),
   ]);
 
@@ -33,7 +34,10 @@ export async function loadInbox(isDemoViewer: boolean, now = new Date()): Promis
   for (const u of unspent) if ((u._sum.delta ?? 0) > 0) kinds.set(u.userId, [...(kinds.get(u.userId) ?? []), u.kind === "TRIAL_GUIDANCE" ? "trial guidance" : u.kind === "TRIAL_PI" ? "trial PI" : u.kind === "PI_DIRECT" ? "PI with you" : "strategy with you"]);
   const waitingDeletion = deletions.filter((d) => d.actor && !d.actor.deletedAt);
 
+  const needPanel = panels.filter((p) => p.panelists.filter((x) => x.status === "ACCEPTED").length < 2);
   const groups: InboxGroup[] = [
+    { key: "panels", label: "Panel PIs waiting on panelists", href: "/admin/scheduler", cta: "Pick panelists", icon: "gift", total: needPanel.length,
+      items: needPanel.slice(0, 6).map((p) => ({ id: p.id, title: `${nm(p.student?.name)} · Panel PI`, meta: `${p.panelists.filter((x) => x.status === "ACCEPTED").length}/2 accepted · ${p.startsAt ? new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(p.startsAt) : ""}`, href: "/admin/scheduler", tone: "oxblood" as const })) },
     { key: "overdue", label: "Mentor feedback overdue", href: "/admin/sessions", cta: "Open sessions", icon: "clock", total: overdue.length,
       items: overdue.slice(0, 6).map((s) => ({ id: s.id, title: `${nm(s.mentor?.user.name)} · ${nm(s.student?.name)}`, meta: `${ago(new Date(s.startsAt!.getTime() + settings.feedbackDueHours * HOUR), now)} late`, href: "/admin/sessions", tone: "oxblood" as const })) },
     { key: "unassigned", label: "Sessions needing a mentor", href: "/admin/scheduler", cta: "Open schedule", icon: "calendar", total: unassigned.length,

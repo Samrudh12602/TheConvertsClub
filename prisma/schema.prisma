@@ -963,16 +963,27 @@ model RateLimit {
 
 /// The two non-lead panelists on a Panel PI session. The lead (the owner) is Session.mentorId. Each panelist holds one
 /// slot for the hour and earns a fixed amount when the lead submits the feedback (accrualId points at that accrual).
+enum PanelStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+}
+
 model SessionPanelist {
-  id        String        @id @default(cuid())
-  sessionId String
-  mentorId  String
-  slotId    String?
-  accrualId String?       @unique
-  createdAt DateTime      @default(now())
-  session   Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  mentor    MentorProfile @relation(fields: [mentorId], references: [id])
-  slot      Slot?         @relation(fields: [slotId], references: [id])
+  id          String        @id @default(cuid())
+  sessionId   String
+  mentorId    String
+  slotId      String?
+  accrualId   String?       @unique
+  /// Invited by the owner; the mentor accepts or declines in their portal.
+  status      PanelStatus   @default(INVITED)
+  respondedAt DateTime?
+  /// True when we created the slot for this seat (so it is deleted again if the seat is removed); false when it was already one of their open hours.
+  slotCreated Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  session     Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+  slot        Slot?         @relation(fields: [slotId], references: [id])
 
   @@unique([sessionId, mentorId])
   @@index([mentorId])

@@ -96,7 +96,7 @@ export function PanelSpotlight({ product }: { product: CatalogProduct | null }) 
             <div className="rounded-2xl bg-night p-5 text-surface shadow-pop ring-1 ring-white/10">
               <p className="type-eyebrow text-dark-muted">Your panel</p>
               <div className="mt-4 flex flex-col gap-2.5">
-                {[["Samrudh", "Leads the panel"], ["Panelist", "Cross-questions"], ["Panelist", "Probes your profile"]].map(([n, r], i) => (
+                {[["Panelist 1", "Opens and sets the tone"], ["Panelist 2", "Cross-questions your answers"], ["Panelist 3", "Probes your profile and goals"]].map(([n, r], i) => (
                   <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/10">
                     <span className="flex size-9 flex-none items-center justify-center rounded-full bg-brand font-display text-[13px] font-bold text-white">{i + 1}</span>
                     <span><span className="block text-[13.5px] font-semibold leading-[1.2] text-white">{n}</span><span className="mt-0.5 block text-[11.5px] text-dark-soft">{r}</span></span>

@@ -101,7 +101,7 @@ export async function submitSessionFeedback(mentorId: string, sessionId: string,
     // Panel PI: the lead (the owner) keeps the remainder; each of the two other panelists is accrued a fixed amount.
     const panelPaid: { userId: string }[] = [];
     if (s.type === "PANEL_PI") {
-      const seats = await tx.sessionPanelist.findMany({ where: { sessionId, accrualId: null }, include: { mentor: true } });
+      const seats = await tx.sessionPanelist.findMany({ where: { sessionId, accrualId: null, status: "ACCEPTED" }, include: { mentor: true } });
       for (const seat of seats) {
         const acc = await tx.payoutAccrual.create({ data: { mentorId: seat.mentorId, service: "PANEL", amountPaise: PANEL_PANELIST_PAISE, rateSnapshotPaise: PANEL_PANELIST_PAISE, tierSnapshot: seat.mentor.tier } });
         await tx.sessionPanelist.update({ where: { id: seat.id }, data: { accrualId: acc.id } });

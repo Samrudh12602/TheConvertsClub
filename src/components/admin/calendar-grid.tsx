@@ -82,7 +82,7 @@ export function CalendarGrid({ days, rows, students }: { days: { label: string; 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-ink-faint">
         <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-green/40 bg-green-tint align-middle" />free (click to book)</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm bg-ink align-middle" />booked</span>
-        <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-[#C9A96A] bg-[#F2E4C4] align-middle" />your hours for the paid PI / strategy calls</span>
+        <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-[#C9A96A] bg-[#F2E4C4] align-middle" />your hours for the paid PI / strategy / Panel PI calls</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm border border-amber-line bg-amber-tint align-middle" />held</span>
         <span><span className="mr-1 inline-block size-2.5 rounded-sm bg-line-soft align-middle" />blocked</span>
         <span>★ you</span>

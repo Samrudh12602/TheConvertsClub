@@ -17,12 +17,13 @@ import { cancelSession, BookingError } from "@/server/booking";
 import { AvailabilityError } from "@/server/availability";
 import { adminAddHours, adminBookFor, adminBookSlot, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
 import { refundOrder, CheckoutError } from "@/server/checkout";
+import { PanelError, setPanelists } from "@/server/panel";
 import { addMentorDirect, MentorAdminError, promoteApplication, resendMentorLogin } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 const fail = (e: unknown): Result => {
-  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError || e instanceof AvailabilityError) return { ok: false, error: e.message };
+  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError || e instanceof AvailabilityError || e instanceof PanelError) return { ok: false, error: e.message };
   console.error(e);
   return { ok: false, error: "Something went wrong. Please try again." };
 };
@@ -63,6 +64,17 @@ export async function reassignMentorSessionsAction(fromMentorId: string, toMento
     refreshAll();
     if (!moved) return { ok: false, error: `Nothing could be moved. ${[...new Set(stuck)][0]}` };
     return { ok: true, message: `Moved ${moved} session${moved === 1 ? "" : "s"}.${stuck.length ? ` ${stuck.length} couldn't move (${[...new Set(stuck)][0]}); they're still with the original mentor.` : ""}` };
+  } catch (e) { return fail(e); }
+}
+
+/** The owner picks the two other panelists for a Panel PI; each gets their hour held and an invite to accept. */
+export async function setPanelistsAction(sessionId: string, mentorIds: string[]): Promise<Result> {
+  try {
+    const actor = await guard("panel");
+    const r = await setPanelists(actor, z.string().min(1).max(40).parse(sessionId), z.array(z.string().min(1).max(40)).max(4).parse(mentorIds));
+    await audit({ actorId: actor.id, action: "panel.set_panelists", entity: "Session", entityId: sessionId, after: { mentorIds } });
+    refreshAll();
+    return { ok: true, message: r.invited ? `Invites sent to ${r.invited} panelist${r.invited === 1 ? "" : "s"}.` : "Panel unchanged." };
   } catch (e) { return fail(e); }
 }
 

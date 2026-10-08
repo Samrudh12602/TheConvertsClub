@@ -20,7 +20,7 @@ export default async function MentorSessions({ searchParams }: { searchParams: P
   const rows = await db.session.findMany({
     where: dueOnly
       ? { mentorId: mentor.id, startsAt: { lt: new Date() }, status: "CONFIRMED", feedback: null }
-      : { startsAt: { not: null }, OR: [{ mentorId: mentor.id }, { panelists: { some: { mentorId: mentor.id } } }] },
+      : { startsAt: { not: null }, OR: [{ mentorId: mentor.id }, { panelists: { some: { mentorId: mentor.id, status: { not: "DECLINED" } } } }] },
     orderBy: { startsAt: "desc" }, take: 100,
     include: { student: { select: { name: true } }, feedback: { select: { id: true } } },
   });

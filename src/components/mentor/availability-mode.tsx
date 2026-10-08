@@ -38,7 +38,7 @@ export function ModePicker() {
       <p className="type-label text-ink-faint">You are adding hours for</p>
       <div className="mt-2.5 flex flex-wrap gap-2.5">
         {opt(false, "My free time", "Ordinary sessions: you take whatever you're free for before other mentors do, and strategy calls from the programs.")}
-        {opt(true, "Special paid sessions", "Only the ₹599 PI and ₹299 strategy call with Samrudh. Kept separate from your free time.")}
+        {opt(true, "Special paid sessions", "The paid PI and strategy call with Samrudh, and Panel PIs. Kept separate from your free time.")}
       </div>
     </div>
   );

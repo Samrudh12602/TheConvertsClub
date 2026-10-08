@@ -11,7 +11,7 @@ import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
 import { BookingError, isDemoStudent, now, openOrExpiredHold } from "@/server/booking-shared";
-import { holdPanelSlots, panelistsOf, panelTimes, releasePanelSeats, seatPanel } from "@/server/panel";
+import { panelistsOf, releasePanelSeats } from "@/server/panel";
 
 export { BookingError };
 
@@ -50,7 +50,6 @@ async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: Sessi
 
 /** Bookable start times between two instants (mentor identity and tier are never exposed). Sorted ascending. */
 export async function availableTimesRange(studentId: string, type: SessionType, focus: PiFocus | null, rangeFrom: Date, rangeTo: Date, preferMentorId?: string | null) {
-  if (type === "PANEL_PI") return panelTimes(studentId, rangeFrom, rangeTo);
   if (preferMentorId) await assertCanRebook(studentId, preferMentorId);
   const s = await getSettings();
   const t = now();
@@ -93,7 +92,6 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
     await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
 
     const heldUntil = new Date(now().getTime() + s.holdMinutes * 60_000);
-    if (type === "PANEL_PI") return holdPanelSlots(tx, studentId, startsAt, heldUntil);
     let cands = await candidatesAt(tx, type, startsAt, await isDemoStudent(tx, studentId), preferMentorId);
     const seniorRequired = needsSenior(type, focus, s.seniorRequiredFocuses);
     while (cands.length) {
@@ -133,7 +131,6 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
       });
       await reserveCredit(tx, { userId: studentId, kind: sessionCreditKind(type), sessionId: created.id });
       await tx.slot.update({ where: { id: slot.id }, data: { status: "BOOKED", heldUntil: null } });
-      if (type === "PANEL_PI") await seatPanel(tx, created.id, studentId, { id: slot.id, startsAt: slot.startsAt });
       return { ...created, mentorUserId: slot.mentor.userId };
     } catch (e) {
       if (e instanceof InsufficientCreditsError) throw new BookingError("You have no credit left for this session type.", "NO_CREDIT");
@@ -151,7 +148,6 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
  * calendar invite and everything else behave exactly like a booking the student made themselves.
  */
 export async function bookSpecificSlot(studentId: string, slotId: string, type: SessionType, focus: PiFocus | null) {
-  if (type === "PANEL_PI") throw new BookingError("A Panel PI needs three people free at once, so the student books it themselves.", "NOT_ALLOWED");
   const s = await getSettings();
   await db.$transaction(async (tx) => {
     await lockUser(tx, studentId);
@@ -163,7 +159,7 @@ export async function bookSpecificSlot(studentId: string, slotId: string, type: 
     if (slot.mentor.status !== "ACTIVE") throw new BookingError("That mentor isn't active.", "NOT_ALLOWED");
     if (slot.mentor.user.isDemo !== Boolean(student?.isDemo)) throw new BookingError("Demo and real accounts can't be mixed.", "NOT_ALLOWED");
     if (isAdminOnly(type) && !slot.mentor.isAdminMentor) throw new BookingError("That kind of session is only taken by the admin.", "NOT_ALLOWED");
-    if (slot.direct !== isDirectType(type)) throw new BookingError(isDirectType(type) ? "That hour is your free time, not set aside for the paid PI / strategy calls." : "That hour is set aside for the paid PI / strategy calls with Samrudh.", "NOT_ALLOWED");
+    if (slot.direct !== isDirectType(type)) throw new BookingError(isDirectType(type) ? "That hour is your free time, not set aside for the paid PI / strategy / Panel PI calls." : "That hour is set aside for the paid PI / strategy / Panel PI calls with Samrudh.", "NOT_ALLOWED");
     if (needsSenior(type, focus, s.seniorRequiredFocuses) && slot.mentor.tier !== "SENIOR") throw new BookingError("That focus needs a Senior mentor.", "NOT_ALLOWED");
     const clash = await tx.session.count({ where: { studentId, startsAt: slot.startsAt, status: { in: ["CONFIRMED", "REQUESTED"] } } });
     if (clash) throw new BookingError("That student already has a session at that time.", "NOT_ALLOWED");
@@ -203,14 +199,9 @@ async function afterBooked(sessionId: string, kind: "new" | "moved") {
     await sendEmail({ template: "mentor_assignment", to: s.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `${title} with ${s.student.name ?? "a student"}, ${vars.when} IST. Feedback is due ${settings.feedbackDueHours} hours after the session.` }, url: `/mentor/sessions/${s.id}`,
       attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} with ${s.student.name ?? "a student"}`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
     await notify(s.mentor.userId, { title: `New session: ${s.student.name ?? "Student"}, ${vars.when}`, href: `/mentor/sessions/${s.id}` });
-    // Panel PI: the two other panelists are told too (they're paid a fixed amount once the lead submits the feedback).
+    // Panel PI: the owner picks the other two panelists next, so tell them it's waiting (the invites go out when they choose).
     if (s.type === "PANEL_PI") {
-      const lead = s.mentor.user.name ?? "Samrudh";
-      for (const p of await panelistsOf(s.id)) {
-        await sendEmail({ template: "mentor_assignment", to: p.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `You're on the panel for a Panel PI with ${s.student.name ?? "a student"}, ${vars.when} IST. ${lead} leads; you and one other mentor join. One hour in total, interview and live debrief. You're paid ₹300 once the feedback is submitted.` }, url: `/mentor/sessions/${s.id}`,
-          attachments: s.endsAt ? [icsAttachment({ uid: `${s.id}-${p.mentorId}`, title: `Panel PI with ${s.student.name ?? "a student"}`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
-        await notify(p.mentor.user.id, { title: `You're on a panel: ${s.student.name ?? "Student"}, ${vars.when}`, href: `/mentor/sessions/${s.id}` });
-      }
+      await notify(s.mentor.userId, { title: `Pick 2 panelists for ${s.student.name ?? "a student"}'s Panel PI, ${vars.when}`, href: "/admin/scheduler" });
     }
   }
 }
@@ -251,7 +242,7 @@ async function afterCancel(sessionId: string, outcome: "RELEASE" | "CONSUME") {
     await notify(s.mentor.userId, { title: `Cancelled: ${s.student.name ?? "student"}, ${fmtWhen(s.startsAt)}`, href: "/mentor/sessions" });
   }
   if (s.type === "PANEL_PI") {
-    for (const p of await panelistsOf(s.id)) {
+    for (const p of (await panelistsOf(s.id)).filter((x) => x.respondedAt === null || x.status !== "DECLINED" || x.respondedAt >= s.cancelledAt!)) {
       await sendEmail({ template: "mentor_availability_change", to: p.mentor.user.email, vars: { when: fmtWhen(s.startsAt), detail: `${s.student.name ?? "A student"} cancelled the Panel PI on ${fmtWhen(s.startsAt)}. Your hour is open again.` }, url: "/mentor/availability" });
       await notify(p.mentor.user.id, { title: `Panel cancelled: ${s.student.name ?? "student"}, ${fmtWhen(s.startsAt)}`, href: "/mentor/sessions" });
     }

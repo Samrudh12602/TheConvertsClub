@@ -1,27 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/settings-db", () => ({ getSettings: async () => ({}) }));
-import { panelFrom } from "./panel";
+import { panelSummary } from "./panel";
 import { PANEL_PANELIST_PAISE } from "./payroll";
 import { panelUpgradeStatus, PANEL_UPGRADE_MAX } from "./panel-upgrade";
 
-const slot = (id: string, mentorId: string, tier: "SENIOR" | "JUNIOR", isAdminMentor = false) => ({ id, startsAt: new Date(0), mentorId, mentor: { id: mentorId, tier, isAdminMentor } });
-
-describe("panel staffing", () => {
-  it("needs the owner plus two other mentors free at the same hour", () => {
-    expect(panelFrom([slot("a", "admin", "SENIOR", true), slot("j", "m1", "JUNIOR")], new Map())).toBeNull();
-    expect(panelFrom([slot("j", "m1", "JUNIOR"), slot("k", "m2", "JUNIOR")], new Map())).toBeNull();
-    const ok = panelFrom([slot("a", "admin", "SENIOR", true), slot("j", "m1", "JUNIOR"), slot("k", "m2", "SENIOR")], new Map());
-    expect(ok?.lead.mentorId).toBe("admin");
-    expect(ok?.panel.map((p) => p.mentorId).sort()).toEqual(["m1", "m2"]);
+describe("panel progress", () => {
+  it("is ready only when both panelists have accepted", () => {
+    expect(panelSummary([]).ready).toBe(false);
+    expect(panelSummary([{ status: "INVITED" }, { status: "INVITED" }])).toMatchObject({ accepted: 0, invited: 2, ready: false });
+    expect(panelSummary([{ status: "ACCEPTED" }, { status: "INVITED" }])).toMatchObject({ accepted: 1, invited: 1, ready: false });
+    expect(panelSummary([{ status: "ACCEPTED" }, { status: "ACCEPTED" }]).ready).toBe(true);
   });
-  it("never seats the same mentor twice", () => {
-    const r = panelFrom([slot("a", "admin", "SENIOR", true), slot("j1", "m1", "JUNIOR"), slot("j2", "m1", "JUNIOR"), slot("k", "m2", "JUNIOR")], new Map());
-    expect(new Set(r!.panel.map((p) => p.mentorId)).size).toBe(2);
-  });
-  it("prefers the less busy mentors", () => {
-    const r = panelFrom([slot("a", "admin", "SENIOR", true), slot("j1", "busy", "JUNIOR"), slot("j2", "free1", "JUNIOR"), slot("j3", "free2", "JUNIOR")], new Map([["busy", 5]]));
-    expect(r!.panel.map((p) => p.mentorId).sort()).toEqual(["free1", "free2"]);
+  it("ignores declined seats when counting who is on the panel", () => {
+    expect(panelSummary([{ status: "ACCEPTED" }, { status: "DECLINED" }, { status: "INVITED" }])).toMatchObject({ accepted: 1, invited: 1, declined: 1, picked: 2, ready: false });
   });
   it("splits Rs 999 as 399 for the owner and 300 for each of the two other panelists", () => {
     expect(PANEL_PANELIST_PAISE * 2 + 39_900).toBe(99_900);

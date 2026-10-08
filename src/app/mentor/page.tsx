@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlarmClock, CalendarCheck, ChevronRight, IndianRupee, Medal, Star, Trophy } from "lucide-react";
+import { AlarmClock, CalendarCheck, ChevronRight, IndianRupee, Medal, Star, Trophy, Users } from "lucide-react";
 import { Sparkline } from "@/components/ui/charts";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, Kpi, KpiGrid, Meter, Panel, Row, Section } from "@/components/portal/ui";
@@ -23,7 +23,7 @@ export default async function MentorDashboard() {
   const [openWeek, bookedWeek, assigned, accrued, ratings, mocks, board, futureOpenSlots, referral] = await Promise.all([
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: { in: ["OPEN", "HELD"] } } }),
     db.slot.count({ where: { mentorId: mentor.id, startsAt: { gte: now, lt: weekEnd }, status: "BOOKED" } }),
-    db.session.findMany({ where: { OR: [{ mentorId: mentor.id }, { panelists: { some: { mentorId: mentor.id } } }], status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 6, include: { student: { select: { name: true, studentProfile: true } } } }),
+    db.session.findMany({ where: { OR: [{ mentorId: mentor.id }, { panelists: { some: { mentorId: mentor.id, status: { not: "DECLINED" } } } }], status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: new Date(now.getTime() - 3_600_000) } }, orderBy: { startsAt: "asc" }, take: 6, include: { student: { select: { name: true, studentProfile: true } } } }),
     db.payoutAccrual.aggregate({ where: { mentorId: mentor.id, status: { in: ["ACCRUED", "APPROVED"] } }, _sum: { amountPaise: true } }),
     db.sessionRating.aggregate({ where: { session: { mentorId: mentor.id } }, _avg: { rating: true }, _count: true }),
     countMocks(mentor.id, settings.mockCounts),
@@ -34,6 +34,7 @@ export default async function MentorDashboard() {
   // The owner's own mentor mode earns no pay and isn't listed publicly, so only 'publish your hours' applies.
   const checklist = mentorChecklist({ bio: mentor.bio, photoKey: mentor.photoKey, photoUrl: mentor.photoUrl, payoutEncrypted: mentor.payoutEncrypted, futureOpenSlots }).filter((i) => !mentor.isAdminMentor || i.key === "availability");
   const dueMs = settings.feedbackDueHours * 3_600_000;
+  const panelInvites = await db.sessionPanelist.findMany({ where: { mentorId: mentor.id, status: "INVITED", session: { status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: now } } }, orderBy: { session: { startsAt: "asc" } }, include: { session: { select: { id: true, startsAt: true, student: { select: { name: true } } } } } });
   const [needFeedback, accrualRows] = await Promise.all([
     db.session.findMany({ where: { mentorId: mentor.id, status: "CONFIRMED", feedback: null, startsAt: { lt: now } }, orderBy: { startsAt: "asc" }, take: 5, include: { student: { select: { name: true } } } }),
     db.payoutAccrual.findMany({ where: { mentorId: mentor.id, createdAt: { gte: new Date(now.getTime() - 56 * 86_400_000) } }, select: { amountPaise: true, createdAt: true } }),
@@ -59,6 +60,17 @@ export default async function MentorDashboard() {
               </li>
             ))}
           </ul>
+        </Panel>
+      )}
+      {panelInvites.length > 0 && (
+        <Panel title={`Panel invites waiting for you · ${panelInvites.length}`}>
+          {panelInvites.map((p) => (
+            <Row key={p.id} href={`/mentor/sessions/${p.session.id}`}>
+              <span aria-hidden className="flex size-9 flex-none items-center justify-center rounded-xl bg-gold-tint text-gold-deep"><Users className="size-[18px]" /></span>
+              <div className="min-w-0 flex-1"><p className="text-[13px] font-medium leading-[1.3] text-ink-body">Panel PI with {nm(p.session.student?.name)}</p><p className="mt-0.5 text-[11.5px] leading-[1.35] text-ink-faint">{p.session.startsAt ? fmtWhen(p.session.startsAt) : ""} IST · ₹300 for you</p></div>
+              <span className="flex-none rounded-full bg-oxblood px-3 py-1.5 text-[11px] font-semibold leading-none text-white">Accept or decline</span>
+            </Row>
+          ))}
         </Panel>
       )}
       <KpiGrid>

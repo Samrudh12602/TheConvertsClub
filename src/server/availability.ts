@@ -4,7 +4,7 @@ import { audit } from "@/server/audit";
 
 export class AvailabilityError extends Error {}
 
-/** Create slots (skipping ones that already exist) for a list of windows. Returns how many changed. `direct`: set-aside hours for the paid PI / strategy calls with Samrudh. */
+/** Create slots (skipping ones that already exist) for a list of windows. Returns how many changed. `direct`: set-aside hours for the paid PI / strategy / Panel PI calls with Samrudh. */
 async function createSlots(mentorId: string, windows: (SlotSpan & { direct?: boolean })[], repeatUntil?: Date, direct = false) {
   let created = 0;
   for (const w of windows) {
@@ -21,7 +21,7 @@ async function createSlots(mentorId: string, windows: (SlotSpan & { direct?: boo
 }
 
 function assertDirectAllowed(isAdminMentor: boolean, direct: boolean) {
-  if (direct && !isAdminMentor) throw new AvailabilityError("Only Samrudh's own hours can be set aside for the paid PI / strategy calls.");
+  if (direct && !isAdminMentor) throw new AvailabilityError("Only Samrudh's own hours can be set aside for the paid PI / strategy / Panel PI calls.");
 }
 
 /** Add a window on an IST date (from/to as HH:mm), optionally repeating weekly until another IST date. */
