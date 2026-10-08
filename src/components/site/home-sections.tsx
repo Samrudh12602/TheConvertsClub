@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { ArrowRight, CalendarClock, ClipboardList, Clock, Crown, FileText, IndianRupee, MessageSquareText, ShieldCheck, ShoppingBag, Sparkles, Star, Video } from "lucide-react";
+import { ArrowRight, Check, CalendarClock, ClipboardList, Clock, Crown, FileText, IndianRupee, MessageSquareText, ShieldCheck, ShoppingBag, Sparkles, Star, Video } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { CountUp, Reveal } from "@/components/ui/motion";
 import { Price, buyHref } from "@/components/site/price";
@@ -64,6 +64,51 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
         </div>
       </div>
     </section>
+  );
+}
+
+/* ----------------------------------------------------------- panel PI */
+
+/** Panel PI: three interviewers on one panel for an hour. The most realistic mock we run. */
+export function PanelSpotlight({ product }: { product: CatalogProduct | null }) {
+  if (!product) return null;
+  const v = priceView(product);
+  return (
+    <Reveal>
+      <section id="panel-pi" aria-labelledby="panel-title" className="relative scroll-mt-24 overflow-hidden rounded-3xl border border-line bg-card p-6 shadow-lift sm:p-9">
+        <span aria-hidden className="absolute -right-16 -top-16 size-64 rounded-full bg-oxblood/10 blur-3xl" />
+        <span aria-hidden className="absolute -bottom-20 left-10 size-56 rounded-full bg-gold/15 blur-3xl" />
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 rounded-full border border-oxblood-line bg-oxblood-tint px-3 py-1.5 text-[11.5px] font-semibold leading-none text-oxblood"><Sparkles className="size-3.5" aria-hidden />Closest to live</span>
+            <h2 id="panel-title" className="type-display mt-4 text-ink">Panel PI: three interviewers, one hour.</h2>
+            <p className="mt-3 max-w-[52ch] text-pretty text-[15px] leading-[1.7] text-ink-muted">The real interview isn&apos;t one friendly person. It&apos;s a panel that interrupts, cross-questions and reads each other&apos;s notes. Sit that panel before the day it counts, and get a live debrief before the hour is up.</p>
+            <ul className="mt-5 grid gap-2.5 text-[13.5px] text-ink-2 sm:grid-cols-2">
+              {["Three panelists, like the real thing", "One hour: interview plus live debrief", "One combined feedback report", "Prepared from your profile"].map((t) => <li key={t} className="flex items-start gap-2"><span className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-teal-tint text-teal"><Check className="size-3" aria-hidden /></span>{t}</li>)}
+            </ul>
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <div className="flex items-baseline gap-2.5"><span className="tnum font-display text-[38px] font-bold leading-none text-ink">{`₹${Math.round(v.payablePaise / 100)}`}</span>{v.strikePaise ? <span className="tnum text-[16px] text-ink-faint line-through">{`₹${Math.round(v.strikePaise / 100)}`}</span> : null}</div>
+              <ButtonLink href={buyHref(product)} size="lg" className="px-6" data-track="panel_pi_buy">Book a Panel PI <ArrowRight className="size-4" /></ButtonLink>
+            </div>
+            <p className="mt-3 text-[12px] leading-[1.6] text-ink-faint">Call Convert Plus students can turn up to two of their six mock PIs into Panel PIs for just ₹199 each.</p>
+          </div>
+          <div aria-hidden className="relative mx-auto w-full max-w-[380px]">
+            <div className="rounded-2xl bg-night p-5 text-surface shadow-pop ring-1 ring-white/10">
+              <p className="type-eyebrow text-dark-muted">Your panel</p>
+              <div className="mt-4 flex flex-col gap-2.5">
+                {[["Samrudh", "Leads the panel"], ["Panelist", "Cross-questions"], ["Panelist", "Probes your profile"]].map(([n, r], i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/10">
+                    <span className="flex size-9 flex-none items-center justify-center rounded-full bg-brand font-display text-[13px] font-bold text-white">{i + 1}</span>
+                    <span><span className="block text-[13.5px] font-semibold leading-[1.2] text-white">{n}</span><span className="mt-0.5 block text-[11.5px] text-dark-soft">{r}</span></span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3.5 text-[12px] text-dark-soft"><span>1 hour, all in</span><span className="font-semibold text-gold">Live debrief included</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Reveal>
   );
 }
 

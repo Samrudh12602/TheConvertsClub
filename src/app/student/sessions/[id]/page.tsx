@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { ProgressRing, RadarChart } from "@/components/ui/charts";
 import { AddToCalendar } from "@/components/student/add-to-calendar";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Flash, Insight, Meter, StatusPill } from "@/components/portal/ui";
+import { Avatar, Flash, Insight, Meter, StatusPill } from "@/components/portal/ui";
 import { RatingPicker, SessionActions } from "@/components/student/session-actions";
 import { db } from "@/lib/db";
 import { fmtWhen, relative } from "@/lib/format";
@@ -21,7 +21,7 @@ const lines = (s?: string | null) => (s ?? "").split("\n").map((x) => x.trim()).
 export default async function SessionDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ booked?: string; moved?: string }> }) {
   const user = await requireStudent();
   const [{ id }, sp] = await Promise.all([params, searchParams]);
-  const s = await db.session.findUnique({ where: { id }, include: { mentor: { include: { user: { select: { name: true } } } }, feedback: true, rating: true } });
+  const s = await db.session.findUnique({ where: { id }, include: { mentor: { include: { user: { select: { name: true } } } }, panelists: { include: { mentor: { include: { user: { select: { name: true } } } } } }, feedback: true, rating: true } });
   if (!s || s.studentId !== user.id) notFound();
   const settings = await getSettings();
   const now = new Date();
@@ -69,6 +69,18 @@ export default async function SessionDetail({ params, searchParams }: { params: 
       {sp.moved && <Flash tone="green">Session moved. We&apos;ve told your mentor.</Flash>}
       {header}
 
+      {s.type === "PANEL_PI" && s.panelists.length > 0 && (
+        <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
+          <p className="type-label text-ink-faint">Your panel</p>
+          <ul className="mt-3 grid gap-2.5 sm:grid-cols-3">
+            {[s.mentor?.user.name, ...s.panelists.map((x) => x.mentor.user.name)].filter(Boolean).map((n, i) => (
+              <li key={i} className="flex items-center gap-2.5 rounded-xl border border-line bg-surface p-3"><Avatar name={(n as string).replace(/\s*\(demo\)/, "")} size={34} /><span className="text-[13px] font-semibold text-ink">{(n as string).replace(/\s*\(demo\)/, "")}</span></li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs leading-[1.55] text-ink-muted">Three interviewers, one hour in total, the interview and a live debrief. You&apos;ll get one combined feedback report afterwards.</p>
+        </div>
+      )}
+
       {upcoming && s.startsAt && (
         <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
           <div className="flex flex-col justify-between gap-4 rounded-2xl bg-night p-5 text-white shadow-lift ring-1 ring-white/5">
@@ -83,7 +95,7 @@ export default async function SessionDetail({ params, searchParams }: { params: 
           <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
             <p className="type-label text-ink-faint">Need to change plans?</p>
             <div className="mt-3">
-              <SessionActions id={s.id} canMove={s.type !== "GD_BATCH" && canReschedule(s.startsAt, now, settings.cancelNoticeHours, s.rescheduleCount, settings.maxReschedules)}
+              <SessionActions id={s.id} canMove={s.type !== "GD_BATCH" && s.type !== "PANEL_PI" && canReschedule(s.startsAt, now, settings.cancelNoticeHours, s.rescheduleCount, settings.maxReschedules)}
                 policyNote={cancelOutcome(s.startsAt, now, settings.cancelNoticeHours) === "RELEASE" ? `Cancelling now returns your credit. Free changes close ${settings.cancelNoticeHours} hours before the start.` : `This is inside the ${settings.cancelNoticeHours}-hour window, so cancelling uses the credit.`} />
             </div>
           </div>

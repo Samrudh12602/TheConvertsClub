@@ -16,8 +16,9 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo\)/, "") ?? "Student";
 export default async function MentorSession({ params }: { params: Promise<{ id: string }> }) {
   const { mentor } = await requireMentor();
   const { id } = await params;
-  const s = await db.session.findUnique({ where: { id }, include: { feedback: true, student: { include: { studentProfile: true, calls: true } }, gdBatch: { include: { participants: { where: { status: "JOINED" }, include: { student: { select: { name: true } } } } } } } });
-  if (!s || s.mentorId !== mentor.id) notFound();
+  const s = await db.session.findUnique({ where: { id }, include: { panelists: { include: { mentor: { include: { user: { select: { name: true } } } } } }, mentor: { include: { user: { select: { name: true } } } }, feedback: true, student: { include: { studentProfile: true, calls: true } }, gdBatch: { include: { participants: { where: { status: "JOINED" }, include: { student: { select: { name: true } } } } } } } });
+  const isLead = s?.mentorId === mentor.id;
+  if (!s || (!isLead && !s.panelists.some((x) => x.mentorId === mentor.id))) notFound();
   const st = SESSION_STATUS[s.status];
   const p = s.student?.studentProfile;
   const started = s.startsAt ? s.startsAt.getTime() < nowMs() : false;
@@ -34,10 +35,20 @@ export default async function MentorSession({ params }: { params: Promise<{ id: 
         </div>
         <div className="flex flex-wrap gap-2">
           {s.status === "CONFIRMED" && s.meetingUrl && <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-line-strong bg-white px-4 text-[13px] font-medium leading-none text-ink-2 no-underline hover:border-ink hover:text-ink hover:no-underline">Join meeting</a>}
-          {s.status === "CONFIRMED" && <ButtonLink href={`/mentor/feedback/${s.id}`}>{started ? "Complete session" : "Complete early"}</ButtonLink>}
-          {s.status === "CONFIRMED" && started && <NoShowButton sessionId={s.id} />}
+          {isLead && s.status === "CONFIRMED" && <ButtonLink href={`/mentor/feedback/${s.id}`}>{started ? "Complete session" : "Complete early"}</ButtonLink>}
+          {isLead && s.status === "CONFIRMED" && started && <NoShowButton sessionId={s.id} />}
         </div>
       </div>
+
+      {s.type === "PANEL_PI" && (
+        <Panel title="The panel" flush={false}>
+          <ul className="flex flex-col gap-1.5 text-[13px] text-ink-body">
+            <li><span className="font-semibold">{nm(s.mentor?.user.name)}</span> <span className="text-ink-faint">· leads and submits the feedback</span></li>
+            {s.panelists.map((x) => <li key={x.id}><span className="font-semibold">{nm(x.mentor.user.name)}{x.mentorId === mentor.id ? " (you)" : ""}</span> <span className="text-ink-faint">· panelist, ₹300 once the feedback is submitted</span></li>)}
+          </ul>
+          <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">One hour in total, interview and live debrief included. Everyone joins the same meeting link.</p>
+        </Panel>
+      )}
 
       {s.student && s.type !== "GD_BATCH" && (
         <Panel title="Student dossier" flush={false}>

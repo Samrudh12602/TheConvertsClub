@@ -168,7 +168,7 @@ async function seedDemo() {
     return db.feedback.create({ data: { sessionId, reviewId, mentorId, scores, overall, strengths: pick(STRENGTHS), weaknesses: pick(WEAKNESSES), redFlags: rnd() > 0.7 ? "A 22-month gap that wasn't explained until asked." : null, answerFraming: pick(FRAMING), questionsToPrepare: pick(PREP), recommendation: overall >= 7.5 ? "READY" : overall >= 6.5 ? "NEARLY_THERE" : overall >= 5.5 ? "NEEDS_MORE_MOCKS" : "REWORK_BASICS", privateNote: rnd() > 0.8 ? "Attitude was fine, just nervous." : null, submittedAt: new Date(when.getTime() + 1.5 * HOUR) } });
   }
 
-  async function accrue(m: M, o: { sessionId?: string; reviewId?: string; service: "PI" | "GD" | "WAT" | "GUIDANCE" | "SOP"; at: Date }) {
+  async function accrue(m: M, o: { sessionId?: string; reviewId?: string; service: Parameters<typeof accrualFor>[1]; at: Date }) {
     if (m.isAdminMentor) return; // Admin's own sessions accrue no pay (default setting)
     const a = accrualFor(m.tier, o.service, rates);
     if (!a) return;

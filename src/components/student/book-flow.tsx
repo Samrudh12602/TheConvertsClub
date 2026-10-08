@@ -21,10 +21,10 @@ const parts = (iso: string) => {
 
 const FOCUS = [["HR_PROFILE", "HR / profile"], ["ACADEMICS", "Academics"], ["STRESS", "Stress"], ["INSTITUTE_FINAL", "Institute final"], ["CURRENT_AFFAIRS", "Current affairs"], ["CROSS_QUESTIONING", "Cross-questioning"]] as const;
 const FOCUS_HINT: Record<string, string> = { HR_PROFILE: "Your story, why MBA, work-ex", ACADEMICS: "Subjects, projects, marks", STRESS: "Pushback and pressure", INSTITUTE_FINAL: "Full panel dry-run", CURRENT_AFFAIRS: "News and opinions", CROSS_QUESTIONING: "Defend every claim" };
-const TYPE_ICON: Record<string, React.ReactNode> = { MOCK_PI: <Mic />, STRATEGY_CALL: <Compass />, GUIDANCE: <Lightbulb />, PI_DIRECT: <Crown />, STRATEGY_DIRECT: <Crown />, TRIAL_GUIDANCE: <Lightbulb />, TRIAL_PI: <Mic /> };
+const TYPE_ICON: Record<string, React.ReactNode> = { MOCK_PI: <Mic />, STRATEGY_CALL: <Compass />, GUIDANCE: <Lightbulb />, PI_DIRECT: <Crown />, STRATEGY_DIRECT: <Crown />, TRIAL_GUIDANCE: <Lightbulb />, TRIAL_PI: <Mic />, PANEL_PI: <Users /> };
 const PART = (iso: string) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: IST, hour: "numeric", hour12: false }).format(new Date(iso))) % 24;
 const DAYPARTS = [["Morning", <Sun key="m" />, (h: number) => h < 12], ["Afternoon", <Sunset key="a" />, (h: number) => h >= 12 && h < 17], ["Evening", <Moon key="e" />, (h: number) => h >= 17]] as const;
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Trial guidance call · 25 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Trial guidance call · 25 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"], ["PANEL_PI", "Panel PI · 3 panelists", "PANEL_PI"]] as const;
 
 interface Props {
   credits: Record<string, number>;
@@ -160,7 +160,7 @@ export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialTy
               {TYPES.map(([id, label, kind]) => {
                 const n = credits[kind] ?? 0;
                 const on = type === id;
-                if (n === 0 && (kind === "PI_DIRECT" || kind === "STRATEGY_DIRECT" || kind === "TRIAL_GUIDANCE" || kind === "TRIAL_PI")) return null; // only shown to people who bought it
+                if (n === 0 && (kind === "PI_DIRECT" || kind === "STRATEGY_DIRECT" || kind === "TRIAL_GUIDANCE" || kind === "TRIAL_PI" || kind === "PANEL_PI")) return null; // only shown to people who bought it
                 const inner = (sub: React.ReactNode, active: boolean) => (
                   <>
                     <span className={clsx("flex size-10 flex-none items-center justify-center rounded-xl [&>svg]:size-5", active ? "bg-white/15 text-white" : "bg-oxblood-tint text-oxblood")}>{TYPE_ICON[id]}</span>
@@ -266,7 +266,7 @@ export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialTy
         )}
         <ul className="flex flex-col gap-1.5 text-[12px] leading-[1.45] text-dark-soft">
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />{reschedule ? "Keeps your reserved credit" : `Uses 1 credit · ${Math.max(0, left0 - (picked ? 1 : 0))} left ${picked ? "after this" : ""}`}</li>
-          <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>
+          {type === "PANEL_PI" ? <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Three panelists, one hour in total with the live debrief. Times show only when all three are free. It can&apos;t be moved, only cancelled.</li> : <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>}
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Written feedback after the session</li>
         </ul>
         <Button variant="onDark" size="lg" disabled={!hold || busy} onClick={confirm} className="min-h-12 w-full">{busy ? "Working…" : reschedule ? "Confirm new time" : "Confirm booking"}</Button>

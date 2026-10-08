@@ -521,6 +521,18 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     per device, and never applied to the public site. An axe-core audit of the public pages and all three portals found only
     unlabeled form controls, now labelled.
 
+51. **Panel PI (owner's instructions).** A ₹999 mock (MRP ₹1,499, "closest to live") with three interviewers and one hour in
+    total, interview and live debrief included. The owner always leads; two other active mentors with an open slot at the
+    same hour make up the panel (`SessionPanelist`), chosen by the usual rule (least busy juniors first, then seniors). A
+    time is offered only when all three are free, and the three slots are held, booked and released together. It can't be
+    moved, only cancelled (same notice rules). It is not part of any plan. Call Convert Plus students (6 PIs) can swap an
+    unused PI for a Panel PI for ₹199, at most twice (`panel-pi-upgrade`); if the PI was used between paying and
+    fulfilment, nothing is swapped and the owner is emailed to refund. Mentor codes don't apply. Internal split of ₹999:
+    owner ₹399 (no accrual, the remainder), ₹300 to each of the two other panelists, accrued when the lead submits the
+    feedback (`PayService.PANEL`, `PANEL_PANELIST_PAISE`). The lead submits one combined feedback. Panelists see the
+    session in their portal, get the email, the calendar entry and the 24h/1h reminders. Lead slots may be the owner's
+    free time or special paid hours (either). No college dossier for now.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

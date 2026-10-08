@@ -20,12 +20,12 @@ export default async function ProgressPage() {
     orderBy: { submittedAt: "asc" },
     include: { session: { select: { type: true, focus: true } }, review: { select: { kind: true } } },
   });
-  const done = await db.session.findMany({ where: { studentId: user.id, status: "COMPLETED", type: { in: ["MOCK_PI", "PI_DIRECT"] } }, select: { focus: true } });
+  const done = await db.session.findMany({ where: { studentId: user.id, status: "COMPLETED", type: { in: ["MOCK_PI", "PI_DIRECT", "PANEL_PI"] } }, select: { focus: true } });
 
   if (fb.length === 0) return <PortalPage width="max-w-[880px]"><Empty art="chart">Your progress appears after your first piece of feedback.</Empty></PortalPage>;
 
   let pi = 0;
-  const bars = fb.map((f) => ({ label: f.session?.type === "MOCK_PI" || f.session?.type === "PI_DIRECT" ? `Mock ${++pi}` : f.session?.type === "GD_BATCH" ? "GD" : f.review ? f.review.kind === "WAT" ? "WAT" : "SOP" : "Call", score: f.overall }));
+  const bars = fb.map((f) => ({ label: f.session?.type === "MOCK_PI" || f.session?.type === "PI_DIRECT" || f.session?.type === "PANEL_PI" ? `Mock ${++pi}` : f.session?.type === "GD_BATCH" ? "GD" : f.review ? f.review.kind === "WAT" ? "WAT" : "SOP" : "Call", score: f.overall }));
 
   const avg = (rows: typeof fb, r: string) => { const v = rows.map((x) => (x.scores as Record<string, number>)[r]).filter((n) => typeof n === "number"); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const half = Math.floor(fb.length / 2);

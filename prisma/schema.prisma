@@ -16,23 +16,28 @@ enum Role {
   MENTOR
   ADMIN
 }
+
 enum UserStatus {
   ACTIVE
   SUSPENDED
 }
+
 enum MentorTier {
   SENIOR
   JUNIOR
 }
+
 enum MentorStatus {
   ACTIVE
   PAUSED
   OFFBOARDED
 }
+
 enum ProductKind {
   BUNDLE
   SINGLE
 }
+
 enum CreditKind {
   PI
   GD
@@ -50,7 +55,10 @@ enum CreditKind {
   TRIAL_GUIDANCE
   /// Rs 50 trial: a mock PI with the owner. Sold once per person.
   TRIAL_PI
+  /// A panel mock: the owner plus two other mentors interview together.
+  PANEL_PI
 }
+
 enum OrderStatus {
   CREATED
   PAID
@@ -58,15 +66,18 @@ enum OrderStatus {
   REFUNDED
   PARTIALLY_REFUNDED
 }
+
 enum PaymentStatus {
   CAPTURED
   FAILED
   REFUNDED
 }
+
 enum EnrollmentStatus {
   ACTIVE
   REFUNDED
 }
+
 enum LedgerType {
   GRANT
   RESERVE
@@ -74,12 +85,14 @@ enum LedgerType {
   RELEASE
   ADJUST
 }
+
 enum SlotStatus {
   OPEN
   HELD
   BOOKED
   BLOCKED
 }
+
 enum SessionType {
   MOCK_PI
   STRATEGY_CALL
@@ -93,7 +106,10 @@ enum SessionType {
   TRIAL_GUIDANCE
   /// Rs 50 trial: a mock PI with the owner.
   TRIAL_PI
+  /// A panel mock: the owner (lead) plus two other mentors (see SessionPanelist).
+  PANEL_PI
 }
+
 enum PiFocus {
   HR_PROFILE
   ACADEMICS
@@ -102,6 +118,7 @@ enum PiFocus {
   CURRENT_AFFAIRS
   CROSS_QUESTIONING
 }
+
 enum SessionStatus {
   REQUESTED
   CONFIRMED
@@ -111,48 +128,59 @@ enum SessionStatus {
   NO_SHOW
   RESCHEDULED
 }
+
 enum GdParticipantStatus {
   JOINED
   WAITLISTED
   LEFT
 }
+
 enum ReviewKind {
   WAT
   SOP_BASIC
   SOP_DETAILED
 }
+
 enum ReviewStatus {
   SUBMITTED
   ASSIGNED
   COMPLETED
 }
+
 enum Recommendation {
   READY
   NEARLY_THERE
   NEEDS_MORE_MOCKS
   REWORK_BASICS
 }
+
 enum PayService {
   PI
   GD
   WAT
   GUIDANCE
   SOP
+  /// One of the two non-lead panelists on a Panel PI (a fixed Rs 300, see payroll.ts).
+  PANEL
 }
+
 enum AccrualStatus {
   ACCRUED
   APPROVED
   PAID
 }
+
 enum BonusPeriod {
   SEASON
   MONTH
 }
+
 enum PayoutRunStatus {
   DRAFT
   APPROVED
   PAID
 }
+
 enum ApplicationStage {
   NEW
   SCREENING
@@ -161,16 +189,19 @@ enum ApplicationStage {
   ACCEPTED
   REJECTED
 }
+
 enum CouponType {
   PERCENT
   FLAT
 }
+
 enum CallOutcome {
   SCHEDULED
   WAITING
   CONVERTED
   REJECTED
 }
+
 enum EmailStatus {
   SENT
   FAILED
@@ -180,40 +211,40 @@ enum EmailStatus {
 // ───────────── Identity (Auth.js + roles) ─────────────
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  phone         String?
-  role          Role       @default(STUDENT)
-  status        UserStatus @default(ACTIVE)
-  isDemo        Boolean    @default(false)
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  emailVerified         DateTime?
+  name                  String?
+  image                 String?
+  phone                 String?
+  role                  Role       @default(STUDENT)
+  status                UserStatus @default(ACTIVE)
+  isDemo                Boolean    @default(false)
   /// bcrypt hash. Null until the account sets a password (self-signup, or "Set a password" in settings).
-  passwordHash  String?
+  passwordHash          String?
   /// True while the password is a temporary one emailed by an admin: the person must choose their own before anything else.
-  mustChangePassword Boolean @default(false)
+  mustChangePassword    Boolean    @default(false)
   /// A temporary password stops working at this time if unused.
   tempPasswordExpiresAt DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  deletedAt             DateTime?
 
-  accounts       Account[]
-  studentProfile StudentProfile?
-  mentorProfile  MentorProfile?
-  orders         Order[]
-  enrollments    Enrollment[]
-  ledger         CreditLedger[]
-  studentSessions Session[]      @relation("StudentSessions")
-  reviews        Review[]
-  calls          CallTracker[]
-  notifications  Notification[]
-  messagesTo     Message[]      @relation("MessageTo")
-  messagesFrom   Message[]      @relation("MessageFrom")
-  gdParticipants GdParticipant[]
-  ratings        SessionRating[]
-  auditLogs      AuditLog[]
+  accounts         Account[]
+  studentProfile   StudentProfile?
+  mentorProfile    MentorProfile?
+  orders           Order[]
+  enrollments      Enrollment[]
+  ledger           CreditLedger[]
+  studentSessions  Session[]         @relation("StudentSessions")
+  reviews          Review[]
+  calls            CallTracker[]
+  notifications    Notification[]
+  messagesTo       Message[]         @relation("MessageTo")
+  messagesFrom     Message[]         @relation("MessageFrom")
+  gdParticipants   GdParticipant[]
+  ratings          SessionRating[]
+  auditLogs        AuditLog[]
   legalAcceptances LegalAcceptance[]
 
   @@index([role])
@@ -274,38 +305,39 @@ model CallTracker {
 }
 
 model MentorProfile {
-  id               String       @id @default(cuid())
-  userId           String       @unique
-  tier             MentorTier   @default(JUNIOR)
-  bio              String?
-  college          String?
-  batchYear        Int?
-  meetingUrl       String?
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  tier            MentorTier   @default(JUNIOR)
+  bio             String?
+  college         String?
+  batchYear       Int?
+  meetingUrl      String?
   /// Blob storage key for an uploaded photo (private store, served via /api/mentor-photo/[id]). Preferred over photoUrl.
-  photoKey         String?
+  photoKey        String?
   /// External photo URL, used only when photoKey is not set (e.g. admin pastes a link instead of uploading).
-  photoUrl         String?
+  photoUrl        String?
   /// Admin's own reference only. Never shown on the public site.
-  linkedinUrl      String?
+  linkedinUrl     String?
   /// AES-GCM encrypted JSON (UPI / bank). Never returned to the client in plaintext.
-  payoutEncrypted  String?
-  status           MentorStatus @default(ACTIVE)
+  payoutEncrypted String?
+  status          MentorStatus @default(ACTIVE)
   /// True for the Admin's own mentor mode.
-  isAdminMentor    Boolean      @default(false)
-  publicVisible    Boolean      @default(true)
-  createdAt        DateTime     @default(now())
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isAdminMentor   Boolean      @default(false)
+  publicVisible   Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  availability AvailabilityWindow[]
-  slots        Slot[]
-  sessions     Session[]           @relation("MentorSessions")
-  reviews      Review[]            @relation("MentorReviews")
-  feedback     Feedback[]
-  accruals     PayoutAccrual[]
-  bonusAwards  BonusAward[]
-  payouts      Payout[]
-  adjustments  Adjustment[]
-  gdBatches    GdBatch[]
+  availability   AvailabilityWindow[]
+  slots          Slot[]
+  sessions       Session[]            @relation("MentorSessions")
+  panelSeats     SessionPanelist[]
+  reviews        Review[]             @relation("MentorReviews")
+  feedback       Feedback[]
+  accruals       PayoutAccrual[]
+  bonusAwards    BonusAward[]
+  payouts        Payout[]
+  adjustments    Adjustment[]
+  gdBatches      GdBatch[]
   referralCoupon Coupon?
 
   @@index([tier, status])
@@ -324,28 +356,28 @@ model MentorInvite {
 }
 
 model MentorApplication {
-  id              String           @id @default(cuid())
-  name            String
-  email           String
-  phone           String
-  institute       String
-  callsConverted  String
-  hoursPerWeek    Int
-  linkedinUrl     String?
+  id               String           @id @default(cuid())
+  name             String
+  email            String
+  phone            String
+  institute        String
+  callsConverted   String
+  hoursPerWeek     Int
+  linkedinUrl      String?
   /// Blob storage key for the submitted professional photo (private; admin-only view until promoted).
-  photoKey        String?
-  photoFileName   String?
-  stage           ApplicationStage @default(NEW)
-  scorecard       Json?
-  recommendedTier MentorTier?
-  notes           String?
-  createdAt       DateTime         @default(now())
+  photoKey         String?
+  photoFileName    String?
+  stage            ApplicationStage @default(NEW)
+  scorecard        Json?
+  recommendedTier  MentorTier?
+  notes            String?
+  createdAt        DateTime         @default(now())
   /// Set once this application has been turned into a mentor account.
   promotedMentorId String?
   /// The Mentor Agreement version the applicant ticked when applying.
-  termsVersion    String?
-  termsAcceptedAt DateTime?
-  termsIp         String?
+  termsVersion     String?
+  termsAcceptedAt  DateTime?
+  termsIp          String?
 
   @@index([stage])
 }
@@ -371,33 +403,33 @@ model LegalAcceptance {
 // ───────────── Catalog, orders, credits ─────────────
 
 model Product {
-  id              String      @id @default(cuid())
-  slug            String      @unique
-  name            String
-  kind            ProductKind
-  pricePaise      Int
-  mrpPaise        Int?
+  id                  String      @id @default(cuid())
+  slug                String      @unique
+  name                String
+  kind                ProductKind
+  pricePaise          Int
+  mrpPaise            Int?
   /// Exact price when a mentor's own referral coupon is applied to this product — not a percent/flat
   /// delta, a specific target price admin sets per product. Null means a mentor coupon just applies
   /// its own normal discount (e.g. 10% off) to this product like it would anywhere else.
-  mentorPricePaise Int?
-  earlyBirdEndsAt DateTime?
-  enrolledOnly    Boolean     @default(false)
+  mentorPricePaise    Int?
+  earlyBirdEndsAt     DateTime?
+  enrolledOnly        Boolean     @default(false)
   /// Taken directly by the owner: only the admin's mentor profile can serve it, mentor referral codes don't apply,
   /// the owner is emailed on every purchase, and enrolled students see it in their Top-up shop.
-  withAdmin       Boolean     @default(false)
+  withAdmin           Boolean     @default(false)
   /// Early-bird: for the first `earlyBirdSeats` buyers the price is `earlyBirdPricePaise` (pricePaise is struck through).
   /// Seats are counted from paid orders (and very recent unpaid ones) so it can't be oversold.
   earlyBirdPricePaise Int?
   earlyBirdSeats      Int?
-  active          Boolean     @default(true)
-  summary         String
-  includes        String[]
-  badge           String?
-  sortOrder       Int         @default(0)
-  singleOrder     Int?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  active              Boolean     @default(true)
+  summary             String
+  includes            String[]
+  badge               String?
+  sortOrder           Int         @default(0)
+  singleOrder         Int?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   credits     ProductCredit[]
   orders      Order[]
@@ -415,16 +447,16 @@ model ProductCredit {
 }
 
 model Coupon {
-  id        String     @id @default(cuid())
-  code      String     @unique
+  id        String         @id @default(cuid())
+  code      String         @unique
   type      CouponType
   /// Percent (1-100) or flat paise, per `type`.
   value     Int
   expiresAt DateTime?
   maxUses   Int?
-  usedCount Int        @default(0)
-  active    Boolean    @default(true)
-  createdAt DateTime   @default(now())
+  usedCount Int            @default(0)
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now())
   orders    Order[]
   /// Set only for a mentor's own auto-generated referral code — every other field (discount type/value,
   /// maxUses, active) works exactly like any other coupon, so referral tracking is just "which orders
@@ -483,9 +515,9 @@ model Payment {
 
 /// One row per processed Razorpay webhook event id: makes handling idempotent.
 model WebhookEvent {
-  id          String   @id
+  id          String    @id
   type        String
-  receivedAt  DateTime @default(now())
+  receivedAt  DateTime  @default(now())
   processedAt DateTime?
   payload     Json
 }
@@ -553,18 +585,19 @@ model AvailabilityWindow {
 }
 
 model Slot {
-  id        String        @id @default(cuid())
-  mentorId  String
-  startsAt  DateTime
-  endsAt    DateTime
-  status    SlotStatus    @default(OPEN)
-  heldUntil DateTime?
-  heldById  String?
+  id         String            @id @default(cuid())
+  mentorId   String
+  startsAt   DateTime
+  endsAt     DateTime
+  status     SlotStatus        @default(OPEN)
+  heldUntil  DateTime?
+  heldById   String?
   /// The owner's hours come in two separate kinds. false = free time (ordinary sessions the owner takes);
   /// true = hours set aside for the paid PI / strategy call with Samrudh. The two never serve each other's bookings.
-  direct    Boolean       @default(false)
-  mentor    MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
-  session   Session?
+  direct     Boolean           @default(false)
+  mentor     MentorProfile     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  session    Session?
+  panelSeats SessionPanelist[]
 
   /// A mentor cannot have two slots starting at the same instant.
   @@unique([mentorId, startsAt])
@@ -572,14 +605,14 @@ model Slot {
 }
 
 model Session {
-  id              String        @id @default(cuid())
+  id              String            @id @default(cuid())
   type            SessionType
   focus           PiFocus?
-  status          SessionStatus @default(REQUESTED)
+  status          SessionStatus     @default(REQUESTED)
   studentId       String?
   mentorId        String?
   /// Unique: a slot can back at most one session.
-  slotId          String?       @unique
+  slotId          String?           @unique
   startsAt        DateTime?
   endsAt          DateTime?
   meetingUrl      String?
@@ -589,19 +622,20 @@ model Session {
   heldAt          DateTime?
   notes           String?
   gdBatchId       String?
-  rescheduleCount Int           @default(0)
+  rescheduleCount Int               @default(0)
   cancelledAt     DateTime?
-  reminder24Sent  Boolean       @default(false)
-  reminder1Sent   Boolean       @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  student         User?         @relation("StudentSessions", fields: [studentId], references: [id])
-  mentor          MentorProfile? @relation("MentorSessions", fields: [mentorId], references: [id])
-  slot            Slot?         @relation(fields: [slotId], references: [id])
-  gdBatch         GdBatch?      @relation(fields: [gdBatchId], references: [id])
+  reminder24Sent  Boolean           @default(false)
+  reminder1Sent   Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  student         User?             @relation("StudentSessions", fields: [studentId], references: [id])
+  mentor          MentorProfile?    @relation("MentorSessions", fields: [mentorId], references: [id])
+  slot            Slot?             @relation(fields: [slotId], references: [id])
+  gdBatch         GdBatch?          @relation(fields: [gdBatchId], references: [id])
   feedback        Feedback?
   rating          SessionRating?
   accrual         PayoutAccrual?
+  panelists       SessionPanelist[]
 
   @@index([studentId, startsAt])
   @@index([mentorId, startsAt])
@@ -609,18 +643,18 @@ model Session {
 }
 
 model GdBatch {
-  id          String          @id @default(cuid())
-  topic       String
-  startsAt    DateTime
-  endsAt      DateTime
-  capacity    Int             @default(8)
-  moderatorId String?
-  meetingUrl  String?
-  status      SessionStatus   @default(CONFIRMED)
-  createdAt   DateTime        @default(now())
-  moderator   MentorProfile?  @relation(fields: [moderatorId], references: [id])
+  id           String          @id @default(cuid())
+  topic        String
+  startsAt     DateTime
+  endsAt       DateTime
+  capacity     Int             @default(8)
+  moderatorId  String?
+  meetingUrl   String?
+  status       SessionStatus   @default(CONFIRMED)
+  createdAt    DateTime        @default(now())
+  moderator    MentorProfile?  @relation(fields: [moderatorId], references: [id])
   participants GdParticipant[]
-  sessions    Session[]
+  sessions     Session[]
 
   @@index([startsAt])
 }
@@ -638,19 +672,19 @@ model GdParticipant {
 }
 
 model Review {
-  id               String       @id @default(cuid())
+  id               String         @id @default(cuid())
   studentId        String
   kind             ReviewKind
   title            String?
   fileKey          String?
   fileName         String?
   textBody         String?
-  status           ReviewStatus @default(SUBMITTED)
+  status           ReviewStatus   @default(SUBMITTED)
   assignedMentorId String?
   dueAt            DateTime
-  submittedAt      DateTime     @default(now())
+  submittedAt      DateTime       @default(now())
   completedAt      DateTime?
-  student          User         @relation(fields: [studentId], references: [id])
+  student          User           @relation(fields: [studentId], references: [id])
   assignedMentor   MentorProfile? @relation("MentorReviews", fields: [assignedMentorId], references: [id])
   feedback         Feedback?
   accrual          PayoutAccrual?
@@ -660,38 +694,38 @@ model Review {
 }
 
 model Feedback {
-  id                String         @id @default(cuid())
-  sessionId         String?        @unique
-  reviewId          String?        @unique
-  mentorId          String
+  id                 String         @id @default(cuid())
+  sessionId          String?        @unique
+  reviewId           String?        @unique
+  mentorId           String
   /// { "Content depth": 8, ... } 1-10
-  scores            Json
-  overall           Float
-  strengths         String
-  weaknesses        String
-  redFlags          String?
-  answerFraming     String?
+  scores             Json
+  overall            Float
+  strengths          String
+  weaknesses         String
+  redFlags           String?
+  answerFraming      String?
   questionsToPrepare String?
-  recommendation    Recommendation
+  recommendation     Recommendation
   /// Visible to Admin only. Never sent to the student.
-  privateNote       String?
-  submittedAt       DateTime       @default(now())
-  session           Session?       @relation(fields: [sessionId], references: [id])
-  review            Review?        @relation(fields: [reviewId], references: [id])
-  mentor            MentorProfile  @relation(fields: [mentorId], references: [id])
+  privateNote        String?
+  submittedAt        DateTime       @default(now())
+  session            Session?       @relation(fields: [sessionId], references: [id])
+  review             Review?        @relation(fields: [reviewId], references: [id])
+  mentor             MentorProfile  @relation(fields: [mentorId], references: [id])
 }
 
 model SessionRating {
-  id        String   @id @default(cuid())
-  sessionId String   @unique
-  studentId String
-  rating    Int
-  comment   String?
+  id             String   @id @default(cuid())
+  sessionId      String   @unique
+  studentId      String
+  rating         Int
+  comment        String?
   /// The student said we may show their comment on the public site (first name only).
-  featureConsent Boolean @default(false)
-  createdAt DateTime @default(now())
-  session   Session  @relation(fields: [sessionId], references: [id])
-  student   User     @relation(fields: [studentId], references: [id])
+  featureConsent Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  session        Session  @relation(fields: [sessionId], references: [id])
+  student        User     @relation(fields: [studentId], references: [id])
 }
 
 // ───────────── Pay ─────────────
@@ -727,34 +761,34 @@ model PayoutAccrual {
 }
 
 model BonusRule {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   tier        MentorTier
-  period      BonusPeriod @default(SEASON)
+  period      BonusPeriod  @default(SEASON)
   threshold   Int
   amountPaise Int
-  active      Boolean     @default(true)
+  active      Boolean      @default(true)
   awards      BonusAward[]
 
   @@unique([tier, period, threshold])
 }
 
 model BonusAward {
-  id          String        @id @default(cuid())
-  mentorId    String
+  id            String        @id @default(cuid())
+  mentorId      String
   /// Milestone awards (retired) have a rule; referral bonuses don't.
-  ruleId      String?
-  periodKey   String
-  amountPaise Int
-  status      AccrualStatus @default(ACCRUED)
-  payoutId    String?
+  ruleId        String?
+  periodKey     String
+  amountPaise   Int
+  status        AccrualStatus @default(ACCRUED)
+  payoutId      String?
   /// "MILESTONE" (retired) or "REFERRAL": every N students a mentor refers earns a percent of the fees those students paid.
-  kind        String        @default("MILESTONE")
+  kind          String        @default("MILESTONE")
   referralBatch Int?
-  basePaise   Int?
-  percent     Int?
-  createdAt   DateTime      @default(now())
-  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
-  rule        BonusRule?    @relation(fields: [ruleId], references: [id])
+  basePaise     Int?
+  percent       Int?
+  createdAt     DateTime      @default(now())
+  mentor        MentorProfile @relation(fields: [mentorId], references: [id])
+  rule          BonusRule?    @relation(fields: [ruleId], references: [id])
 
   @@unique([mentorId, ruleId, periodKey])
   @@unique([mentorId, referralBatch])
@@ -770,15 +804,15 @@ model PayoutRun {
 }
 
 model Payout {
-  id          String        @id @default(cuid())
+  id          String          @id @default(cuid())
   runId       String
   mentorId    String
   amountPaise Int
   /// UTR / bank reference entered by Admin when marking paid.
   reference   String?
   paidAt      DateTime?
-  run         PayoutRun     @relation(fields: [runId], references: [id])
-  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+  run         PayoutRun       @relation(fields: [runId], references: [id])
+  mentor      MentorProfile   @relation(fields: [mentorId], references: [id])
   accruals    PayoutAccrual[]
 
   @@index([mentorId])
@@ -911,12 +945,12 @@ model FaqItem {
 
 /// Student library (audience STUDENT) and mentor resources (audience MENTOR).
 model Resource {
-  id       String   @id @default(cuid())
-  audience Role
-  kind     String
-  title    String
-  meta     String?
-  url      String?
+  id        String  @id @default(cuid())
+  audience  Role
+  kind      String
+  title     String
+  meta      String?
+  url       String?
   sortOrder Int     @default(0)
 }
 
@@ -925,4 +959,21 @@ model RateLimit {
   key     String   @id
   count   Int
   resetAt DateTime
+}
+
+/// The two non-lead panelists on a Panel PI session. The lead (the owner) is Session.mentorId. Each panelist holds one
+/// slot for the hour and earns a fixed amount when the lead submits the feedback (accrualId points at that accrual).
+model SessionPanelist {
+  id        String        @id @default(cuid())
+  sessionId String
+  mentorId  String
+  slotId    String?
+  accrualId String?       @unique
+  createdAt DateTime      @default(now())
+  session   Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  mentor    MentorProfile @relation(fields: [mentorId], references: [id])
+  slot      Slot?         @relation(fields: [slotId], references: [id])
+
+  @@unique([sessionId, mentorId])
+  @@index([mentorId])
 }

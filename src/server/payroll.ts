@@ -3,7 +3,13 @@ import type { MentorTier, PayService, ReviewKind, SessionType } from "@/generate
 /** Pure payroll rules. DB-touching code lives in the actions that call these. */
 
 export const serviceForSession = (t: SessionType): PayService | null =>
-  ({ MOCK_PI: "PI", GD_BATCH: "GD", GUIDANCE: "GUIDANCE", STRATEGY_CALL: null, PI_DIRECT: null, STRATEGY_DIRECT: null, TRIAL_GUIDANCE: null, TRIAL_PI: null } as const)[t];
+  ({ MOCK_PI: "PI", GD_BATCH: "GD", GUIDANCE: "GUIDANCE", STRATEGY_CALL: null, PI_DIRECT: null, STRATEGY_DIRECT: null, TRIAL_GUIDANCE: null, TRIAL_PI: null, PANEL_PI: null } as const)[t];
+
+/**
+ * Panel PI: the lead (the owner) takes the remainder and earns no accrual; each of the two other panelists earns this fixed
+ * amount, paid when the lead submits the feedback. (999 = 399 owner + 300 + 300.)
+ */
+export const PANEL_PANELIST_PAISE = 30_000;
 
 export const serviceForReview = (k: ReviewKind): PayService => (k === "WAT" ? "WAT" : "SOP");
 

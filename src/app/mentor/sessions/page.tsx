@@ -18,12 +18,14 @@ export default async function MentorSessions({ searchParams }: { searchParams: P
   const settings = await getSettings();
   const dueOnly = status === "feedback-due";
   const rows = await db.session.findMany({
-    where: { mentorId: mentor.id, startsAt: { not: null }, ...(dueOnly ? { status: "CONFIRMED", startsAt: { lt: new Date() }, feedback: null } : {}) },
+    where: dueOnly
+      ? { mentorId: mentor.id, startsAt: { lt: new Date() }, status: "CONFIRMED", feedback: null }
+      : { startsAt: { not: null }, OR: [{ mentorId: mentor.id }, { panelists: { some: { mentorId: mentor.id } } }] },
     orderBy: { startsAt: "desc" }, take: 100,
     include: { student: { select: { name: true } }, feedback: { select: { id: true } } },
   });
   const now = nowMs();
-  const dueCount = rows.filter((s) => s.status === "CONFIRMED" && !s.feedback && s.startsAt!.getTime() < now).length;
+  const dueCount = rows.filter((s) => s.mentorId === mentor.id && s.status === "CONFIRMED" && !s.feedback && s.startsAt!.getTime() < now).length;
   const doneCount = rows.filter((s) => s.status === "COMPLETED").length;
   const month = (d: Date) => new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", month: "long", year: "numeric" }).format(d);
   const groups: { m: string; items: typeof rows }[] = [];
@@ -44,8 +46,9 @@ export default async function MentorSessions({ searchParams }: { searchParams: P
         <section key={g.m} className="flex flex-col gap-2.5">
           <h2 className="type-label sticky top-[60px] z-[1] bg-surface/90 py-1 text-ink-faint backdrop-blur">{g.m}</h2>
           {g.items.map((s) => {
-            const overdue = s.status === "CONFIRMED" && !s.feedback && s.startsAt!.getTime() + settings.feedbackDueHours * 3_600_000 < now;
-            const st = s.status === "COMPLETED" ? { label: "Submitted", tone: "stone" as const } : overdue ? { label: "Feedback overdue", tone: "oxblood" as const } : s.status === "CONFIRMED" && s.startsAt!.getTime() < now ? { label: "Feedback due", tone: "amber" as const } : SESSION_STATUS[s.status];
+            const lead = s.mentorId === mentor.id;
+            const overdue = lead && s.status === "CONFIRMED" && !s.feedback && s.startsAt!.getTime() + settings.feedbackDueHours * 3_600_000 < now;
+            const st = !lead && s.status === "CONFIRMED" ? { label: "On the panel", tone: "indigo" as const } : s.status === "COMPLETED" ? { label: lead ? "Submitted" : "Done", tone: "stone" as const } : overdue ? { label: "Feedback overdue", tone: "oxblood" as const } : lead && s.status === "CONFIRMED" && s.startsAt!.getTime() < now ? { label: "Feedback due", tone: "amber" as const } : SESSION_STATUS[s.status];
             const name = s.type === "GD_BATCH" ? "GD batch" : s.student?.name?.replace(/\s*\(demo\)/, "") ?? "Student";
             const edge = st.tone === "oxblood" ? "bg-oxblood" : st.tone === "amber" ? "bg-gold" : st.tone === "green" ? "bg-teal" : "bg-line-strong";
             return (

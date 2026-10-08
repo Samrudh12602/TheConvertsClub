@@ -16,7 +16,7 @@ import { getSettings } from "@/lib/settings-db";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mentor" };
 const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
-const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD / GE batch", WAT: "WAT evaluation", GUIDANCE: "Guidance call", SOP: "SOP review" };
+const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD / GE batch", WAT: "WAT evaluation", GUIDANCE: "Guidance call", SOP: "SOP review", PANEL: "Panel PI" };
 
 function maskPayout(enc: string | null): string {
   if (!enc) return "not set";

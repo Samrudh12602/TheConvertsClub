@@ -45,6 +45,7 @@ export async function assignSession(actor: Actor, sessionId: string, mentorId: s
     const s = await tx.session.findUnique({ where: { id: sessionId }, include: { student: true } });
     if (!s?.startsAt || !s.endsAt) throw new AdminError("Session not found.");
     if (!["CONFIRMED", "REQUESTED"].includes(s.status)) throw new AdminError("Only upcoming sessions can be assigned.");
+    if (s.type === "PANEL_PI") throw new AdminError("A Panel PI is staffed automatically (you plus two mentors). To change it, cancel it and let the student rebook.");
     const mentor = await tx.mentorProfile.findUnique({ where: { id: mentorId }, include: { user: true } });
     if (!mentor || mentor.status !== "ACTIVE") throw new AdminError("That mentor isn't active.");
     if (actor.isDemo && (!mentor.user.isDemo || !s.student?.isDemo)) throw new AdminError("The demo admin can only work with demo data.");

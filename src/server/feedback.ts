@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings-db";
 import { RUBRIC, sessionTitle, REVIEW_LABEL } from "@/lib/labels";
 import { fmtWhen } from "@/lib/format";
 import { consumeCredit, lockUser, reviewCreditKind, sessionCreditKind } from "@/server/credits";
-import { accrualFor, overallScore, serviceForReview, serviceForSession, type RateTable } from "@/server/payroll";
+import { PANEL_PANELIST_PAISE, accrualFor, overallScore, serviceForReview, serviceForSession, type RateTable } from "@/server/payroll";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
@@ -98,8 +98,19 @@ export async function submitSessionFeedback(mentorId: string, sessionId: string,
         accrued = a.amountPaise;
       }
     }
-    return { sessionId, studentId: s.studentId, type: s.type, focus: s.focus, startsAt: s.startsAt, overall, accrued };
+    // Panel PI: the lead (the owner) keeps the remainder; each of the two other panelists is accrued a fixed amount.
+    const panelPaid: { userId: string }[] = [];
+    if (s.type === "PANEL_PI") {
+      const seats = await tx.sessionPanelist.findMany({ where: { sessionId, accrualId: null }, include: { mentor: true } });
+      for (const seat of seats) {
+        const acc = await tx.payoutAccrual.create({ data: { mentorId: seat.mentorId, service: "PANEL", amountPaise: PANEL_PANELIST_PAISE, rateSnapshotPaise: PANEL_PANELIST_PAISE, tierSnapshot: seat.mentor.tier } });
+        await tx.sessionPanelist.update({ where: { id: seat.id }, data: { accrualId: acc.id } });
+        panelPaid.push({ userId: seat.mentor.userId });
+      }
+    }
+    return { sessionId, studentId: s.studentId, type: s.type, focus: s.focus, startsAt: s.startsAt, overall, accrued, panelPaid };
   });
+  for (const p of done.panelPaid) await notify(p.userId, { title: "Panel PI complete: ₹300 added to your earnings", href: "/mentor/earnings" });
 
   const student = await db.user.findUnique({ where: { id: done.studentId } });
   if (student) {

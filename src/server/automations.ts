@@ -25,38 +25,44 @@ const marked = (userId: string, kind: string, key: string) =>
 
 /* ------------------------------------------------ mentor session reminders */
 
-/** 24h and 1h before each confirmed session, the mentor gets the student's profile and the meeting link. One per GD batch. */
+/** 24h and 1h before each confirmed session, the mentor gets the student's profile and the meeting link. One per GD batch. Panel PI panelists get it too. */
 export async function sendMentorReminders(now = new Date()) {
   const out = { m24: 0, m1: 0 };
   const windows = [
     { kind: "r24", template: "mentor_reminder_24h" as const, from: 1.5 * HOUR, to: 25 * HOUR, key: "m24" as const },
     { kind: "r1", template: "mentor_reminder_1h" as const, from: 0.15 * HOUR, to: 1.5 * HOUR, key: "m1" as const },
   ];
+  type Sess = Awaited<ReturnType<typeof loadDue>>[number];
+  const loadDue = (w: (typeof windows)[number]) => db.session.findMany({
+    where: { status: "CONFIRMED", mentorId: { not: null }, startsAt: { gte: new Date(now.getTime() + w.from), lt: new Date(now.getTime() + w.to) }, mentor: { user: { isDemo: false, status: "ACTIVE" } } },
+    include: { mentor: { include: { user: { select: { id: true, name: true, email: true } } } }, student: { include: { studentProfile: true } }, panelists: { include: { mentor: { include: { user: { select: { id: true, name: true, email: true } } } } } } },
+    orderBy: { startsAt: "asc" },
+  });
+  const remind = async (w: (typeof windows)[number], s: Sess, who: { id: string; email: string }, key: string) => {
+    if (!s.startsAt || !isReal(who.email)) return;
+    if (await marked(who.id, w.kind, key)) return;
+    // Mark first (an in-app notification doubles as the marker), so a second run can't send it again.
+    const title = sessionTitle(s.type, s.focus);
+    const student = s.type === "GD_BATCH" ? "your GD batch" : first(s.student?.name);
+    await notify(who.id, { title: `${w.kind === "r24" ? "Tomorrow" : "In an hour"}: ${title} at ${fmtTime(s.startsAt)}`, href: `/mentor/sessions/${s.id}?n=${w.kind}&k=${key}` });
+    const p = s.student?.studentProfile;
+    const details = s.type === "GD_BATCH" ? undefined : [
+      { k: "Student", v: s.student?.name ?? "—" },
+      { k: "When", v: `${fmtWhen(s.startsAt)} IST` },
+      ...(s.type === "PANEL_PI" ? [{ k: "Panel", v: [s.mentor?.user.name, ...s.panelists.map((x) => x.mentor.user.name)].filter(Boolean).join(", ") }] : []),
+      ...(p?.college ? [{ k: "College", v: p.college }] : []),
+      ...(p?.targetInstitutes?.length ? [{ k: "Targets", v: p.targetInstitutes.join(", ") }] : []),
+      ...(p?.weakAreas?.length ? [{ k: "Weak areas", v: p.weakAreas.join(", ") }] : []),
+    ];
+    const url = w.kind === "r1" ? (await ensureMeetingUrl(s.id)) ?? `/mentor/sessions/${s.id}` : `/mentor/sessions/${s.id}`;
+    await sendEmail({ template: w.template, to: who.email, url, details, vars: { session: title, student, time: fmtTime(s.startsAt) } });
+    out[w.key]++;
+  };
   for (const w of windows) {
-    const due = await db.session.findMany({
-      where: { status: "CONFIRMED", mentorId: { not: null }, startsAt: { gte: new Date(now.getTime() + w.from), lt: new Date(now.getTime() + w.to) }, mentor: { user: { isDemo: false, status: "ACTIVE" } } },
-      include: { mentor: { include: { user: { select: { id: true, name: true, email: true } } } }, student: { include: { studentProfile: true } } },
-      orderBy: { startsAt: "asc" },
-    });
-    for (const s of due) {
-      if (!s.mentor || !s.startsAt || !isReal(s.mentor.user.email)) continue;
-      const key = s.gdBatchId ?? s.id;
-      if (await marked(s.mentor.user.id, w.kind, key)) continue;
-      // Mark first (an in-app notification doubles as the marker), so a second run can't send it again.
-      const title = sessionTitle(s.type, s.focus);
-      const who = s.type === "GD_BATCH" ? "your GD batch" : first(s.student?.name);
-      await notify(s.mentor.user.id, { title: `${w.kind === "r24" ? "Tomorrow" : "In an hour"}: ${title} at ${fmtTime(s.startsAt)}`, href: `/mentor/sessions/${s.id}?n=${w.kind}&k=${key}` });
-      const p = s.student?.studentProfile;
-      const details = s.type === "GD_BATCH" ? undefined : [
-        { k: "Student", v: s.student?.name ?? "—" },
-        { k: "When", v: `${fmtWhen(s.startsAt)} IST` },
-        ...(p?.college ? [{ k: "College", v: p.college }] : []),
-        ...(p?.targetInstitutes?.length ? [{ k: "Targets", v: p.targetInstitutes.join(", ") }] : []),
-        ...(p?.weakAreas?.length ? [{ k: "Weak areas", v: p.weakAreas.join(", ") }] : []),
-      ];
-      const url = w.kind === "r1" ? (await ensureMeetingUrl(s.id)) ?? `/mentor/sessions/${s.id}` : `/mentor/sessions/${s.id}`;
-      await sendEmail({ template: w.template, to: s.mentor.user.email, url, details, vars: { session: title, student: who, time: fmtTime(s.startsAt) } });
-      out[w.key]++;
+    for (const s of await loadDue(w)) {
+      if (!s.mentor) continue;
+      await remind(w, s, s.mentor.user, s.gdBatchId ?? s.id);
+      for (const p of s.panelists) await remind(w, s, p.mentor.user, `${s.id}-${p.mentorId}`);
     }
   }
   return out;

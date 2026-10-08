@@ -10,7 +10,7 @@ import { formatPaise } from "@/lib/money";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Payouts" };
 const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
-const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD batch", WAT: "WAT", GUIDANCE: "Guidance", SOP: "SOP review" };
+const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD batch", WAT: "WAT", GUIDANCE: "Guidance", SOP: "SOP review", PANEL: "Panel PI" };
 
 export default async function PayoutsPage() {
   const db = await adminDb();

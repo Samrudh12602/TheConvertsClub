@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { PANEL_UPGRADE_SLUG, convertPiToPanel, panelUpgradeStatus } from "@/server/panel-upgrade";
 import { getProduct } from "@/lib/catalog";
 import { checkCoupon, describeCredit, priceView } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
@@ -16,6 +17,8 @@ import { LEGAL_VERSION, REQUIRED_DOCS } from "@/lib/legal";
 import { loadReceiptData } from "@/server/receipt";
 import { renderReceiptPdf } from "@/server/receipt-pdf";
 import type { CreditKind } from "@/generated/prisma/client";
+
+const PANEL_PI_SLUG = "panel-pi";
 
 export class CheckoutError extends Error {}
 
@@ -71,6 +74,11 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   if (q.product.enrolledOnly) {
     // Additional PI: only for enrolled students, bought from inside the portal.
     if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
+  }
+  // The Rs 199 Panel PI upgrade: only for Call Convert Plus students, at most twice, and only while they still hold an unused PI.
+  if (q.product.slug === PANEL_UPGRADE_SLUG) {
+    const st = await panelUpgradeStatus(db, buyer!.id);
+    if (!st.eligible) throw new CheckoutError(st.reason ?? "You can't upgrade right now.");
   }
   const email = parsed.data.email.toLowerCase();
   // Trial offers (Rs 10 / Rs 50) are a first taste: one per person, per trial, counted by email and by phone.
@@ -159,9 +167,11 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
     await tx.order.update({ where: { id: order.id }, data: { status: "PAID", userId: user.id } });
     const enrollment = await tx.enrollment.create({ data: { userId: user.id, productId: order.productId, orderId: order.id } });
     for (const c of order.product.credits) await grantCredit(tx, { userId: user.id, kind: c.kind, quantity: c.quantity, enrollmentId: enrollment.id, reason: `Purchase: ${order.product.name}` });
+    // The upgrade swaps a PI for a Panel PI. If the PI was used up between paying and now, nothing is swapped and the owner is told to refund.
+    const upgradeFailed = order.product.slug === PANEL_UPGRADE_SLUG ? !(await convertPiToPanel(tx, user.id, enrollment.id)) : false;
     if (order.couponId) await tx.coupon.update({ where: { id: order.couponId }, data: { usedCount: { increment: 1 } } });
     await tx.studentProfile.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
-    return { kind: "fulfilled" as const, orderId: order.id, user, created, product: order.product, amountPaise: order.amountPaise };
+    return { kind: "fulfilled" as const, orderId: order.id, user, created, product: order.product, amountPaise: order.amountPaise, upgradeFailed };
   });
 
   if (result.kind === "fulfilled") {
@@ -172,14 +182,25 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
       const attachments = receipt ? [{ filename: `receipt-${result.orderId}.pdf`, content: await renderReceiptPdf(receipt), contentType: "application/pdf" }] : undefined;
       await sendEmail({
         template: "welcome", to: result.user.email, url: link, vars: { package: result.product.name },
-        details: [{ k: "Package", v: result.product.name }, { k: "Paid", v: formatPaise(result.amountPaise) }, { k: "Credits", v: result.product.credits.map((c) => describeCredit(c, "short")).join(" · ") }],
+        details: [{ k: "Package", v: result.product.name }, { k: "Paid", v: formatPaise(result.amountPaise) }, { k: "Credits", v: result.product.slug === PANEL_UPGRADE_SLUG ? (result.upgradeFailed ? "Nothing changed yet. We'll sort it out" : "1 mock PI is now a Panel PI") : result.product.credits.map((c) => describeCredit(c, "short")).join(" · ") }],
         attachments,
       });
       await notify(result.user.id, { title: `Payment confirmed: ${result.product.name}`, href: "/student" });
-      if (result.product.withAdmin) await alertAdminDirectRequest(result);
+      if (result.product.withAdmin || result.product.slug === PANEL_PI_SLUG) await alertAdminDirectRequest(result);
+      if (result.upgradeFailed) await alertAdminUnfulfilledUpgrade(result);
     } catch (e) { console.error("post-fulfil side effects failed", e); }
   }
   return result;
+}
+
+/** The student paid for the Panel PI upgrade but had no unused PI left to swap: tell the owner so they can refund. */
+async function alertAdminUnfulfilledUpgrade(r: { orderId: string; user: { id: string; name: string | null; email: string; isDemo: boolean }; amountPaise: number }) {
+  try {
+    const inbox = adminInbox();
+    if (inbox && !r.user.isDemo) await sendEmail({ template: "direct_request", to: inbox, replyTo: r.user.email, url: `/admin/students/${r.user.id}`, vars: { student: r.user.name ?? r.user.email, product: "Panel PI upgrade (NOT applied: no unused PI left, please refund)" }, details: [{ k: "Student", v: r.user.name ?? "—" }, { k: "Email", v: r.user.email }, { k: "Paid", v: formatPaise(r.amountPaise) }, { k: "Order", v: r.orderId }] });
+    const admins = await db.user.findMany({ where: { role: "ADMIN", status: "ACTIVE", isDemo: r.user.isDemo }, select: { id: true } });
+    await Promise.all(admins.map((a) => notify(a.id, { title: `Panel upgrade paid but not applied: ${r.user.name ?? r.user.email}`, body: "No unused PI was left to swap. Refund the order.", href: `/admin/students/${r.user.id}` })));
+  } catch (e) { console.error("unfulfilled upgrade alert failed", e); }
 }
 
 /** A failed payment attempt only marks a still-unpaid order as failed. */

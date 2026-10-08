@@ -8,7 +8,7 @@ import { requireMentor } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Earnings" };
-const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD / GE batch", WAT: "WAT evaluation", GUIDANCE: "Guidance call", SOP: "SOP review" };
+const SERVICE: Record<string, string> = { PI: "Mock PI", GD: "GD / GE batch", WAT: "WAT evaluation", GUIDANCE: "Guidance call", SOP: "SOP review", PANEL: "Panel PI" };
 const nm = (n?: string | null) => n?.replace(/\s*\(demo\)/, "") ?? "Student";
 
 export default async function Earnings() {

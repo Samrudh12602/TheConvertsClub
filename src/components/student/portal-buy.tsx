@@ -8,7 +8,7 @@ import { startCheckoutAction } from "@/app/(public)/checkout/actions";
 
 /** In-portal purchase (additional PI, single sessions) for a signed-in student: same server-priced
  * Razorpay flow, with an optional coupon field — a mentor's own referral code works here too. */
-export function PortalBuy({ slug, label, me, variant = "primary", defaultCoupon }: { slug: string; label: string; defaultCoupon?: string; me: { name: string; email: string; phone: string }; variant?: "primary" | "dark" | "secondary" }) {
+export function PortalBuy({ slug, label, me, variant = "primary", defaultCoupon }: { slug: string; label: string; defaultCoupon?: string; me: { name: string; email: string; phone: string }; variant?: "primary" | "dark" | "secondary" | "onDark" }) {
   const router = useRouter();
   const [coupon, setCoupon] = useState(defaultCoupon ?? "");
   const [showCoupon, setShowCoupon] = useState(Boolean(defaultCoupon));

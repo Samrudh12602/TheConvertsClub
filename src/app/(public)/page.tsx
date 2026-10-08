@@ -1,4 +1,4 @@
-import { DirectSpotlight, FaqTeaser, FinalCta, Hero, HowItWorks, MentorShowcase, StatsStrip, TrialStrip } from "@/components/site/home-sections";
+import { DirectSpotlight, FaqTeaser, FinalCta, Hero, HowItWorks, MentorShowcase, PanelSpotlight, StatsStrip, TrialStrip } from "@/components/site/home-sections";
 import { ProductTile } from "@/components/site/product-tile";
 import { ReferralBanner } from "@/components/site/referral-banner";
 import { Reveal } from "@/components/ui/motion";
@@ -24,6 +24,7 @@ export default async function HomePage() {
       <TrialStrip trials={trials} />
       <StatsStrip feedbackHours={policy.feedbackDueHours} fromPaise={Number.isFinite(cheapest) ? cheapest : 9900} />
       <HowItWorks steps={how} />
+      <PanelSpotlight product={products.find((p) => p.slug === "panel-pi") ?? null} />
 
       <section aria-labelledby="everything">
         <Reveal className="mb-5 max-w-[560px]">
@@ -31,7 +32,7 @@ export default async function HomePage() {
           <h2 id="everything" className="type-display mt-3 text-ink">Pick one session, or the whole season</h2>
         </Reveal>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.filter((p) => !p.withAdmin && !p.slug.startsWith("trial-")).map((p, i) => (
+          {products.filter((p) => !p.withAdmin && !p.slug.startsWith("trial-") && p.slug !== "panel-pi" && p.slug !== "panel-pi-upgrade").map((p, i) => (
             <Reveal key={p.slug} delay={Math.min(i, 6) * 60} className="h-full"><ProductTile product={p} /></Reveal>
           ))}
         </div>

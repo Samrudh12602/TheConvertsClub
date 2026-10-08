@@ -62,7 +62,7 @@ export default async function SchedulerPage() {
           <div className="min-w-0 flex-1"><p className="text-[13px] font-semibold text-ink">{nm(s.student?.name) || "GD batch"} · {sessionTitle(s.type, s.focus)}</p><p className="mt-0.5 text-[11.5px] text-ink-faint">{s.startsAt ? fmtTime(s.startsAt) : ""} · with <span className="font-semibold text-ink-2">{s.mentor ? nm(s.mentor.user.name) : "unassigned"}</span></p></div>
           {s.status === "REQUESTED" && <ConfirmButton sessionId={s.id} />}
           <AdminCancelButton sessionId={s.id} />
-          <AssignPicker sessionId={s.id} options={options(s.type, s.focus)} />
+          {s.type !== "PANEL_PI" && <AssignPicker sessionId={s.id} options={options(s.type, s.focus)} />}
           <StatusPill tone={s.status === "CONFIRMED" ? "green" : "amber"}>{s.status}</StatusPill>
         </div>
       ))}

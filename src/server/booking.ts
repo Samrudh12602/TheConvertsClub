@@ -10,14 +10,10 @@ import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
 import { notify } from "@/server/notify";
 
-export class BookingError extends Error {
-  constructor(message: string, public code: "NO_CREDIT" | "TAKEN" | "HOLD_EXPIRED" | "NOT_ALLOWED" | "NOT_FOUND" | "POLICY") {
-    super(message);
-  }
-}
+import { BookingError, isDemoStudent, now, openOrExpiredHold } from "@/server/booking-shared";
+import { holdPanelSlots, panelistsOf, panelTimes, releasePanelSeats, seatPanel } from "@/server/panel";
 
-const now = () => new Date();
-const openOrExpiredHold = (t: Date) => ({ OR: [{ status: "OPEN" as const }, { status: "HELD" as const, heldUntil: { lt: t } }] });
+export { BookingError };
 
 /** Mentors whose slots can serve this session type. Strategy calls are Samrudh's; everything else any active mentor. */
 export const mentorFilter = (type: SessionType, demo: boolean, preferMentorId?: string | null) => ({
@@ -35,8 +31,6 @@ export async function assertCanRebook(studentId: string, mentorId: string) {
   if (!met) throw new BookingError("You can rebook a mentor you've already had a session with.", "NOT_ALLOWED");
 }
 
-/** Real students are only ever matched to real mentors, and demo students to demo mentors, so a fake demo mentor can never get a real booking. */
-const isDemoStudent = async (client: Pick<typeof db, "user">, studentId: string) => Boolean((await client.user.findUnique({ where: { id: studentId }, select: { isDemo: true } }))?.isDemo);
 
 async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean, preferMentorId?: string | null): Promise<Candidate[]> {
   const t = now();
@@ -56,6 +50,7 @@ async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: Sessi
 
 /** Bookable start times between two instants (mentor identity and tier are never exposed). Sorted ascending. */
 export async function availableTimesRange(studentId: string, type: SessionType, focus: PiFocus | null, rangeFrom: Date, rangeTo: Date, preferMentorId?: string | null) {
+  if (type === "PANEL_PI") return panelTimes(studentId, rangeFrom, rangeTo);
   if (preferMentorId) await assertCanRebook(studentId, preferMentorId);
   const s = await getSettings();
   const t = now();
@@ -97,9 +92,10 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
 
     await tx.slot.updateMany({ where: { heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
 
+    const heldUntil = new Date(now().getTime() + s.holdMinutes * 60_000);
+    if (type === "PANEL_PI") return holdPanelSlots(tx, studentId, startsAt, heldUntil);
     let cands = await candidatesAt(tx, type, startsAt, await isDemoStudent(tx, studentId), preferMentorId);
     const seniorRequired = needsSenior(type, focus, s.seniorRequiredFocuses);
-    const heldUntil = new Date(now().getTime() + s.holdMinutes * 60_000);
     while (cands.length) {
       const pick = pickCandidate(cands, seniorRequired);
       if (!pick) break;
@@ -113,7 +109,10 @@ export async function holdSlot(studentId: string, type: SessionType, focus: PiFo
 }
 
 export async function releaseHold(studentId: string, slotId: string) {
-  await db.slot.updateMany({ where: { id: slotId, heldById: studentId, status: "HELD" }, data: { status: "OPEN", heldById: null, heldUntil: null } });
+  const held = await db.slot.findUnique({ where: { id: slotId }, select: { startsAt: true, heldById: true } });
+  // A Panel PI holds three slots at one instant; release them all together.
+  const where = held && held.heldById === studentId ? { heldById: studentId, status: "HELD" as const, startsAt: held.startsAt } : { id: slotId, heldById: studentId, status: "HELD" as const };
+  await db.slot.updateMany({ where, data: { status: "OPEN", heldById: null, heldUntil: null } });
 }
 
 /** Step 2: confirm a held slot. Reserves the credit, creates the session, then auto-confirms or queues for approval. */
@@ -134,6 +133,7 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
       });
       await reserveCredit(tx, { userId: studentId, kind: sessionCreditKind(type), sessionId: created.id });
       await tx.slot.update({ where: { id: slot.id }, data: { status: "BOOKED", heldUntil: null } });
+      if (type === "PANEL_PI") await seatPanel(tx, created.id, studentId, { id: slot.id, startsAt: slot.startsAt });
       return { ...created, mentorUserId: slot.mentor.userId };
     } catch (e) {
       if (e instanceof InsufficientCreditsError) throw new BookingError("You have no credit left for this session type.", "NO_CREDIT");
@@ -151,6 +151,7 @@ export async function confirmBooking(studentId: string, slotId: string, type: Se
  * calendar invite and everything else behave exactly like a booking the student made themselves.
  */
 export async function bookSpecificSlot(studentId: string, slotId: string, type: SessionType, focus: PiFocus | null) {
+  if (type === "PANEL_PI") throw new BookingError("A Panel PI needs three people free at once, so the student books it themselves.", "NOT_ALLOWED");
   const s = await getSettings();
   await db.$transaction(async (tx) => {
     await lockUser(tx, studentId);
@@ -202,6 +203,15 @@ async function afterBooked(sessionId: string, kind: "new" | "moved") {
     await sendEmail({ template: "mentor_assignment", to: s.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `${title} with ${s.student.name ?? "a student"}, ${vars.when} IST. Feedback is due ${settings.feedbackDueHours} hours after the session.` }, url: `/mentor/sessions/${s.id}`,
       attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} with ${s.student.name ?? "a student"}`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
     await notify(s.mentor.userId, { title: `New session: ${s.student.name ?? "Student"}, ${vars.when}`, href: `/mentor/sessions/${s.id}` });
+    // Panel PI: the two other panelists are told too (they're paid a fixed amount once the lead submits the feedback).
+    if (s.type === "PANEL_PI") {
+      const lead = s.mentor.user.name ?? "Samrudh";
+      for (const p of await panelistsOf(s.id)) {
+        await sendEmail({ template: "mentor_assignment", to: p.mentor.user.email, vars: { student: s.student.name ?? "A student", when: vars.when, detail: `You're on the panel for a Panel PI with ${s.student.name ?? "a student"}, ${vars.when} IST. ${lead} leads; you and one other mentor join. One hour in total, interview and live debrief. You're paid ₹300 once the feedback is submitted.` }, url: `/mentor/sessions/${s.id}`,
+          attachments: s.endsAt ? [icsAttachment({ uid: `${s.id}-${p.mentorId}`, title: `Panel PI with ${s.student.name ?? "a student"}`, startsAt: s.startsAt, endsAt: s.endsAt, url: s.meetingUrl })] : undefined });
+        await notify(p.mentor.user.id, { title: `You're on a panel: ${s.student.name ?? "Student"}, ${vars.when}`, href: `/mentor/sessions/${s.id}` });
+      }
+    }
   }
 }
 
@@ -219,6 +229,7 @@ export async function cancelSession(studentId: string, sessionId: string, opts: 
     const kind = sessionCreditKind(sess.type);
     await tx.session.update({ where: { id: sess.id }, data: { status: "CANCELLED", cancelledAt: t } });
     if (sess.slotId) await tx.slot.update({ where: { id: sess.slotId }, data: { status: "OPEN", heldById: null, heldUntil: null } });
+    if (sess.type === "PANEL_PI") await releasePanelSeats(tx, sess.id);
     if (outcome === "RELEASE") await releaseCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: opts.byStaff ? "Cancelled by The Convert Club" : "Cancelled with notice" });
     else await consumeCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: `Late cancel (under ${s.cancelNoticeHours}h)` });
     if (sess.gdBatchId) await tx.gdParticipant.updateMany({ where: { batchId: sess.gdBatchId, studentId }, data: { status: "LEFT" } });
@@ -239,6 +250,12 @@ async function afterCancel(sessionId: string, outcome: "RELEASE" | "CONSUME") {
     await sendEmail({ template: "mentor_availability_change", to: s.mentor.user.email, vars: { when: fmtWhen(s.startsAt), detail: `${s.student.name ?? "A student"} cancelled ${title} on ${fmtWhen(s.startsAt)}. The slot is open again.` }, url: "/mentor/availability" });
     await notify(s.mentor.userId, { title: `Cancelled: ${s.student.name ?? "student"}, ${fmtWhen(s.startsAt)}`, href: "/mentor/sessions" });
   }
+  if (s.type === "PANEL_PI") {
+    for (const p of await panelistsOf(s.id)) {
+      await sendEmail({ template: "mentor_availability_change", to: p.mentor.user.email, vars: { when: fmtWhen(s.startsAt), detail: `${s.student.name ?? "A student"} cancelled the Panel PI on ${fmtWhen(s.startsAt)}. Your hour is open again.` }, url: "/mentor/availability" });
+      await notify(p.mentor.user.id, { title: `Panel cancelled: ${s.student.name ?? "student"}, ${fmtWhen(s.startsAt)}`, href: "/mentor/sessions" });
+    }
+  }
 }
 
 /** Move a confirmed session to a new held slot. The credit stays reserved; limits and notice come from Settings. */
@@ -251,6 +268,7 @@ export async function rescheduleSession(studentId: string, sessionId: string, ne
     if (!sess || sess.studentId !== studentId || !sess.startsAt) throw new BookingError("Session not found.", "NOT_FOUND");
     if (sess.status !== "CONFIRMED" && sess.status !== "REQUESTED") throw new BookingError("This session can't be moved.", "NOT_ALLOWED");
     if (sess.type === "GD_BATCH") throw new BookingError("GD batches can't be rescheduled. Leave and join another.", "NOT_ALLOWED");
+    if (sess.type === "PANEL_PI") throw new BookingError("A Panel PI involves three people, so it can't be moved. Cancel it (free before the notice period) and book a new time.", "NOT_ALLOWED");
     if (!canReschedule(sess.startsAt, t, s.cancelNoticeHours, sess.rescheduleCount, s.maxReschedules)) {
       throw new BookingError(`Rescheduling is free up to ${s.cancelNoticeHours} hours before, and ${s.maxReschedules} times per session.`, "POLICY");
     }
