@@ -10,6 +10,7 @@ import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
 import { getReferral, referralPrice } from "@/server/referral";
 import { Users } from "lucide-react";
+import { ADDITIONAL_PI_SLUG, canBuyAdditionalPi } from "@/server/eligibility";
 import { NOT_ON_PLAN, PANEL_UPGRADE_MAX, PANEL_UPGRADE_SLUG, panelUpgradeStatus } from "@/server/panel-upgrade";
 import { paymentsConfigured } from "@/server/razorpay";
 import { getCreditSummary, getEnrollmentBreakdown } from "@/server/credits";
@@ -35,7 +36,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // products belong here, and only once actually enrolled. Everyone else buys singles at full price
   // from /services, same as a public visitor. Everything shows at MRP; a mentor's referral code (or
   // any other coupon) is what brings the price down, entered on the buy button below.
-  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin) && !p.slug.startsWith("trial-") && p.slug !== PANEL_UPGRADE_SLUG) : [];
+  const mayBuyAdditionalPi = enrolled > 0 && (await canBuyAdditionalPi(db, user.id));
+  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin) && !p.slug.startsWith("trial-") && p.slug !== PANEL_UPGRADE_SLUG && (p.slug !== ADDITIONAL_PI_SLUG || mayBuyAdditionalPi)) : [];
   // Panel PI: buy it outright, or (Call Convert Plus only) swap one of your unused PIs for a Panel PI for Rs 199.
   const panel = products.find((p) => p.slug === "panel-pi");
   const upgrade = products.find((p) => p.slug === PANEL_UPGRADE_SLUG);

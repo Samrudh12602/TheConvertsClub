@@ -32,7 +32,7 @@ export default async function HomePage() {
           <h2 id="everything" className="type-display mt-3 text-ink">Pick one session, or the whole season</h2>
         </Reveal>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.filter((p) => !p.withAdmin && !p.slug.startsWith("trial-") && p.slug !== "panel-pi" && p.slug !== "panel-pi-upgrade").map((p, i) => (
+          {products.filter((p) => !p.withAdmin && !p.enrolledOnly && !p.slug.startsWith("trial-") && p.slug !== "panel-pi").map((p, i) => (
             <Reveal key={p.slug} delay={Math.min(i, 6) * 60} className="h-full"><ProductTile product={p} /></Reveal>
           ))}
         </div>

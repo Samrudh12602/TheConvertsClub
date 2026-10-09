@@ -541,6 +541,12 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     into one Panel PI) instead of 6 PIs; students who already bought Plus keep what they were given. (d) The ₹199 swap of an
     unused PI for a Panel PI now applies to Call Convert and Call Convert Plus, at most twice per student.
 
+53. **Enrolled-only products are never shown on the public site (owner's instruction).** Additional PI and the Panel PI upgrade
+    no longer appear on the home page or Packages page (`getSingles` and the home grid skip `enrolledOnly`). Additional PI can
+    only be bought by a student who came in through a single Mock PI, Call Convert or Call Convert Plus (checked at
+    checkout and in the portal's Top up); the Panel PI upgrade is for Call Convert and Call Convert Plus students. The Panel
+    PI (₹999) is promoted, on the dashboard and in Payments, to students whose only purchase is the single Mock PI.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

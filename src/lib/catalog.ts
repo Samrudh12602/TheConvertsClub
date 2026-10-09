@@ -77,5 +77,6 @@ export async function getSingles(): Promise<CatalogProduct[]> {
     select: { slug: true },
   });
   const all = await getProducts();
-  return rows.map((r) => all.find((p) => p.slug === r.slug)).filter((p): p is CatalogProduct => Boolean(p));
+  // The public Packages page: enrolled-only products (Additional PI, the Panel PI upgrade) are for the student portal only.
+  return rows.map((r) => all.find((p) => p.slug === r.slug)).filter((p): p is CatalogProduct => Boolean(p) && !p!.enrolledOnly);
 }

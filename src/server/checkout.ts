@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { ADDITIONAL_PI_NOT_ELIGIBLE, ADDITIONAL_PI_SLUG, canBuyAdditionalPi } from "@/server/eligibility";
 import { PANEL_UPGRADE_SLUG, convertPiToPanel, panelUpgradeStatus } from "@/server/panel-upgrade";
 import { getProduct } from "@/lib/catalog";
 import { checkCoupon, describeCredit, priceView } from "@/lib/pricing";
@@ -75,6 +76,8 @@ export async function startCheckout(input: { slug: string; name: string; email: 
     // Additional PI: only for enrolled students, bought from inside the portal.
     if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
   }
+  // Additional PI is only for students who came in through a single Mock PI, Call Convert or Call Convert Plus.
+  if (q.product.slug === ADDITIONAL_PI_SLUG && !(await canBuyAdditionalPi(db, buyer!.id))) throw new CheckoutError(ADDITIONAL_PI_NOT_ELIGIBLE);
   // The Rs 199 Panel PI upgrade: only for Call Convert Plus students, at most twice, and only while they still hold an unused PI.
   if (q.product.slug === PANEL_UPGRADE_SLUG) {
     const st = await panelUpgradeStatus(db, buyer!.id);

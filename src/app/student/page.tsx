@@ -11,6 +11,12 @@ import { AddToCalendar } from "@/components/student/add-to-calendar";
 import { WelcomeTour } from "@/components/student/welcome-tour";
 import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
 import { getCreditSummary } from "@/server/credits";
+import { PortalBuy } from "@/components/student/portal-buy";
+import { getProduct } from "@/lib/catalog";
+import { formatPaise } from "@/lib/money";
+import { priceView } from "@/lib/pricing";
+import { isSinglePiStudent } from "@/server/eligibility";
+import { paymentsConfigured } from "@/server/razorpay";
 import { requireStudent } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +36,8 @@ export default async function StudentDashboard() {
     getCreditSummary(db, user.id),
   ]);
   const bookable = (["PI", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "GD"] as const).reduce((n, k) => n + (creditSummary[k]?.available ?? 0), 0);
+  // A student whose only purchase is the single Mock PI is the one most worth showing the Panel PI to.
+  const [promoPanel, panelProduct] = await Promise.all([isSinglePiStudent(db, user.id), getProduct("panel-pi")]);
   const rings = CREDIT_KIND_ORDER.filter((k) => (creditSummary[k]?.granted ?? 0) > 0).map((k) => ({ kind: k, ...creditSummary[k]! }));
   const next = upcoming[0];
   const rest = upcoming.slice(1, 5);
@@ -73,6 +81,24 @@ export default async function StudentDashboard() {
           <p className="mt-2 max-w-[52ch] text-[13px] leading-normal text-dark-soft">{bookable > 0 ? `You have ${bookable} unused session credit${bookable === 1 ? "" : "s"} waiting. Pick a type, a focus and a time. Slots are released by mentors each Sunday.` : "Pick a type, a focus and a time. Slots are released by mentors each Sunday."}</p>
           <ButtonLink href="/student/book" variant="onDark" className="mt-3.5">Book a session</ButtonLink>
         </div>
+      )}
+
+      {promoPanel && panelProduct && (
+        <section className="relative overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5" aria-label="Panel PI">
+          <span aria-hidden className="absolute -right-12 -top-12 size-44 rounded-full bg-oxblood/40 blur-3xl" />
+          <div className="relative flex flex-wrap items-center gap-5">
+            <div className="min-w-[240px] flex-[1_1_320px]">
+              <p className="type-eyebrow text-gold">Next level</p>
+              <h2 className="mt-2 font-display text-[21px] font-bold leading-[1.2]">After your mock, face a real panel</h2>
+              <p className="mt-2 max-w-[56ch] text-[13px] leading-[1.65] text-dark-soft">One mock tells you how you answer. A Panel PI shows how you hold up in front of three interviewers who cross-question each other&apos;s points, with a live debrief inside the same hour. It&apos;s the closest thing to the real interview.</p>
+              <p className="mt-2 text-[12px] text-dark-muted">Once booked it can&apos;t be cancelled or moved, so pick a time you&apos;re sure of.</p>
+            </div>
+            <div className="flex flex-col items-start gap-2">
+              <p className="tnum font-display text-[30px] font-bold leading-none">{formatPaise(priceView(panelProduct).payablePaise)}{priceView(panelProduct).strikePaise ? <span className="ml-2 text-sm font-medium text-dark-muted line-through">{formatPaise(priceView(panelProduct).strikePaise!)}</span> : null}</p>
+              {paymentsConfigured() && <PortalBuy slug="panel-pi" me={{ name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" }} label="Get a Panel PI" variant="onDark" />}
+            </div>
+          </div>
+        </section>
       )}
 
       {rings.length > 0 && (
