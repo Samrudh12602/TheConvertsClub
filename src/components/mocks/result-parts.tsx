@@ -114,19 +114,33 @@ export function ReviewExplorer({ items, groups }: { items: ReviewItem[]; groups:
   );
 }
 
-/** One bar per question, tall for the time it took, coloured by how it went. The dashed line is an even pace. */
-export function TimeBars({ items, paceSec }: { items: { number: number; timeSec: number; outcome: Outcome }[]; paceSec: number }) {
+/** One bar per question, tall for the time it took, coloured by how it went. The dashed line is an even pace. Sections are marked underneath. */
+export function TimeBars({ items, paceSec }: { items: { number: number; timeSec: number; outcome: Outcome; section?: string }[]; paceSec: number }) {
   const max = Math.max(paceSec * 2.5, ...items.map((i) => i.timeSec), 1);
-  const w = 760, h = 150, padB = 20, padT = 8;
-  const bw = (w - 8) / items.length;
+  const w = 960, h = 300, padB = 44, padT = 14, padL = 40;
+  const bw = (w - padL - 6) / items.length;
   const y = (v: number) => h - padB - (Math.min(v, max) / max) * (h - padB - padT);
+  const x = (k: number) => padL + k * bw;
   const fill: Record<Outcome, string> = { correct: "var(--color-teal)", wrong: "var(--color-oxblood)", skipped: "var(--color-line-strong)" };
+  const step = max > 240 ? 120 : max > 120 ? 60 : 30;
+  const ticks = Array.from({ length: Math.floor(max / step) + 1 }, (_, i) => i * step);
+  const groups: { name: string; from: number; to: number }[] = [];
+  items.forEach((i, k) => { const g = groups[groups.length - 1]; if (i.section && g && g.name === i.section) g.to = k; else if (i.section) groups.push({ name: i.section, from: k, to: k }); });
+  const short = (n: string) => (n.length > 22 ? n.split(/[ ,&]+/)[0] : n);
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" role="img" aria-label="Time spent on each question">
-      <line x1="4" x2={w - 4} y1={y(paceSec)} y2={y(paceSec)} stroke="var(--color-gold)" strokeDasharray="5 4" strokeWidth="1.5" />
-      <text x={w - 6} y={y(paceSec) - 5} textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-gold-deep)">even pace · {Math.round(paceSec)}s</text>
-      {items.map((i, k) => <rect key={i.number} x={4 + k * bw + 1} y={y(i.timeSec)} width={Math.max(2, bw - 2)} height={Math.max(1, h - padB - y(i.timeSec))} rx="2" fill={fill[i.outcome]} opacity={i.outcome === "skipped" ? 0.9 : 0.85} />)}
-      {items.map((i, k) => (i.number % 10 === 0 || i.number === 1) ? <text key={`l${i.number}`} x={4 + k * bw + bw / 2} y={h - 5} textAnchor="middle" fontSize="9.5" fill="var(--color-ink-faint)">{i.number}</text> : null)}
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" role="img" aria-label="Time spent on each question, coloured by whether it was right, wrong or left blank">
+      {ticks.map((t) => <g key={t}><line x1={padL} x2={w - 6} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeWidth="1" /><text x={padL - 8} y={y(t) + 3.5} textAnchor="end" fontSize="11" fill="var(--color-ink-faint)">{t >= 60 ? `${t / 60}m` : `${t}s`}</text></g>)}
+      <line x1={padL} x2={w - 6} y1={y(paceSec)} y2={y(paceSec)} stroke="var(--color-gold)" strokeDasharray="6 5" strokeWidth="2" />
+      <text x={w - 8} y={y(paceSec) - 7} textAnchor="end" fontSize="12" fontWeight="700" fill="var(--color-gold-deep)">even pace · {Math.round(paceSec)}s a question</text>
+      {items.map((i, k) => <rect key={i.number} x={x(k) + 1.5} y={y(i.timeSec)} width={Math.max(3, bw - 3)} height={Math.max(2, h - padB - y(i.timeSec))} rx="3" fill={fill[i.outcome]} opacity={i.outcome === "skipped" ? 0.9 : 0.9}><title>{`Question ${i.number}: ${mmss(i.timeSec)} · ${i.outcome === "correct" ? "right" : i.outcome === "wrong" ? "wrong" : "blank"}`}</title></rect>)}
+      {items.map((i, k) => (i.number % 5 === 0 || i.number === 1) ? <text key={`l${i.number}`} x={x(k) + bw / 2} y={h - padB + 15} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">{i.number}</text> : null)}
+      {groups.map((g, gi) => (
+        <g key={g.name}>
+          <line x1={x(g.from) + 2} x2={x(g.to + 1) - 2} y1={h - 20} y2={h - 20} stroke="var(--color-line-strong)" strokeWidth="2" strokeLinecap="round" />
+          <text x={(x(g.from) + x(g.to + 1)) / 2} y={h - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--color-ink-muted)">{short(g.name)}</text>
+          {gi > 0 && <line x1={x(g.from)} x2={x(g.from)} y1={padT} y2={h - padB} stroke="var(--color-line-strong)" strokeDasharray="2 4" />}
+        </g>
+      ))}
     </svg>
   );
 }

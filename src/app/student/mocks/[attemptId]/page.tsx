@@ -46,6 +46,9 @@ export default async function MockResultPage({ params }: { params: Promise<{ att
   const v = verdict(a.score, a.maxScore);
   const insights = takeaways(a, pace);
   const n = a.results.length;
+  const avgSec = n ? Math.round(a.timeUsedSec / n) : 0;
+  const slowest = a.results.reduce<(typeof a.results)[number] | null>((m, x) => (!m || x.timeSec > m.timeSec ? x : m), null);
+  const overPace = a.results.filter((x) => x.timeSec > pace * 1.5).length;
 
   return (
     <PortalPage width="max-w-[1040px]">
@@ -114,7 +117,22 @@ export default async function MockResultPage({ params }: { params: Promise<{ att
         </div>
       </section>
 
-      {/* 5. where to work, and time */}
+      {/* 5. time, then where to work */}
+      <section aria-labelledby="time-went" className="rounded-2xl border border-line bg-card p-5 shadow-card sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 id="time-went" className="font-display text-[19px] font-bold text-ink">Where your time went</h2><p className="mt-0.5 text-[12.5px] text-ink-muted">One bar per question. Taller means longer. Bars above the dashed line took more than an even share of the clock.</p></div>
+          <div className="flex flex-wrap gap-4 text-[12px] font-medium text-ink-muted"><span className="inline-flex items-center gap-1.5"><i className="size-3 rounded-[4px] bg-teal" />Right</span><span className="inline-flex items-center gap-1.5"><i className="size-3 rounded-[4px] bg-oxblood" />Wrong</span><span className="inline-flex items-center gap-1.5"><i className="size-3 rounded-[4px] bg-line-strong" />Blank</span></div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[["Time used", mmss(a.timeUsedSec), `of ${r.mock.durationMin}:00`], ["Average", mmss(avgSec), `a question · pace ${mmss(pace)}`], ["Longest", slowest ? mmss(slowest.timeSec) : "-", slowest ? `Question ${slowest.number}${slowest.outcome === "wrong" ? ", wrong" : slowest.outcome === "correct" ? ", right" : ", blank"}` : ""], ["Over the pace", `${overPace}`, `question${overPace === 1 ? "" : "s"} took over ${mmss(pace * 1.5)}`]].map(([k, v, note]) => (
+            <div key={k} className="rounded-xl bg-surface p-3.5"><p className="type-label text-ink-faint">{k}</p><p className="tnum mt-1 font-display text-[22px] font-bold leading-none text-ink">{v}</p><p className="mt-1 text-[11.5px] text-ink-muted">{note}</p></div>
+          ))}
+        </div>
+        <div className="mt-4 overflow-x-auto"><div className="min-w-[640px]"><TimeBars items={a.results.map((x) => ({ number: x.number, timeSec: x.timeSec, outcome: x.outcome, section: x.sectionName }))} paceSec={pace} /></div></div>
+        {r.tabSwitches > 0 && <p className="mt-3 flex items-start gap-2 rounded-lg bg-gold-tint p-3 text-[12px] leading-[1.55] text-gold-deep"><Eye aria-hidden className="mt-0.5 size-4 flex-none" />You left the exam tab {r.tabSwitches} time{r.tabSwitches === 1 ? "" : "s"}. On the real exam that is not possible, so try to stay on the page next time.</p>}
+      </section>
+
+
       <Section cols={460}>
         <Panel title="Where to work" flush={false}>
           <p className="mb-3 text-[12px] text-ink-faint">Skill areas, weakest first.</p>
@@ -125,11 +143,6 @@ export default async function MockResultPage({ params }: { params: Promise<{ att
           </ul>
           {revisit.length > 0 && <div className="mt-4 rounded-xl bg-surface p-3"><p className="type-label text-ink-faint">Topics to revisit</p><p className="mt-1.5 flex flex-wrap gap-1.5">{revisit.map((t) => <span key={t.name} className="rounded-full border border-line bg-card px-2.5 py-1 text-[11.5px] font-medium text-ink-2">{t.name}</span>)}</p></div>}
           {strong.length > 0 && <p className="mt-3 flex items-start gap-2 text-[12px] leading-[1.55] text-ink-muted"><Medal aria-hidden className="mt-0.5 size-4 flex-none text-teal" />Fully right on: {strong.map((t) => t.name).join(", ")}.</p>}
-        </Panel>
-        <Panel title="Where your time went" flush={false}>
-          <TimeBars items={a.results.map((x) => ({ number: x.number, timeSec: x.timeSec, outcome: x.outcome }))} paceSec={pace} />
-          <div className="mt-2 flex flex-wrap gap-4 text-[11.5px] text-ink-muted"><span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-teal" />right</span><span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-oxblood" />wrong</span><span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-line-strong" />blank</span></div>
-          {r.tabSwitches > 0 && <p className="mt-3 flex items-start gap-2 rounded-lg bg-gold-tint p-3 text-[12px] leading-[1.55] text-gold-deep"><Eye aria-hidden className="mt-0.5 size-4 flex-none" />You left the exam tab {r.tabSwitches} time{r.tabSwitches === 1 ? "" : "s"}. On the real exam that is not possible, so try to stay on the page next time.</p>}
         </Panel>
       </Section>
 

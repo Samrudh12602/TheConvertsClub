@@ -26,6 +26,15 @@ export async function mockBalances(userId: string) {
 }
 
 /** What the mocks page shows a student: every published mock, their attempt (if any) and whether they can start it. */
+/** Whether this student has ever had the one-per-person SNAP test mock (bought it, or taken it), so it is not offered to them again. */
+export async function hadTestMock(userId: string): Promise<boolean> {
+  const [granted, attempted] = await Promise.all([
+    db.creditLedger.count({ where: { userId, kind: "SNAP_TEST_MOCK", type: "GRANT" } }),
+    db.mockAttempt.count({ where: { userId, mock: { isTest: true } } }),
+  ]);
+  return granted > 0 || attempted > 0;
+}
+
 export async function listMocksFor(userId: string | null, at = new Date()) {
   const mocks = await db.mock.findMany({ where: { status: "PUBLISHED" }, orderBy: [{ isTest: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }], include: { _count: { select: { questions: true } }, sections: { select: { name: true }, orderBy: { sortOrder: "asc" } } } });
   const attempts = userId ? await db.mockAttempt.findMany({ where: { userId }, select: { id: true, mockId: true, status: true, score: true, endsAt: true, submittedAt: true } }) : [];
