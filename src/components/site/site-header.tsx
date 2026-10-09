@@ -7,8 +7,17 @@ import clsx from "clsx";
 import { ButtonLink } from "@/components/ui/button";
 import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
 
+const NAV_SOON = [
+  { href: "/", label: "Home" },
+  { href: "/mocks", label: "SNAP Mocks" },
+  { href: "/packages", label: "GDPI prep · soon" },
+  { href: "/contact", label: "Contact" },
+  { href: "/become-a-mentor", label: "Become a mentor" },
+];
+
 const NAV = [
   { href: "/", label: "Home" },
+  { href: "/mocks", label: "SNAP Mocks" },
   { href: "/packages", label: "Packages" },
   { href: "/services", label: "Services" },
   { href: "/how-it-works", label: "How it works" },
@@ -18,13 +27,13 @@ const NAV = [
   { href: "/become-a-mentor", label: "Become a mentor" },
 ];
 
-export function SiteHeader({ account }: { account: { role: RoleName; home: string } | null }) {
+export function SiteHeader({ account, comingSoon = false }: { account: { role: RoleName; home: string } | null; comingSoon?: boolean }) {
   const pathname = usePathname();
   // The menu is "open" only for the page it was opened on, so navigating closes it without an effect.
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
 
-  const links = NAV.map((n) => {
+  const links = (comingSoon ? NAV_SOON : NAV).map((n) => {
     const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
     return (
       <Link
@@ -59,8 +68,8 @@ export function SiteHeader({ account }: { account: { role: RoleName; home: strin
           <ButtonLink href={account ? account.home : "/login"} variant="secondary" size="sm" className="hidden sm:inline-flex">
             {account ? PORTAL_LABEL[account.role] : "Log in"}
           </ButtonLink>
-          <ButtonLink href="/packages" size="sm">
-            See packages
+          <ButtonLink href={comingSoon ? "/mocks" : "/packages"} size="sm" data-track="header_cta">
+            {comingSoon ? "SNAP mocks" : "See packages"}
           </ButtonLink>
           <button
             type="button"

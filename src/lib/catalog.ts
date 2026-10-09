@@ -11,7 +11,8 @@ type Row = Awaited<ReturnType<typeof loadAll>>[number];
 
 async function loadAll() {
   return db.product.findMany({
-    where: { active: true },
+    // QA aid, never on the live site: lets a developer preview products that are staged but not yet switched on.
+    where: process.env.QA_SHOW_INACTIVE === "1" && process.env.VERCEL_ENV !== "production" ? {} : { active: true },
     include: { credits: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });

@@ -1,3 +1,5 @@
+import { ComingSoon } from "@/components/site/snap-sections";
+import { gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -9,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MentorsPage() {
+  if (await gdpiComingSoon()) return <ComingSoon what="Our mentors" />;
   const mentors = await getPublicMentors();
   const demo = mentors.some((m) => m.demo);
   return (

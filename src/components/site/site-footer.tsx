@@ -7,8 +7,9 @@ const GROUPS = [
   { title: "Legal", links: [{ href: "/terms", label: "Terms" }, { href: "/privacy", label: "Privacy" }, { href: "/refunds", label: "Refunds" }, { href: "/mentor-agreement", label: "Mentor Agreement" }] },
 ];
 
-export function SiteFooter({ account }: { account: { role: RoleName; home: string } | null }) {
+export function SiteFooter({ account, comingSoon = false }: { account: { role: RoleName; home: string } | null; comingSoon?: boolean }) {
   const last = account ? { href: account.home, label: PORTAL_LABEL[account.role] } : { href: "/login", label: "Log in" };
+  const groups = comingSoon ? [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, { href: "/packages", label: "GDPI prep (coming soon)" }] }, ...GROUPS.slice(1)] : [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, ...GROUPS[0].links] }, ...GROUPS.slice(1)];
   const link = "block py-1.5 text-[13px] leading-none text-dark-soft no-underline transition-colors hover:text-surface hover:no-underline";
   return (
     <footer className="relative mt-12 overflow-hidden bg-night px-5 pb-8 pt-12">
@@ -20,11 +21,11 @@ export function SiteFooter({ account }: { account: { role: RoleName; home: strin
             <span className="font-display text-base font-bold leading-tight text-surface">The Convert Club</span>
           </div>
           <p className="mt-3.5 max-w-[34ch] text-[13px] leading-[1.7] text-dark-muted">
-            GDPI prep run by people who converted last season. Real mocks, honest feedback, prices in the open.
+            {comingSoon ? "SNAP mocks on the real exam screen, with an analysis of what went wrong. GDPI prep from people who converted is coming soon." : "GDPI prep run by people who converted last season. Real mocks, honest feedback, prices in the open."}
           </p>
           <Link href={last.href} className="mt-4 inline-flex min-h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3.5 text-[12.5px] font-semibold text-surface no-underline transition-colors hover:bg-white/[0.09] hover:no-underline">{last.label} →</Link>
         </div>
-        {GROUPS.map((g) => (
+        {groups.map((g) => (
           <nav key={g.title} aria-label={g.title}>
             <p className="type-label mb-2.5 text-dark-muted">{g.title}</p>
             {g.links.map((l) => <Link key={l.href} href={l.href} className={link}>{l.label}</Link>)}

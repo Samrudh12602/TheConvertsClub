@@ -1,3 +1,5 @@
+import { ComingSoon } from "@/components/site/snap-sections";
+import { gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
@@ -14,6 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PackagesPage() {
+  if (await gdpiComingSoon()) return <ComingSoon what="Packages" />;
   const [bundles, singles] = await Promise.all([getBundles(), getSingles()]);
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-[18px] px-5 py-[26px]">

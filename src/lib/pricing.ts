@@ -19,7 +19,9 @@ export type CreditKind =
   | "STRATEGY_DIRECT"
   | "TRIAL_GUIDANCE"
   | "TRIAL_PI"
-  | "PANEL_PI";
+  | "PANEL_PI"
+  | "SNAP_MOCK"
+  | "SNAP_TEST_MOCK";
 
 export interface Credit {
   kind: CreditKind;
@@ -92,6 +94,8 @@ const LABELS: Record<CreditKind, { long: [string, string]; short: [string, strin
   TRIAL_GUIDANCE: { long: ["trial guidance call", "trial guidance calls"], short: ["Trial guidance", "Trial guidance"] },
   TRIAL_PI: { long: ["trial mock PI", "trial mock PIs"], short: ["Trial mock PI", "Trial mock PI"] },
   PANEL_PI: { long: ["Panel PI", "Panel PIs"], short: ["Panel PI", "Panel PI"] },
+  SNAP_MOCK: { long: ["SNAP mock", "SNAP mocks"], short: ["SNAP mock", "SNAP mocks"] },
+  SNAP_TEST_MOCK: { long: ["SNAP test mock", "SNAP test mocks"], short: ["SNAP test mock", "SNAP test mock"] },
 };
 
 /** "4 mock PIs" (long) or "4 Mock PI" (short chip). */

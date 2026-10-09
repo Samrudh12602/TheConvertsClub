@@ -19,6 +19,7 @@ import { loadReceiptData } from "@/server/receipt";
 import { renderReceiptPdf } from "@/server/receipt-pdf";
 import type { CreditKind } from "@/generated/prisma/client";
 
+import { isSellable } from "@/server/site-mode";
 const PANEL_PI_SLUG = "panel-pi";
 
 export class CheckoutError extends Error {}
@@ -72,6 +73,8 @@ export async function startCheckout(input: { slug: string; name: string; email: 
     if (!buyer || !(await hasAcceptedCurrent(buyer))) throw new CheckoutError("Please accept the Terms of Use, Privacy Policy and Refund Policy to continue.");
   }
   let q = await quote(input.slug, input.coupon);
+  // While GDPI prep is "coming soon" only the SNAP mock products can be bought.
+  if (!(await isSellable(q.product.slug))) throw new CheckoutError("This isn't open yet: it's coming soon. The SNAP mocks are available now.");
   if (q.product.enrolledOnly) {
     // Additional PI: only for enrolled students, bought from inside the portal.
     if (!buyer || !(await db.enrollment.count({ where: { userId: buyer.id, status: "ACTIVE" } }))) throw new CheckoutError("This is only for enrolled students. Log in to buy it.");
@@ -85,12 +88,12 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   }
   const email = parsed.data.email.toLowerCase();
   // Trial offers (Rs 10 / Rs 50) are a first taste: one per person, per trial, counted by email and by phone.
-  if (q.product.slug.startsWith("trial-")) {
+  if (q.product.slug.startsWith("trial-") || q.product.slug === "snap-test-mock") {
     const phoneDigits = normalizeIndianPhone(parsed.data.phone);
     const used = await db.order.count({ where: { product: { slug: q.product.slug }, status: { in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] }, OR: [{ guestEmail: { equals: email, mode: "insensitive" } }, ...(phoneDigits ? [{ guestPhone: { endsWith: phoneDigits.slice(-10) } }] : [])] } });
     if (used > 0) {
       await audit({ actorId: buyer?.id ?? null, action: "checkout.trial_blocked", entity: "Product", entityId: email, after: { slug: q.product.slug }, ip: input.ip ?? null });
-      throw new CheckoutError("You've already used this trial. Pick one of the full sessions instead.");
+      throw new CheckoutError(q.product.slug === "snap-test-mock" ? "You've already bought the SNAP test mock. The 5-mock and 10-mock packs are open to you." : "You've already used this trial. Pick one of the full sessions instead.");
     }
   }
   if (q.couponId) {
@@ -180,11 +183,12 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
   if (result.kind === "fulfilled") {
     // Best-effort side effects after the money and credits are safely committed.
     try {
-      const link = await createLoginLink(result.user.email, "/student/onboarding");
+      const snap = result.product.slug.startsWith("snap-");
+      const link = await createLoginLink(result.user.email, snap ? "/student/mocks" : "/student/onboarding");
       const receipt = await loadReceiptData(result.orderId);
       const attachments = receipt ? [{ filename: `receipt-${result.orderId}.pdf`, content: await renderReceiptPdf(receipt), contentType: "application/pdf" }] : undefined;
       await sendEmail({
-        template: "welcome", to: result.user.email, url: link, vars: { package: result.product.name },
+        template: snap ? "welcome_snap" : "welcome", to: result.user.email, url: link, vars: { package: result.product.name },
         details: [{ k: "Package", v: result.product.name }, { k: "Paid", v: formatPaise(result.amountPaise) }, { k: "Credits", v: result.product.slug === PANEL_UPGRADE_SLUG ? (result.upgradeFailed ? "Nothing changed yet. We'll sort it out" : "1 mock PI is now a Panel PI") : result.product.credits.map((c) => describeCredit(c, "short")).join(" · ") }],
         attachments,
       });

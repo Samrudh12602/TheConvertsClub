@@ -54,6 +54,13 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
           "A credit is “used” when a session or review it was reserved for is completed, when you cancel late or do not attend, or when you submit work for review.",
           "Coupon and referral codes are single-use per order, cannot be combined unless stated, have no cash value, and may be refused, cancelled or reversed by us if they are used in a way that is fraudulent, abusive or against their purpose. A mentor may not use their own referral code.",
         ] },
+        { heading: "SNAP mock tests", items: [
+          "A SNAP mock is a practice paper written by The Convert Club in the SNAP format. You can take each mock once, in one sitting. The clock is kept on our server and the paper closes and is submitted when it runs out. A mock credit is used when you begin the mock.",
+          "Scores, accuracy, topic and “what went wrong” analysis, and any percentile are for practice. They are a guide to where you can improve, not a prediction of, or a promise about, your result in the real exam. A percentile is shown only once enough students have taken the mock for it to be meaningful.",
+          "SNAP is conducted by Symbiosis International (Deemed University). The Convert Club is independent and is not affiliated with Symbiosis.",
+          "The papers, questions, answer keys, solutions and analysis reports are our copyright and are licensed to you for your own personal study. You must not copy, photograph, record, publish, share, sell or otherwise pass them on, or share your account. Reports carry your name and we may use that to trace a leak. We may suspend an account that does this, without refund.",
+          "If a mock cannot be completed because of a fault on our side, we may reopen the attempt or give the credit back, at our discretion. Refunds follow our Refund Policy: an unused credit within the refund window can be refunded; a mock you have begun cannot.",
+        ] },
         { heading: "Booking, rescheduling, cancelling and no-shows", items: [
           `You can reschedule or cancel a booked session free of charge up to ${p.cancelNoticeHours} hours before it starts. You may reschedule a single session up to ${p.maxReschedules} times.`,
           `If you cancel inside the ${p.cancelNoticeHours}-hour notice period, or do not attend, or join so late that the session cannot reasonably be held, the credit is treated as used.`,

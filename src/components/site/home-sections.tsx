@@ -291,15 +291,15 @@ export function FaqTeaser({ items }: { items: { q: string; a: string }[] }) {
 
 /* ----------------------------------------------------------- closing CTA */
 
-export function FinalCta() {
+export function FinalCta({ snap = false }: { snap?: boolean }) {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-night px-6 py-12 text-center shadow-pop ring-1 ring-white/10 sm:px-10">
       <span aria-hidden className="absolute left-1/2 top-0 size-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-oxblood/50 blur-3xl" />
       <Reveal className="relative mx-auto max-w-[560px]">
-        <h2 className="type-display text-surface">Your call is coming. Be the one who&apos;s already done it ten times.</h2>
-        <p className="mt-4 text-[15px] leading-[1.7] text-dark-soft">Start with one mock, or take the whole season.</p>
+        <h2 className="type-display text-surface">{snap ? "SNAP is in December. Find your gaps while there's still time." : "Your call is coming. Be the one who's already done it ten times."}</h2>
+        <p className="mt-4 text-[15px] leading-[1.7] text-dark-soft">{snap ? "Start with the ₹50 test mock and see the analysis for yourself." : "Start with one mock, or take the whole season."}</p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/packages" variant="onDark" size="lg" className="px-6">See packages <ArrowRight className="size-4" /></ButtonLink>
+          <ButtonLink href={snap ? "/mocks#packs" : "/packages"} variant="onDark" size="lg" className="px-6">{snap ? "Get the test mock" : "See packages"} <ArrowRight className="size-4" /></ButtonLink>
           <ButtonLink href="/contact" variant="secondary" size="lg" className="border-white/15 bg-white/10 text-surface hover:bg-white/15 hover:text-surface">Talk to us</ButtonLink>
         </div>
       </Reveal>

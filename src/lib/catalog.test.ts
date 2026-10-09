@@ -5,7 +5,7 @@ import { describeCredit, priceView } from "./pricing";
 const bySlug = (s: string) => PRODUCTS.find((p) => p.slug === s)!;
 
 describe("seed catalog matches the spec", () => {
-  it("has the fifteen products at the specified prices", () => {
+  it("has the eighteen products at the specified prices", () => {
     expect(Object.fromEntries(PRODUCTS.map((p) => [p.slug, p.pricePaise / 100]))).toEqual({
       "call-convert-plus": 3999,
       "call-convert": 2599,
@@ -18,6 +18,9 @@ describe("seed catalog matches the spec", () => {
       "quick-guidance": 299,
       "pi-with-samrudh": 699,
       "strategy-with-samrudh": 349,
+      "snap-test-mock": 50,
+      "snap-mocks-5": 499,
+      "snap-mocks-10": 899,
       "panel-pi": 999,
       "panel-pi-upgrade": 199,
       "trial-guidance": 10,

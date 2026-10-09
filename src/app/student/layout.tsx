@@ -8,6 +8,7 @@ import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
 import { studentPortal } from "@/lib/portal-nav";
 import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
+import { MOCK_ONLY_NAV, isMockOnly } from "@/server/student-kind";
 
 export const metadata: Metadata = { title: { default: "Student portal", template: "%s · The Convert Club" }, robots: { index: false, follow: false } };
 
@@ -27,7 +28,10 @@ export default async function StudentLayout({ children }: { children: React.Reac
   });
   const days = nextCall?.interviewDate ? Math.ceil((nextCall.interviewDate.getTime() - nowMs()) / 86_400_000) : null;
   const onboarded = Boolean(user.studentProfile?.onboardedAt);
-  const navGroups = onboarded ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => i.href !== "/student/onboarding") })) : studentPortal.groups;
+  const mockOnly = await isMockOnly(db, user.id);
+  const navGroups = mockOnly
+    ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => MOCK_ONLY_NAV.includes(i.href)) }))
+    : onboarded ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => i.href !== "/student/onboarding") })) : studentPortal.groups;
 
   return (
     <PortalFrame

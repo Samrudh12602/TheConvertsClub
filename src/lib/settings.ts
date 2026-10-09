@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS = {
   adminAccrues: false,
   /** Show demo accounts, demo mentors and demo rows (all fake). Off for real use; Admin can switch it on to test. */
   demoEnabled: false,
+  /** GDPI interview prep (packages, sessions, trials, panel PI) is shown as "coming soon" and can't be bought while this is on. SNAP mocks are unaffected. */
+  gdpiComingSoon: true,
   seasonStart: "2026-12-20",
   seasonEnd: "2027-03-31",
 };

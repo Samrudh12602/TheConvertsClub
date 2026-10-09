@@ -57,6 +57,10 @@ enum CreditKind {
   TRIAL_PI
   /// A panel mock: the owner plus two other mentors interview together.
   PANEL_PI
+  /// One SNAP full-length mock (paid series).
+  SNAP_MOCK
+  /// The one SNAP test mock (the cheap first look).
+  SNAP_TEST_MOCK
 }
 
 enum OrderStatus {
@@ -246,6 +250,7 @@ model User {
   ratings          SessionRating[]
   auditLogs        AuditLog[]
   legalAcceptances LegalAcceptance[]
+  mockAttempts     MockAttempt[]
 
   @@index([role])
 }
@@ -987,4 +992,113 @@ model SessionPanelist {
 
   @@unique([sessionId, mentorId])
   @@index([mentorId])
+}
+
+// ───────────── SNAP mocks ─────────────
+
+enum MockStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+}
+
+/// A full-length online mock. Questions and answers live only on the server; the exam page never receives the answer key.
+model Mock {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  exam        String         @default("SNAP")
+  description String?
+  durationMin Int            @default(60)
+  /// The cheap "test mock": taken with a test-mock credit instead of a series credit.
+  isTest      Boolean        @default(false)
+  status      MockStatus     @default(DRAFT)
+  /// Students can take it from this moment (null = as soon as it is published).
+  releaseAt   DateTime?
+  sortOrder   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  sections    MockSection[]
+  questions   MockQuestion[]
+  attempts    MockAttempt[]
+}
+
+model MockSection {
+  id        String         @id @default(cuid())
+  mockId    String
+  name      String
+  sortOrder Int            @default(0)
+  mock      Mock           @relation(fields: [mockId], references: [id], onDelete: Cascade)
+  questions MockQuestion[]
+
+  @@index([mockId])
+}
+
+model MockQuestion {
+  id          String         @id @default(cuid())
+  mockId      String
+  sectionId   String
+  /// 1-based number across the whole paper.
+  number      Int
+  stem        String
+  /// A shared passage or data set: { lines: string[], table?: string[][] }.
+  context     Json?
+  options     String[]
+  /// Index (0-3) of the right option. Server only.
+  correct     Int
+  /// The worked solution. Server only until the attempt is submitted.
+  explanation String?
+  topic       String?
+  marks       Float          @default(1)
+  negative    Float          @default(0.25)
+  mock        Mock           @relation(fields: [mockId], references: [id], onDelete: Cascade)
+  section     MockSection    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  responses   MockResponse[]
+
+  @@unique([mockId, number])
+  @@index([sectionId])
+}
+
+model MockAttempt {
+  id           String         @id @default(cuid())
+  userId       String
+  mockId       String
+  status       AttemptStatus  @default(IN_PROGRESS)
+  startedAt    DateTime       @default(now())
+  /// Server-set deadline: startedAt + the mock's duration. The timer on the page only mirrors it.
+  endsAt       DateTime
+  submittedAt  DateTime?
+  tabSwitches  Int            @default(0)
+  score        Float?
+  correctCount Int?
+  wrongCount   Int?
+  skippedCount Int?
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mock         Mock           @relation(fields: [mockId], references: [id])
+  responses    MockResponse[]
+
+  /// One attempt per student per mock.
+  @@unique([userId, mockId])
+  @@index([mockId, status])
+}
+
+model MockResponse {
+  id         String       @id @default(cuid())
+  attemptId  String
+  questionId String
+  choice     Int?
+  marked     Boolean      @default(false)
+  visited    Boolean      @default(true)
+  timeSec    Int          @default(0)
+  /// How many times the saved answer changed (second-guessing shows up in the analysis).
+  changes    Int          @default(0)
+  savedAt    DateTime     @default(now())
+  attempt    MockAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   MockQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
 }

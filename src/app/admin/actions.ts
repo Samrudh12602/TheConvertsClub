@@ -367,7 +367,7 @@ const settingsSchema = z.object({
   refundWindowHours: z.coerce.number().int().min(1).max(168), recordingRetentionDays: z.coerce.number().int().min(0).max(365),
   creditValidityDays: z.coerce.number().int().min(0).max(1095), creditExpiryWarnDays: z.coerce.number().int().min(0).max(180),
   gdCapacity: z.coerce.number().int().min(2).max(30), feedbackDueHours: z.coerce.number().int().min(1).max(168),
-  gstEnabled: z.boolean(), adminAccrues: z.boolean(), demoEnabled: z.boolean(), minLeadHours: z.coerce.number().int().min(0).max(48),
+  gstEnabled: z.boolean(), adminAccrues: z.boolean(), demoEnabled: z.boolean(), gdpiComingSoon: z.boolean(), minLeadHours: z.coerce.number().int().min(0).max(48),
   bonusPeriod: z.enum(["SEASON", "MONTH"]), seasonStart: z.string(), seasonEnd: z.string(),
   referralBonusEvery: z.coerce.number().int().min(1).max(1000), referralBonusPercent: z.coerce.number().min(0).max(50),
   seniorRequiredFocuses: z.array(z.string()), mockCounts: z.array(z.string()),
@@ -537,5 +537,26 @@ export async function adminBookSlotAction(studentId: string, slotId: string, typ
     await adminBookSlot(actor, studentId, slotId, t, t === "MOCK_PI" ? bookFocusSchema.parse(focus) : null);
     refreshAll();
     return { ok: true, message: "Booked. The student and the mentor have been emailed." };
+  } catch (e) { return fail(e); }
+}
+
+// ───────────── SNAP mocks ─────────────
+
+const mockSchema = z.object({ id: z.string().min(1).max(40), status: z.enum(["DRAFT", "PUBLISHED"]), releaseAt: z.string().max(40).nullable() });
+
+/** Publish or hide a mock and set when students can start it. Attempts already made are never touched. */
+export async function setMockStatusAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mocks");
+    const p = mockSchema.parse(input);
+    const at = p.releaseAt ? new Date(p.releaseAt) : null;
+    if (at && Number.isNaN(at.getTime())) throw new AdminError("That release time isn't valid.");
+    const m = await db.mock.findUnique({ where: { id: p.id }, include: { _count: { select: { questions: true } } } });
+    if (!m) throw new AdminError("Mock not found.");
+    if (p.status === "PUBLISHED" && m._count.questions === 0) throw new AdminError("This mock has no questions yet.");
+    await db.mock.update({ where: { id: p.id }, data: { status: p.status, releaseAt: at } });
+    await audit({ actorId: actor.id, action: "mock.set_status", entity: "Mock", entityId: p.id, after: { status: p.status, releaseAt: p.releaseAt } });
+    revalidatePath("/admin/mocks"); revalidatePath("/mocks"); revalidatePath("/student/mocks");
+    return { ok: true, message: p.status === "PUBLISHED" ? (at && at > new Date() ? "Published; opens at the time you set." : "Published. Students can start it now.") : "Hidden from students." };
   } catch (e) { return fail(e); }
 }

@@ -547,6 +547,29 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     checkout and in the portal's Top up); the Panel PI upgrade is for Call Convert and Call Convert Plus students. The Panel
     PI (₹999) is promoted, on the dashboard and in Payments, to students whose only purchase is the single Mock PI.
 
+54. **SNAP 2026 mocks, a second business (owner's instructions).** Full-length online mocks in the SNAP pattern: 60 questions,
+    60 minutes, +1 / −0.25, four sections (the owner's paper has General English 10, Analytical & Logical Reasoning 20, Quant/DI/DS
+    20, Ethics 10). Products: SNAP 2026 test mock ₹50 (one per person, checked by email and phone), 5-pack ₹499, 10-pack ₹899
+    (credits `SNAP_TEST_MOCK` / `SNAP_MOCK`; a credit is spent when the student presses begin). Public page `/mocks`, a SNAP
+    section on the home page, a "SNAP Mocks" item in the student portal, and `/admin/mocks` to publish or hide a mock and set when
+    it opens. The exam (`/exam/<slug>`) copies the real exam's screen (section tabs, palette with the real symbols, Mark for
+    Review, Save & Next, Clear, server clock, calculator, text size and magnifier). The paper is sent to the browser only after the
+    clock starts; the answer key and solutions never leave the server until the attempt is submitted; every save is checked against
+    a server deadline; leaving the tab is counted. After submitting: score, accuracy, section / skill-area / topic results, a
+    "what went wrong" breakdown (rushed, concept gap, second-guessing, never reached, time lost, left on purpose; inferred from time
+    and answer changes, worded as a guide), time per question, every solution, and a PDF stamped with the student's name. A
+    percentile and per-question cohort figures appear only once enough students have attempted (30 / 8), never from a handful.
+    Papers are imported from the owner's .docx by `scripts/mock-docx-to-json.py` and `scripts/import-mock.ts`; the papers are not
+    committed. The test mock is Mock 11; its 60 answers were checked independently against the solutions. Terms gained a
+    "SNAP mock tests" section (own-copyright, personal use, practice-only, not affiliated with Symbiosis) and the legal version
+    was bumped, so every user re-accepts once. A student who only bought mocks sees a reduced portal and skips GDPI onboarding.
+
+55. **GDPI prep shown as "coming soon" (owner's instruction), with a switch.** Setting `gdpiComingSoon` (Admin > Settings > Public
+    site), ON at launch. While ON: the public site's home page is the SNAP mocks; Packages, Services, How it works, Mentors, Results
+    and FAQ show a "coming soon" page; the header and footer switch to SNAP-first links; every non-SNAP product is refused at checkout
+    and hidden from the portal's top-up and promos. Existing students keep their sessions, credits and portal. Turning it OFF brings
+    the whole GDPI offering back, with a SNAP band on the home page. Become a mentor, Contact and the legal pages stay open.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

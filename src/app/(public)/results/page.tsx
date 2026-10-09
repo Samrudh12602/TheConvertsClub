@@ -1,3 +1,5 @@
+import { ComingSoon } from "@/components/site/snap-sections";
+import { gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card, DarkPanel } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -6,6 +8,7 @@ import { getResults } from "@/lib/content";
 export const metadata: Metadata = { title: "Results", description: "What last season's students converted." };
 
 export default async function ResultsPage() {
+  if (await gdpiComingSoon()) return <ComingSoon what="Results" />;
   const results = await getResults();
   return (
     <div className="mx-auto flex max-w-[1000px] flex-col gap-4 px-5 py-[26px]">

@@ -1,3 +1,5 @@
+import { ComingSoon } from "@/components/site/snap-sections";
+import { gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { steps as getSteps } from "@/lib/content";
@@ -8,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HowItWorksPage() {
+  if (await gdpiComingSoon()) return <ComingSoon what="How GDPI prep works" />;
   const steps = await getSteps();
   return (
     <div className="mx-auto flex max-w-[840px] flex-col gap-3.5 px-5 py-[26px]">

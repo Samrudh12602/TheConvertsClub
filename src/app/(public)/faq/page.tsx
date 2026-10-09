@@ -1,3 +1,5 @@
+import { ComingSoon } from "@/components/site/snap-sections";
+import { gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { faqs as getFaqs } from "@/lib/content";
@@ -5,6 +7,7 @@ import { faqs as getFaqs } from "@/lib/content";
 export const metadata: Metadata = { title: "FAQ", description: "Mentors, booking, rescheduling, recordings, refunds and privacy." };
 
 export default async function FaqPage() {
+  if (await gdpiComingSoon()) return <ComingSoon what="The GDPI FAQ" />;
   const faqs = await getFaqs();
   return (
     <div className="mx-auto flex max-w-[780px] flex-col gap-2.5 px-5 py-[26px]">

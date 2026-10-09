@@ -44,6 +44,7 @@ export const studentPortal: PortalConfig = {
     {
       items: [
         { href: "/student", label: "Dashboard", title: "Dashboard", sub: "Everything in IST" },
+        { href: "/student/mocks", label: "SNAP Mocks", title: "SNAP Mocks", sub: "Take a full mock, see what went wrong", match: ["/student/mocks"] },
         { href: "/student/book", label: "Book a session", title: "Book a session", sub: "Slots are released by mentors each Sunday" },
         { href: "/student/gd", label: "GD / GE batches", title: "GD / GE batches", sub: `Group sessions, ${s.gdCapacity} seats each` },
         { href: "/student/sessions", label: "My sessions", title: "My sessions", sub: "Past and upcoming" },
@@ -59,7 +60,10 @@ export const studentPortal: PortalConfig = {
       ],
     },
   ],
-  details: [{ pattern: /^\/student\/sessions\/[^/]+$/, title: "Feedback report", sub: "Session details and feedback" }],
+  details: [
+    { pattern: /^\/student\/sessions\/[^/]+$/, title: "Feedback report", sub: "Session details and feedback" },
+    { pattern: /^\/student\/mocks\/[^/]+$/, title: "Mock analysis", sub: "Your score, what went wrong and the solutions" },
+  ],
 };
 
 export const mentorPortal: PortalConfig = {
@@ -110,6 +114,7 @@ export const adminPortal: PortalConfig = {
       label: "Delivery",
       items: [
         { href: "/admin/scheduler", label: "Schedule", title: "Schedule", sub: "Delivery", match: ["/admin/calendar"] },
+        { href: "/admin/mocks", label: "SNAP mocks", title: "SNAP mocks", sub: "Delivery" },
         { href: "/admin/sessions", label: "Sessions", title: "All sessions", sub: "Delivery" },
         { href: "/admin/reviews", label: "Reviews", title: "WAT & SOP reviews", sub: "Delivery" },
       ],

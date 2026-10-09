@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isSellable } from "@/server/site-mode";
 import { redirect } from "next/navigation";
 import { CheckoutView, type CheckoutSummary } from "@/components/site/checkout-view";
 import { getProduct } from "@/lib/catalog";
@@ -22,6 +23,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   // types the URL directly — only from inside the student portal, and only once actually enrolled.
   // Login alone doesn't unlock it, so this never suggests it does.
   if (product.enrolledOnly) redirect("/packages");
+  if (!(await isSellable(product.slug))) redirect("/mocks");
 
   const policy = await getPolicy();
   const v = priceView(product);

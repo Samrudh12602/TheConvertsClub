@@ -16,6 +16,9 @@ import { getProduct } from "@/lib/catalog";
 import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
 import { isSinglePiStudent } from "@/server/eligibility";
+import { listMocksFor } from "@/server/mocks";
+import { gdpiComingSoon } from "@/server/site-mode";
+import { isMockOnly } from "@/server/student-kind";
 import { paymentsConfigured } from "@/server/razorpay";
 import { requireStudent } from "@/server/session";
 
@@ -25,7 +28,8 @@ const firstSentence = (s?: string | null) => (s ?? "").split(/(?<=[.!?])\s/)[0];
 export default async function StudentDashboard() {
   const user = await requireStudent();
   if (!user.studentProfile?.onboardedAt && (user.studentProfile?.onboardingStep ?? 0) === 0) {
-    const bought = await db.enrollment.count({ where: { userId: user.id } });
+    // Only a GDPI purchase needs the interview-prep onboarding; someone who only bought SNAP mocks doesn't.
+    const bought = await db.enrollment.count({ where: { userId: user.id, product: { slug: { not: { startsWith: "snap-" } } } } });
     if (bought) redirect("/student/onboarding");
   }
   const now = new Date();
@@ -36,6 +40,11 @@ export default async function StudentDashboard() {
     getCreditSummary(db, user.id),
   ]);
   const bookable = (["PI", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "GD"] as const).reduce((n, k) => n + (creditSummary[k]?.available ?? 0), 0);
+  const [soon, mockOnly, snap] = await Promise.all([gdpiComingSoon(), isMockOnly(db, user.id), listMocksFor(user.id)]);
+  const inProgress = snap.mocks.find((m) => m.attempt?.status === "IN_PROGRESS");
+  const startable = snap.mocks.find((m) => m.canStart);
+  const lastDone = [...snap.mocks].reverse().find((m) => m.attempt?.status === "SUBMITTED");
+  const mockLeft = snap.balances.series + snap.balances.test;
   // A student whose only purchase is the single Mock PI is the one most worth showing the Panel PI to.
   const [promoPanel, panelProduct] = await Promise.all([isSinglePiStudent(db, user.id), getProduct("panel-pi")]);
   const rings = CREDIT_KIND_ORDER.filter((k) => (creditSummary[k]?.granted ?? 0) > 0).map((k) => ({ kind: k, ...creditSummary[k]! }));
@@ -46,8 +55,23 @@ export default async function StudentDashboard() {
 
   return (
     <PortalPage>
-      {enrolledCount > 0 && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
-      {next ? (
+      {enrolledCount > 0 && !mockOnly && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
+      {(mockOnly || (soon && enrolledCount === 0 && !next)) ? (
+        <section className="relative overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5" aria-label="SNAP mocks">
+          <span aria-hidden className="absolute -right-12 -top-12 size-44 rounded-full bg-oxblood/40 blur-3xl" />
+          <div className="relative flex flex-wrap items-center gap-5">
+            <div className="min-w-[240px] flex-[1_1_360px]">
+              <p className="type-eyebrow text-gold">SNAP 2026 mocks</p>
+              <h2 className="mt-2 font-display text-[24px] font-bold leading-[1.2]">{inProgress ? "Your mock is still running" : startable ? `${mockLeft} mock${mockLeft === 1 ? "" : "s"} ready for you` : lastDone ? "See what went wrong in your last mock" : "Take the SNAP test mock for ₹50"}</h2>
+              <p className="mt-2 max-w-[56ch] text-[13px] leading-[1.65] text-dark-soft">{inProgress ? "Pick up where you left off. The clock has been running since you started." : startable ? "Sit it in one go on the real exam screen, then get the full analysis and solutions." : lastDone ? "Your score, where you lost marks, and a solution for every question." : "One full-length mock with the complete analysis, so you can see the quality for yourself."}</p>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {inProgress ? <ButtonLink href={`/exam/${inProgress.slug}`} variant="onDark">Continue the exam</ButtonLink> : startable ? <ButtonLink href={`/exam/${startable.slug}`} variant="onDark">Start {startable.title}</ButtonLink> : lastDone?.attempt ? <ButtonLink href={`/student/mocks/${lastDone.attempt.id}`} variant="onDark">Open the analysis</ButtonLink> : null}
+              <ButtonLink href="/student/mocks" variant="secondary" className="border-white/15 bg-white/10 text-surface hover:bg-white/15 hover:text-surface">All mocks</ButtonLink>
+            </div>
+          </div>
+        </section>
+      ) : next ? (
         <div className="flex flex-wrap items-center gap-5 rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <div className="min-w-0 flex-[1_1_260px]">
             <p className="type-eyebrow text-dark-muted">Next up · {relative(next.startsAt!)}</p>
@@ -67,7 +91,7 @@ export default async function StudentDashboard() {
             {[...prep, "Keep your resume open in another tab."].slice(0, 3).map((p) => <p key={p} className="mt-2 text-[12.5px] leading-normal text-[#D5CEC5]">{p}</p>)}
           </div>
         </div>
-      ) : enrolledCount === 0 ? (
+      ) : enrolledCount === 0 && !soon ? (
         <div className="rounded-2xl bg-night p-5 shadow-lift ring-1 ring-white/5">
           <p className="type-eyebrow text-dark-muted">Not enrolled yet</p>
           <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2] text-surface">Pick a plan to get started</h2>
@@ -83,7 +107,7 @@ export default async function StudentDashboard() {
         </div>
       )}
 
-      {promoPanel && panelProduct && (
+      {promoPanel && panelProduct && !soon && (
         <section className="relative overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5" aria-label="Panel PI">
           <span aria-hidden className="absolute -right-12 -top-12 size-44 rounded-full bg-oxblood/40 blur-3xl" />
           <div className="relative flex flex-wrap items-center gap-5">

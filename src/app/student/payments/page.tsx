@@ -10,6 +10,7 @@ import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
 import { getReferral, referralPrice } from "@/server/referral";
 import { Users } from "lucide-react";
+import { gdpiComingSoon } from "@/server/site-mode";
 import { ADDITIONAL_PI_SLUG, canBuyAdditionalPi } from "@/server/eligibility";
 import { NOT_ON_PLAN, PANEL_UPGRADE_MAX, PANEL_UPGRADE_SLUG, panelUpgradeStatus } from "@/server/panel-upgrade";
 import { paymentsConfigured } from "@/server/razorpay";
@@ -37,7 +38,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // from /services, same as a public visitor. Everything shows at MRP; a mentor's referral code (or
   // any other coupon) is what brings the price down, entered on the buy button below.
   const mayBuyAdditionalPi = enrolled > 0 && (await canBuyAdditionalPi(db, user.id));
-  const extra = enrolled > 0 ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin) && !p.slug.startsWith("trial-") && p.slug !== PANEL_UPGRADE_SLUG && (p.slug !== ADDITIONAL_PI_SLUG || mayBuyAdditionalPi)) : [];
+  const soon = await gdpiComingSoon();
+  const extra = enrolled > 0 && !soon ? products.filter((p) => p.kind === "SINGLE" && (p.enrolledOnly || p.withAdmin) && !p.slug.startsWith("trial-") && p.slug !== PANEL_UPGRADE_SLUG && (p.slug !== ADDITIONAL_PI_SLUG || mayBuyAdditionalPi)) : [];
   // Panel PI: buy it outright, or (Call Convert Plus only) swap one of your unused PIs for a Panel PI for Rs 199.
   const panel = products.find((p) => p.slug === "panel-pi");
   const upgrade = products.find((p) => p.slug === PANEL_UPGRADE_SLUG);
@@ -48,7 +50,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
     <PortalPage width="max-w-[820px]">
       {sp.paid && <Flash tone="green">Payment received. Your credits are on the way and will appear in the sidebar in a moment.</Flash>}
       <CreditBreakdown summary={creditSummary} enrollments={enrollments} />
-      {enrolled > 0 && panel && (
+      {enrolled > 0 && panel && !soon && (
         <section className="overflow-hidden rounded-2xl bg-night p-5 text-white shadow-lift ring-1 ring-white/5" aria-label="Panel PI">
           <div className="flex flex-wrap items-start gap-4">
             <span className="flex size-11 flex-none items-center justify-center rounded-xl bg-white/10 text-gold"><Users className="size-5" aria-hidden /></span>

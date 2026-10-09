@@ -65,6 +65,12 @@ export function SettingsForm({ initial }: { initial: Settings }) {
       </fieldset>
 
       <fieldset className="rounded-2xl border border-line bg-card p-5 shadow-card">
+        <legend className="type-label rounded-full bg-oxblood-tint px-2.5 py-1 text-oxblood">Public site</legend>
+        <label className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-2"><input type="checkbox" checked={v.gdpiComingSoon} onChange={(e) => setV({ ...v, gdpiComingSoon: e.target.checked })} />GDPI prep is &ldquo;coming soon&rdquo; (packages, mock PIs, GD, WAT/SOP, trials, Panel PI)</label>
+        <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">While this is ON, the public site shows SNAP Mocks and a &ldquo;coming soon&rdquo; page in place of the GDPI offering, and the GDPI products can&apos;t be bought. Existing students keep their sessions and credits. <b>Turn it OFF to bring the whole GDPI offering back.</b> It takes up to a minute to apply.</p>
+      </fieldset>
+
+      <fieldset className="rounded-2xl border border-line bg-card p-5 shadow-card">
         <legend className="type-label rounded-full bg-oxblood-tint px-2.5 py-1 text-oxblood">Testing</legend>
         <label className="flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" checked={v.demoEnabled} onChange={(e) => setV({ ...v, demoEnabled: e.target.checked })} />Demo mode (demo logins, demo mentors on the public site, and demo rows in this portal)</label>
         <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">Keep this OFF for real use. The demo data stays stored; this only decides whether anyone can see or sign in to it. Takes up to a minute to apply.</p>

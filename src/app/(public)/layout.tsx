@@ -2,10 +2,12 @@ import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteAnalytics } from "@/components/site/analytics";
 import { SiteFooter } from "@/components/site/site-footer";
+import { gdpiComingSoon } from "@/server/site-mode";
 import { roleHome } from "@/lib/roles";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
+  const comingSoon = await gdpiComingSoon();
   const account = session?.user ? { role: session.user.role, home: roleHome(session.user.role) } : null;
   return (
     <div className="min-h-screen bg-paper text-ink">
@@ -15,9 +17,9 @@ export default async function PublicLayout({ children }: { children: React.React
       >
         Skip to content
       </a>
-      <SiteHeader account={account} />
+      <SiteHeader account={account} comingSoon={comingSoon} />
       <main id="main">{children}</main>
-      <SiteFooter account={account} />
+      <SiteFooter account={account} comingSoon={comingSoon} />
       <SiteAnalytics />
     </div>
   );
