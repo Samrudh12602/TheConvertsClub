@@ -1,10 +1,11 @@
 import { ComingSoon } from "@/components/site/snap-sections";
-import { gdpiComingSoon } from "@/server/site-mode";
+import { gatedMetadata, gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { faqs as getFaqs } from "@/lib/content";
 
-export const metadata: Metadata = { title: "FAQ", description: "Mentors, booking, rescheduling, recordings, refunds and privacy." };
+export const generateMetadata = (): Promise<Metadata> => gatedMetadata({ title: "FAQ", description: "Mentors, booking, rescheduling, recordings, refunds and privacy." });
+export const dynamic = "force-dynamic";
 
 export default async function FaqPage() {
   if (await gdpiComingSoon()) return <ComingSoon what="The GDPI FAQ" />;

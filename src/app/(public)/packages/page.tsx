@@ -1,5 +1,5 @@
 import { ComingSoon } from "@/components/site/snap-sections";
-import { gdpiComingSoon } from "@/server/site-mode";
+import { gatedMetadata, gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
@@ -8,12 +8,12 @@ import { EnrolledOnlyNote, Price, buyHref, buyLabel, isPubliclyPurchasable } fro
 import { ReferralBanner } from "@/components/site/referral-banner";
 import { getBundles, getSingles } from "@/lib/catalog";
 
-export const metadata: Metadata = {
+export const generateMetadata = (): Promise<Metadata> => gatedMetadata({
   title: "Packages",
   description: "Season packages for GDPI prep, or buy a single mock, GD, WAT or SOP review.",
-};
-// Reads the visitor's referral cookie to show mentor-code prices, so this page renders per request.
+});
 export const dynamic = "force-dynamic";
+// Reads the visitor's referral cookie to show mentor-code prices, so this page renders per request.
 
 export default async function PackagesPage() {
   if (await gdpiComingSoon()) return <ComingSoon what="Packages" />;

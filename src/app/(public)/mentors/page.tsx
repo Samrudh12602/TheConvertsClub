@@ -1,14 +1,15 @@
 import { ComingSoon } from "@/components/site/snap-sections";
-import { gdpiComingSoon } from "@/server/site-mode";
+import { gatedMetadata, gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { getPublicMentors } from "@/lib/content";
 
-export const metadata: Metadata = {
+export const generateMetadata = (): Promise<Metadata> => gatedMetadata({
   title: "Mentors",
   description: "Everyone here converted a call in the last two seasons.",
-};
+});
+export const dynamic = "force-dynamic";
 
 export default async function MentorsPage() {
   if (await gdpiComingSoon()) return <ComingSoon what="Our mentors" />;

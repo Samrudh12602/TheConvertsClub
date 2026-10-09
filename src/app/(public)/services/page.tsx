@@ -1,14 +1,14 @@
 import { ComingSoon } from "@/components/site/snap-sections";
-import { gdpiComingSoon } from "@/server/site-mode";
+import { gatedMetadata, gdpiComingSoon } from "@/server/site-mode";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { getServices } from "@/lib/content";
 
-export const metadata: Metadata = {
+export const generateMetadata = (): Promise<Metadata> => gatedMetadata({
   title: "Services",
   description: "Mock PIs, GD/GE, WAT evaluation, SOP review, strategy calls and quick guidance.",
-};
-export const revalidate = 3600;
+});
+export const dynamic = "force-dynamic";
 
 export default async function ServicesPage() {
   if (await gdpiComingSoon()) return <ComingSoon what="Services" />;
