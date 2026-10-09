@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ db: {} }));
 import { mentorFilter } from "./booking";
-import { isAdminOnly } from "./scheduling";
+import { isAdminOnly, slotKindFilter } from "./scheduling";
 import { referralPrice, type Referral } from "./referral";
 import type { CatalogProduct } from "@/lib/pricing";
 
@@ -44,5 +44,17 @@ describe("free time versus the special paid hours", async () => {
   it("keeps all three owner-only types owner-only, including the new strategy call", () => {
     expect(["STRATEGY_CALL", "PI_DIRECT", "STRATEGY_DIRECT"].every(isAdminOnly)).toBe(true);
     expect(mentorFilter("STRATEGY_DIRECT", false)).toMatchObject({ isAdminMentor: true });
+  });
+});
+
+describe("which kind of owner hour serves a session", () => {
+  it("lets a Panel PI use any of the owner's hours, free or special", () => {
+    expect(slotKindFilter("PANEL_PI")).toEqual({});
+  });
+  it("keeps the paid PI and strategy calls on special hours, and everything else on free time", () => {
+    expect(slotKindFilter("PI_DIRECT")).toEqual({ direct: true });
+    expect(slotKindFilter("STRATEGY_DIRECT")).toEqual({ direct: true });
+    expect(slotKindFilter("MOCK_PI")).toEqual({ direct: false });
+    expect(slotKindFilter("STRATEGY_CALL")).toEqual({ direct: false });
   });
 });

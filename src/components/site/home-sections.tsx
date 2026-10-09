@@ -90,7 +90,7 @@ export function PanelSpotlight({ product }: { product: CatalogProduct | null }) 
               <div className="flex items-baseline gap-2.5"><span className="tnum font-display text-[38px] font-bold leading-none text-ink">{`₹${Math.round(v.payablePaise / 100)}`}</span>{v.strikePaise ? <span className="tnum text-[16px] text-ink-faint line-through">{`₹${Math.round(v.strikePaise / 100)}`}</span> : null}</div>
               <ButtonLink href={buyHref(product)} size="lg" className="px-6" data-track="panel_pi_buy">Book a Panel PI <ArrowRight className="size-4" /></ButtonLink>
             </div>
-            <p className="mt-3 text-[12px] leading-[1.6] text-ink-faint">Call Convert Plus students can turn up to two of their six mock PIs into Panel PIs for just ₹199 each.</p>
+            <p className="mt-3 text-[12px] leading-[1.6] text-ink-faint">One Panel PI is included in Call Convert Plus. On Call Convert or Plus, you can turn up to two mock PIs into Panel PIs for just ₹199 each.</p>
           </div>
           <div aria-hidden className="relative mx-auto w-full max-w-[380px]">
             <div className="rounded-2xl bg-night p-5 text-surface shadow-pop ring-1 ring-white/10">

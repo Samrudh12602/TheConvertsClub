@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings-db";
 import { fmtDay, fmtTime, fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { getBalances, InsufficientCreditsError, lockUser, releaseCredit, consumeCredit, reserveCredit, sessionCreditKind } from "@/server/credits";
-import { canReschedule, cancelOutcome, HOUR, isAdminOnly, isDirectType, istDayRange, needsSenior, pickCandidate, type Candidate } from "@/server/scheduling";
+import { canReschedule, cancelOutcome, HOUR, isAdminOnly, isDirectType, istDayRange, needsSenior, pickCandidate, slotKindFilter, type Candidate } from "@/server/scheduling";
 import { icsAttachment } from "@/server/ics";
 import { ensureMeetingUrl } from "@/server/meeting";
 import { sendEmail } from "@/server/email";
@@ -35,7 +35,7 @@ export async function assertCanRebook(studentId: string, mentorId: string) {
 async function candidatesAt(tx: Pick<typeof db, "slot" | "session">, type: SessionType, startsAt: Date, demo: boolean, preferMentorId?: string | null): Promise<Candidate[]> {
   const t = now();
   const slots = await tx.slot.findMany({
-    where: { startsAt, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, demo, preferMentorId) },
+    where: { startsAt, ...slotKindFilter(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, demo, preferMentorId) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
   });
   if (!slots.length) return [];
@@ -56,7 +56,7 @@ export async function availableTimesRange(studentId: string, type: SessionType, 
   const earliest = new Date(Math.max(rangeFrom.getTime(), t.getTime() + s.minLeadHours * HOUR));
   if (earliest >= rangeTo) return [];
   const slots = await db.slot.findMany({
-    where: { startsAt: { gte: earliest, lt: rangeTo }, direct: isDirectType(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId), preferMentorId) },
+    where: { startsAt: { gte: earliest, lt: rangeTo }, ...slotKindFilter(type), ...openOrExpiredHold(t), mentor: mentorFilter(type, await isDemoStudent(db, studentId), preferMentorId) },
     include: { mentor: { select: { id: true, tier: true, isAdminMentor: true } } },
     orderBy: { startsAt: "asc" },
   });
@@ -159,7 +159,7 @@ export async function bookSpecificSlot(studentId: string, slotId: string, type: 
     if (slot.mentor.status !== "ACTIVE") throw new BookingError("That mentor isn't active.", "NOT_ALLOWED");
     if (slot.mentor.user.isDemo !== Boolean(student?.isDemo)) throw new BookingError("Demo and real accounts can't be mixed.", "NOT_ALLOWED");
     if (isAdminOnly(type) && !slot.mentor.isAdminMentor) throw new BookingError("That kind of session is only taken by the admin.", "NOT_ALLOWED");
-    if (slot.direct !== isDirectType(type)) throw new BookingError(isDirectType(type) ? "That hour is your free time, not set aside for the paid PI / strategy / Panel PI calls." : "That hour is set aside for the paid PI / strategy / Panel PI calls with Samrudh.", "NOT_ALLOWED");
+    if (type !== "PANEL_PI" && slot.direct !== isDirectType(type)) throw new BookingError(isDirectType(type) ? "That hour is your free time, not set aside for the paid PI / strategy / Panel PI calls." : "That hour is set aside for the paid PI / strategy / Panel PI calls with Samrudh.", "NOT_ALLOWED");
     if (needsSenior(type, focus, s.seniorRequiredFocuses) && slot.mentor.tier !== "SENIOR") throw new BookingError("That focus needs a Senior mentor.", "NOT_ALLOWED");
     const clash = await tx.session.count({ where: { studentId, startsAt: slot.startsAt, status: { in: ["CONFIRMED", "REQUESTED"] } } });
     if (clash) throw new BookingError("That student already has a session at that time.", "NOT_ALLOWED");
@@ -216,6 +216,7 @@ export async function cancelSession(studentId: string, sessionId: string, opts: 
     if (!sess || sess.studentId !== studentId) throw new BookingError("Session not found.", "NOT_FOUND");
     if (sess.status !== "CONFIRMED" && sess.status !== "REQUESTED") throw new BookingError("This session can't be cancelled.", "NOT_ALLOWED");
     if (!sess.startsAt) throw new BookingError("Session has no time.", "NOT_ALLOWED");
+    if (sess.type === "PANEL_PI" && !opts.byStaff) throw new BookingError("A Panel PI can't be cancelled once it's booked, because three people hold that hour. If something urgent comes up, message us and we'll sort it out.", "NOT_ALLOWED");
     const outcome = opts.byStaff ? "RELEASE" : cancelOutcome(sess.startsAt, t, s.cancelNoticeHours);
     const kind = sessionCreditKind(sess.type);
     await tx.session.update({ where: { id: sess.id }, data: { status: "CANCELLED", cancelledAt: t } });
@@ -259,7 +260,7 @@ export async function rescheduleSession(studentId: string, sessionId: string, ne
     if (!sess || sess.studentId !== studentId || !sess.startsAt) throw new BookingError("Session not found.", "NOT_FOUND");
     if (sess.status !== "CONFIRMED" && sess.status !== "REQUESTED") throw new BookingError("This session can't be moved.", "NOT_ALLOWED");
     if (sess.type === "GD_BATCH") throw new BookingError("GD batches can't be rescheduled. Leave and join another.", "NOT_ALLOWED");
-    if (sess.type === "PANEL_PI") throw new BookingError("A Panel PI involves three people, so it can't be moved. Cancel it (free before the notice period) and book a new time.", "NOT_ALLOWED");
+    if (sess.type === "PANEL_PI") throw new BookingError("A Panel PI involves three people, so it can't be moved or cancelled once booked. If something urgent comes up, message us.", "NOT_ALLOWED");
     if (!canReschedule(sess.startsAt, t, s.cancelNoticeHours, sess.rescheduleCount, s.maxReschedules)) {
       throw new BookingError(`Rescheduling is free up to ${s.cancelNoticeHours} hours before, and ${s.maxReschedules} times per session.`, "POLICY");
     }

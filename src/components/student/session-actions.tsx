@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { cancelSessionAction, rateSessionAction } from "@/app/student/actions";
 
-export function SessionActions({ id, canMove, policyNote }: { id: string; canMove: boolean; policyNote: string }) {
+export function SessionActions({ id, canMove, policyNote, canCancel = true }: { id: string; canMove: boolean; policyNote: string; canCancel?: boolean }) {
   const router = useRouter();
   const [err, setErr] = useState<string | null>(null);
   const toast = useToast();
@@ -19,7 +19,8 @@ export function SessionActions({ id, canMove, policyNote }: { id: string; canMov
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         {canMove && <ButtonLink href={`/student/book?reschedule=${id}`} variant="secondary">Reschedule</ButtonLink>}
-        <Button variant="quiet" disabled={pending} onClick={() => setOpen(true)}>{pending ? "Cancelling…" : "Cancel session"}</Button>
+        {canCancel && <Button variant="quiet" disabled={pending} onClick={() => setOpen(true)}>{pending ? "Cancelling…" : "Cancel session"}</Button>}
+        {!canCancel && <ButtonLink href="/student/messages" variant="secondary">Message us about this session</ButtonLink>}
       </div>
       <ConfirmDialog open={open} onClose={() => setOpen(false)} danger title="Cancel this session?" body={policyNote} confirmLabel="Cancel session" busy={pending}
         onConfirm={() => start(async () => {

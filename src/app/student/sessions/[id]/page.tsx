@@ -102,8 +102,8 @@ export default async function SessionDetail({ params, searchParams }: { params: 
           <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
             <p className="type-label text-ink-faint">Need to change plans?</p>
             <div className="mt-3">
-              <SessionActions id={s.id} canMove={s.type !== "GD_BATCH" && s.type !== "PANEL_PI" && canReschedule(s.startsAt, now, settings.cancelNoticeHours, s.rescheduleCount, settings.maxReschedules)}
-                policyNote={cancelOutcome(s.startsAt, now, settings.cancelNoticeHours) === "RELEASE" ? `Cancelling now returns your credit. Free changes close ${settings.cancelNoticeHours} hours before the start.` : `This is inside the ${settings.cancelNoticeHours}-hour window, so cancelling uses the credit.`} />
+              <SessionActions id={s.id} canCancel={s.type !== "PANEL_PI"} canMove={s.type !== "GD_BATCH" && s.type !== "PANEL_PI" && canReschedule(s.startsAt, now, settings.cancelNoticeHours, s.rescheduleCount, settings.maxReschedules)}
+                policyNote={s.type === "PANEL_PI" ? "A Panel PI can't be moved or cancelled once booked, because three people hold that hour. If something urgent comes up, message us. Only we can cancel it, and your credit comes straight back." : cancelOutcome(s.startsAt, now, settings.cancelNoticeHours) === "RELEASE" ? `Cancelling now returns your credit. Free changes close ${settings.cancelNoticeHours} hours before the start.` : `This is inside the ${settings.cancelNoticeHours}-hour window, so cancelling uses the credit.`} />
             </div>
           </div>
         </div>

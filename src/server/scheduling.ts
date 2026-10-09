@@ -69,8 +69,10 @@ export const isAdminOnly = (type: string) => ADMIN_ONLY_TYPES.has(type);
  * for them (`Slot.direct`). The owner's free time (direct = false) serves ordinary sessions and the strategy calls that
  * come with the programs. The two kinds of hours never serve each other.
  */
-export const DIRECT_TYPES: ReadonlySet<string> = new Set(["PI_DIRECT", "STRATEGY_DIRECT", "PANEL_PI"]);
+export const DIRECT_TYPES: ReadonlySet<string> = new Set(["PI_DIRECT", "STRATEGY_DIRECT"]);
 export const isDirectType = (type: string) => DIRECT_TYPES.has(type);
+/** Which kind of hour can serve a session type. A Panel PI can use any of the owner's published hours, free time or special paid. */
+export const slotKindFilter = (type: string): { direct?: boolean } => (type === "PANEL_PI" ? {} : { direct: isDirectType(type) });
 
 export const needsSenior = (type: SessionType, focus: PiFocus | null | undefined, seniorFocuses: string[]) =>
   type === "MOCK_PI" && !!focus && seniorFocuses.includes(focus);

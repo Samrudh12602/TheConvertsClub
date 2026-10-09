@@ -26,10 +26,10 @@ describe("Panel PI upgrade eligibility", () => {
     order: { count: async () => o.used },
     creditLedger: { groupBy: async () => (o.pi ? [{ kind: "PI", _sum: { delta: o.pi, reservedDelta: 0 } }] : []) },
   }) as never;
-  it("is only for Call Convert Plus holders", async () => {
+  it("is only for Call Convert and Call Convert Plus holders", async () => {
     const s = await panelUpgradeStatus(client({ plus: 0, used: 0, pi: 3 }), "u");
     expect(s.eligible).toBe(false);
-    expect(s.reason).toMatch(/Call Convert Plus/);
+    expect(s.reason).toMatch(/Call Convert and Call Convert Plus/);
   });
   it("allows up to two, then stops", async () => {
     expect((await panelUpgradeStatus(client({ plus: 1, used: 1, pi: 3 }), "u")).left).toBe(PANEL_UPGRADE_MAX - 1);
@@ -42,7 +42,7 @@ describe("Panel PI upgrade eligibility", () => {
     expect(s.eligible).toBe(false);
     expect(s.reason).toMatch(/unused mock PI/);
   });
-  it("is eligible with a Plus plan, an unused PI and upgrades left", async () => {
+  it("is eligible on either plan with an unused PI and upgrades left", async () => {
     expect((await panelUpgradeStatus(client({ plus: 1, used: 0, pi: 4 }), "u")).eligible).toBe(true);
   });
 });

@@ -534,6 +534,13 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
     panelist who accepted, accrued when the lead submits the one combined feedback (`PayService.PANEL`). Only accepted
     panelists get reminders and pay. No college dossier for now.
 
+52. **Panel PI changes (owner's instructions).** (a) A Panel PI can be booked from any of the owner's published hours, free time
+    or special paid. (b) Students can't cancel or move one once booked: the booking screen warns them first (a confirm
+    dialog and a banner), and the session page offers "message us" instead of cancel. Only the admin can cancel one
+    (Admin > Schedule), and the credit always goes back. (c) Call Convert Plus is now 4 mock PIs + 1 Panel PI (two PIs merged
+    into one Panel PI) instead of 6 PIs; students who already bought Plus keep what they were given. (d) The ₹199 swap of an
+    unused PI for a Panel PI now applies to Call Convert and Call Convert Plus, at most twice per student.
+
 ## Assumptions
 
 | # | Topic | Default | Where |

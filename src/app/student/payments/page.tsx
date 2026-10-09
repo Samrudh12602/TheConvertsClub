@@ -10,7 +10,7 @@ import { formatPaise } from "@/lib/money";
 import { priceView } from "@/lib/pricing";
 import { getReferral, referralPrice } from "@/server/referral";
 import { Users } from "lucide-react";
-import { PANEL_UPGRADE_MAX, PANEL_UPGRADE_SLUG, panelUpgradeStatus } from "@/server/panel-upgrade";
+import { NOT_ON_PLAN, PANEL_UPGRADE_MAX, PANEL_UPGRADE_SLUG, panelUpgradeStatus } from "@/server/panel-upgrade";
 import { paymentsConfigured } from "@/server/razorpay";
 import { getCreditSummary, getEnrollmentBreakdown } from "@/server/credits";
 import { requireStudent } from "@/server/session";
@@ -40,7 +40,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   const panel = products.find((p) => p.slug === "panel-pi");
   const upgrade = products.find((p) => p.slug === PANEL_UPGRADE_SLUG);
   const upStatus = enrolled > 0 && upgrade ? await panelUpgradeStatus(db, user.id) : null;
-  const plusHolder = upStatus ? upStatus.eligible || upStatus.reason !== "This upgrade is for Call Convert Plus students." : false;
+  const plusHolder = upStatus ? upStatus.eligible || upStatus.reason !== NOT_ON_PLAN : false;
 
   return (
     <PortalPage width="max-w-[820px]">

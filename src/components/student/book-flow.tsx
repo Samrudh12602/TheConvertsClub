@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, UserCheck, CalendarClock, CheckCircle2, Clock3, Compass, Crown, Lightbulb, Mic, Moon, Sun, Sunset, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/charts";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { nowMs } from "@/lib/datetime";
 import { Flash } from "@/components/portal/ui";
 import { confirmBookingAction, getTimesAction, holdAction, releaseHoldAction, rescheduleAction } from "@/app/student/actions";
@@ -61,6 +62,7 @@ export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialTy
   const holdRef = useRef<string | null>(null);
 
   const [anyMentor, setAnyMentor] = useState(false);
+  const [askPanel, setAskPanel] = useState(false);
   const mentorId = rebook && !anyMentor ? rebook.mentorId : null;
   const key = `${type}|${type === "MOCK_PI" ? focus : ""}|${mentorId ?? ""}`;
   const times = data?.key === key ? data.times : null;
@@ -266,11 +268,14 @@ export function BookFlow({ credits, guidancePrice, reschedule, rebook, initialTy
         )}
         <ul className="flex flex-col gap-1.5 text-[12px] leading-[1.45] text-dark-soft">
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />{reschedule ? "Keeps your reserved credit" : `Uses 1 credit · ${Math.max(0, left0 - (picked ? 1 : 0))} left ${picked ? "after this" : ""}`}</li>
-          {type === "PANEL_PI" ? <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Three panelists, one hour in total with the live debrief. We confirm your panelists after you book. It can&apos;t be moved, only cancelled.</li> : <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>}
+          {type === "PANEL_PI" ? <li className="flex items-start gap-2 rounded-lg bg-gold/15 p-2 text-gold"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none" /><span><strong>Can&apos;t be cancelled or moved once booked.</strong> Three panelists, one hour in total with the live debrief. We confirm your panelists after you book.</span></li> : <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Free to move up to your notice period</li>}
           <li className="flex items-start gap-2"><BadgeCheck aria-hidden className="mt-0.5 size-3.5 flex-none text-teal" />Written feedback after the session</li>
         </ul>
-        <Button variant="onDark" size="lg" disabled={!hold || busy} onClick={confirm} className="min-h-12 w-full">{busy ? "Working…" : reschedule ? "Confirm new time" : "Confirm booking"}</Button>
+        <Button variant="onDark" size="lg" disabled={!hold || busy} onClick={() => (type === "PANEL_PI" && !reschedule ? setAskPanel(true) : confirm())} className="min-h-12 w-full">{busy ? "Working…" : reschedule ? "Confirm new time" : "Confirm booking"}</Button>
       </aside>
+      <ConfirmDialog open={askPanel} onClose={() => setAskPanel(false)} danger title="Once booked, a Panel PI can't be cancelled" confirmLabel="Yes, book it" busy={busy}
+        body={<>A Panel PI holds the hour for three people, so <strong>you can&apos;t cancel or move it after booking</strong>. If something urgent comes up, message us: only we can cancel it, and your credit comes straight back. Book this time?</>}
+        onConfirm={() => { setAskPanel(false); void confirm(); }} />
     </div>
   );
 }

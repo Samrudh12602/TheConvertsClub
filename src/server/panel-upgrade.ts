@@ -3,28 +3,29 @@ import { db } from "@/lib/db";
 import { adjustCredit, getBalances, grantCredit } from "@/server/credits";
 
 /**
- * Call Convert Plus (6 mock PIs) students can turn up to two of their unused PIs into Panel PIs for a flat Rs 199 each.
- * The Rs 199 is a product (`panel-pi-upgrade`) bought from inside the portal; on payment one PI credit is swapped for one
- * Panel PI credit. Everyone else buys a Panel PI outright (`panel-pi`).
+ * Call Convert and Call Convert Plus students can turn up to two of their unused PIs into Panel PIs for a flat Rs 199 each.
+ * (Call Convert Plus already includes one Panel PI.) The Rs 199 is a product (`panel-pi-upgrade`) bought from inside the
+ * portal; on payment one PI credit is swapped for one Panel PI credit. Everyone else buys a Panel PI outright (`panel-pi`).
  */
 export const PANEL_UPGRADE_SLUG = "panel-pi-upgrade";
 export const PANEL_UPGRADE_MAX = 2;
-const PLUS_SLUG = "call-convert-plus";
+const PLANS = ["call-convert", "call-convert-plus"];
+export const NOT_ON_PLAN = "This upgrade is for Call Convert and Call Convert Plus students.";
 
 type Client = Pick<typeof db, "enrollment" | "order" | "creditLedger">;
 
 export interface UpgradeStatus { eligible: boolean; reason: string | null; used: number; left: number; piAvailable: number }
 
 export async function panelUpgradeStatus(client: Client, userId: string): Promise<UpgradeStatus> {
-  const [plus, used, bal] = await Promise.all([
-    client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: PLUS_SLUG } } }),
+  const [onPlan, used, bal] = await Promise.all([
+    client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: { in: PLANS } } } }),
     client.order.count({ where: { userId, status: { in: ["PAID", "PARTIALLY_REFUNDED"] }, product: { slug: PANEL_UPGRADE_SLUG } } }),
     getBalances(client as Parameters<typeof getBalances>[0], userId),
   ]);
   const piAvailable = bal.PI?.available ?? 0;
   const left = Math.max(0, PANEL_UPGRADE_MAX - used);
-  const reason = !plus ? "This upgrade is for Call Convert Plus students."
-    : left === 0 ? `You've already upgraded ${PANEL_UPGRADE_MAX} of your 6 mock PIs to Panel PIs, which is the limit.`
+  const reason = !onPlan ? NOT_ON_PLAN
+    : left === 0 ? `You've already upgraded ${PANEL_UPGRADE_MAX} mock PIs to Panel PIs, which is the limit.`
     : piAvailable < 1 ? "You need an unused mock PI credit to upgrade."
     : null;
   return { eligible: reason === null, reason, used, left, piAvailable };

@@ -37,7 +37,7 @@ describe("seed catalog matches the spec", () => {
 
   it("grants the specified credits for Call Convert Plus", () => {
     const q = (k: string) => bySlug("call-convert-plus").credits.find((c) => c.kind === k)?.quantity;
-    expect([q("PI"), q("GD"), q("WAT"), q("SOP_DETAILED"), q("SOP_REVISION"), q("STRATEGY")]).toEqual([6, 3, 2, 1, 1, 2]);
+    expect([q("PI"), q("PANEL_PI"), q("GD"), q("WAT"), q("SOP_DETAILED"), q("SOP_REVISION"), q("STRATEGY")]).toEqual([4, 1, 3, 2, 1, 1, 2]);
   });
 
   it("only sells whole-rupee prices and never prices above MRP", () => {

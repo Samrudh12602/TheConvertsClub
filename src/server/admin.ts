@@ -3,7 +3,7 @@ import { getSettings } from "@/lib/settings-db";
 import { fmtWhen } from "@/lib/format";
 import { sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
-import { isAdminOnly, isDirectType, needsSenior, pickCandidate } from "@/server/scheduling";
+import { isAdminOnly, isDirectType, needsSenior, pickCandidate, slotKindFilter } from "@/server/scheduling";
 import { accrueReferralBonuses } from "@/server/referral-bonus";
 import { icsAttachment } from "@/server/ics";
 import { ensureMeetingUrl } from "@/server/meeting";
@@ -28,7 +28,7 @@ export async function suggestMentor(sessionId: string): Promise<{ mentorId: stri
   if (!s?.startsAt) return null;
   const settings = await getSettings();
   const slots = await db.slot.findMany({
-    where: { startsAt: s.startsAt, status: "OPEN", direct: isDirectType(s.type), mentor: { status: "ACTIVE", user: { isDemo: Boolean(s.student?.isDemo) }, ...(isAdminOnly(s.type) ? { isAdminMentor: true } : {}) } },
+    where: { startsAt: s.startsAt, status: "OPEN", ...slotKindFilter(s.type), mentor: { status: "ACTIVE", user: { isDemo: Boolean(s.student?.isDemo) }, ...(isAdminOnly(s.type) ? { isAdminMentor: true } : {}) } },
     include: { mentor: { include: { user: { select: { name: true } } } } },
   });
   if (!slots.length) return null;
