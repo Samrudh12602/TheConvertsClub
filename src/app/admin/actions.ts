@@ -17,13 +17,15 @@ import { cancelSession, BookingError } from "@/server/booking";
 import { AvailabilityError } from "@/server/availability";
 import { adminAddHours, adminBookFor, adminBookSlot, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
 import { refundOrder, CheckoutError } from "@/server/checkout";
+import { DocxError, parseMockDocx, type ParsedMock } from "@/lib/mock-docx";
+import { MockImportError, createMockFromParsed, nextMockNumber, replaceMockPaper, slugify } from "@/server/mock-import";
 import { PanelError, setPanelists } from "@/server/panel";
 import { addMentorDirect, MentorAdminError, promoteApplication, resendMentorLogin } from "@/server/mentors";
 import type { Settings } from "@/lib/settings";
 
 type Result = { ok: true; message?: string } | { ok: false; error: string };
 const fail = (e: unknown): Result => {
-  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError || e instanceof AvailabilityError || e instanceof PanelError) return { ok: false, error: e.message };
+  if (e instanceof AdminError || e instanceof BookingError || e instanceof CheckoutError || e instanceof MentorAdminError || e instanceof AvailabilityError || e instanceof PanelError || e instanceof MockImportError) return { ok: false, error: e.message };
   console.error(e);
   return { ok: false, error: "Something went wrong. Please try again." };
 };
@@ -558,5 +560,129 @@ export async function setMockStatusAction(input: unknown): Promise<Result> {
     await audit({ actorId: actor.id, action: "mock.set_status", entity: "Mock", entityId: p.id, after: { status: p.status, releaseAt: p.releaseAt } });
     revalidatePath("/admin/mocks"); revalidatePath("/mocks"); revalidatePath("/student/mocks");
     return { ok: true, message: p.status === "PUBLISHED" ? (at && at > new Date() ? "Published; opens at the time you set." : "Published. Students can start it now.") : "Hidden from students." };
+  } catch (e) { return fail(e); }
+}
+
+
+// ───────────── SNAP mocks: upload a paper, edit, replace, delete ─────────────
+
+const MAX_DOCX_BYTES = 6 * 1024 * 1024;
+const refreshMocks = () => { for (const p of ["/admin/mocks", "/mocks", "/student/mocks", "/student", "/"]) revalidatePath(p); };
+
+async function readPaper(fd: FormData): Promise<ParsedMock> {
+  const f = fd.get("file");
+  if (!(f instanceof File) || f.size === 0) throw new AdminError("Choose a Word file (.docx) first.");
+  if (!f.name.toLowerCase().endsWith(".docx")) throw new AdminError("Please upload a Word document (.docx). Older .doc files and PDFs can't be read.");
+  if (f.size > MAX_DOCX_BYTES) throw new AdminError("That file is too large (the limit is 6 MB).");
+  try { return parseMockDocx(new Uint8Array(await f.arrayBuffer())); } catch (e) { if (e instanceof DocxError) throw new AdminError(e.message); throw e; }
+}
+
+export interface PaperSummary {
+  detectedTitle: string | null; total: number; sections: { name: string; count: number }[]; solutions: number; problems: string[];
+  sample: { number: number; section: string; stem: string; options: string[]; correct: number } | null;
+  suggestedNumber: number; suggestedTitle: string; suggestedSlug: string;
+}
+
+/** Reads the uploaded paper and reports what it found, without saving anything. */
+export async function inspectMockPaperAction(fd: FormData): Promise<({ ok: true } & PaperSummary) | { ok: false; error: string }> {
+  try {
+    await guard("mock-inspect");
+    const p = await readPaper(fd);
+    const first = p.sections.find((s) => s.questions.length)?.questions[0];
+    const n = await nextMockNumber();
+    return {
+      ok: true, detectedTitle: p.title, total: p.total, sections: p.sections.map((s) => ({ name: s.name, count: s.questions.length })),
+      solutions: p.sections.reduce((t, s) => t + s.questions.filter((q) => q.explanation).length, 0), problems: p.problems.slice(0, 12),
+      sample: first ? { number: first.number, section: p.sections.find((s) => s.questions.includes(first))!.name, stem: first.stem.slice(0, 280), options: first.options, correct: first.correct } : null,
+      suggestedNumber: n, suggestedTitle: `SNAP 2026 Mock ${n}`, suggestedSlug: `snap-mock-${n}`,
+    };
+  } catch (e) { const r = fail(e); return r.ok ? { ok: false, error: "Something went wrong." } : r; }
+}
+
+const newMockSchema = z.object({
+  title: z.string().trim().min(2).max(120), slug: z.string().trim().max(60).optional(), description: z.string().trim().max(400).optional(),
+  durationMin: z.coerce.number().int().min(5).max(300), sortOrder: z.coerce.number().int().min(0).max(999), isTest: z.enum(["true", "false"]).transform((v) => v === "true"),
+  marks: z.coerce.number().min(0.25).max(10), negative: z.coerce.number().min(0).max(10),
+  publish: z.enum(["draft", "now", "schedule"]), releaseAt: z.string().max(40).optional(),
+});
+
+/** Creates a mock from the uploaded paper: parses it, tags topics, stores it, and publishes or schedules it if asked. */
+export async function createMockFromPaperAction(fd: FormData): Promise<Result> {
+  try {
+    const actor = await guard("mock-create");
+    const p = newMockSchema.parse(Object.fromEntries([...fd.entries()].filter(([, v]) => typeof v === "string")));
+    const paper = await readPaper(fd);
+    let releaseAt: Date | null = null;
+    if (p.publish === "schedule") { releaseAt = p.releaseAt ? new Date(p.releaseAt) : null; if (!releaseAt || Number.isNaN(releaseAt.getTime())) throw new AdminError("Pick the date and time the mock should open."); }
+    const slug = slugify(p.slug || p.title);
+    const mock = await createMockFromParsed(paper, { slug, title: p.title, description: p.description || null, durationMin: p.durationMin, isTest: p.isTest, sortOrder: p.sortOrder, status: p.publish === "draft" ? "DRAFT" : "PUBLISHED", releaseAt, marks: p.marks, negative: p.negative });
+    await audit({ actorId: actor.id, action: "mock.create", entity: "Mock", entityId: mock.id, after: { slug, title: p.title, questions: paper.total, publish: p.publish } });
+    refreshMocks();
+    return { ok: true, message: p.publish === "draft" ? `“${p.title}” is saved as a draft with ${paper.total} questions. Preview it, then publish.` : p.publish === "now" ? `“${p.title}” is live with ${paper.total} questions.` : `“${p.title}” is scheduled with ${paper.total} questions.` };
+  } catch (e) { return fail(e); }
+}
+
+const editMockSchema = z.object({
+  id: z.string().min(1).max(40), title: z.string().trim().min(2).max(120), description: z.string().trim().max(400).nullable(),
+  durationMin: z.number().int().min(5).max(300), sortOrder: z.number().int().min(0).max(999), isTest: z.boolean(),
+});
+
+/** Title, blurb, length, order and test/series. The test flag can't change once anyone has attempted it (it decides which credit is spent). */
+export async function updateMockAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mock-edit");
+    const p = editMockSchema.parse(input);
+    const m = await db.mock.findUnique({ where: { id: p.id }, include: { _count: { select: { attempts: true } } } });
+    if (!m) throw new AdminError("Mock not found.");
+    if (m.isTest !== p.isTest && m._count.attempts > 0) throw new AdminError("Students have already attempted this mock, so it can't change between test and series.");
+    await db.mock.update({ where: { id: p.id }, data: { title: p.title, description: p.description || null, durationMin: p.durationMin, sortOrder: p.sortOrder, isTest: p.isTest } });
+    await audit({ actorId: actor.id, action: "mock.edit", entity: "Mock", entityId: p.id, after: { title: p.title, durationMin: p.durationMin, sortOrder: p.sortOrder, isTest: p.isTest } });
+    refreshMocks();
+    return { ok: true, message: "Saved." };
+  } catch (e) { return fail(e); }
+}
+
+const markingSchema = z.object({ id: z.string().min(1).max(40), marks: z.number().min(0.25).max(10), negative: z.number().min(0).max(10) });
+
+/** Marks for a right answer and the penalty for a wrong one, for every question. Locked once there are attempts, so past scores never change. */
+export async function setMockMarkingAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mock-marking");
+    const p = markingSchema.parse(input);
+    const m = await db.mock.findUnique({ where: { id: p.id }, include: { _count: { select: { attempts: true } } } });
+    if (!m) throw new AdminError("Mock not found.");
+    if (m._count.attempts > 0) throw new AdminError("Students have already attempted this mock, so the marking can't change.");
+    await db.mockQuestion.updateMany({ where: { mockId: p.id }, data: { marks: p.marks, negative: p.negative } });
+    await audit({ actorId: actor.id, action: "mock.marking", entity: "Mock", entityId: p.id, after: { marks: p.marks, negative: p.negative } });
+    refreshMocks();
+    return { ok: true, message: `Marking set to +${p.marks} / −${p.negative}.` };
+  } catch (e) { return fail(e); }
+}
+
+/** Replaces the questions of a mock with a new paper (a corrected version, say). Only while nobody has attempted it; the mock goes back to draft. */
+export async function replaceMockPaperAction(fd: FormData): Promise<Result> {
+  try {
+    const actor = await guard("mock-replace");
+    const id = z.string().min(1).max(40).parse(fd.get("id"));
+    const paper = await readPaper(fd);
+    const r = await replaceMockPaper(id, paper);
+    await audit({ actorId: actor.id, action: "mock.replace", entity: "Mock", entityId: id, after: { questions: r.total } });
+    refreshMocks();
+    return { ok: true, message: `Replaced with ${r.total} questions.${r.hidden ? " The mock is now a draft: preview it, then publish again." : ""}` };
+  } catch (e) { return fail(e); }
+}
+
+/** Deletes a mock that nobody has attempted. */
+export async function deleteMockAction(input: unknown): Promise<Result> {
+  try {
+    const actor = await guard("mock-delete");
+    const id = z.string().min(1).max(40).parse(input);
+    const m = await db.mock.findUnique({ where: { id }, include: { _count: { select: { attempts: true } } } });
+    if (!m) throw new AdminError("Mock not found.");
+    if (m._count.attempts > 0) throw new AdminError("Students have attempted this mock, so it can't be deleted. Hide it instead.");
+    await db.mock.delete({ where: { id } });
+    await audit({ actorId: actor.id, action: "mock.delete", entity: "Mock", entityId: id, before: { slug: m.slug, title: m.title } });
+    refreshMocks();
+    return { ok: true, message: `Deleted “${m.title}”.` };
   } catch (e) { return fail(e); }
 }

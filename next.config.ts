@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The mock upload sends a Word file through a server action: allow a few MB (the default is 1 MB).
+  experimental: { serverActions: { bodySizeLimit: "8mb" } },
 };
 
 export default nextConfig;
