@@ -1,4 +1,4 @@
-import { GdpiTeaser, SnapAnalysisShowcase, SnapBand, SnapCatalogue, SnapHero, SnapHow, SnapPacks } from "@/components/site/snap-sections";
+import { GdpiTeaser, SnapAnalysisShowcase, SnapBand, SnapCatalogue, SnapFeatures, SnapHero, SnapHow, SnapPacks } from "@/components/site/snap-sections";
 import { SNAP_FAQS } from "@/lib/snap-content";
 import { listMocksFor } from "@/server/mocks";
 import { gdpiComingSoon } from "@/server/site-mode";
@@ -23,9 +23,10 @@ export default async function HomePage() {
     return (
       <div className="mx-auto flex max-w-[1120px] flex-col gap-8 px-5 pb-6 pt-5 sm:gap-10">
         <SnapHero p={snap} />
+        <SnapFeatures />
         <SnapPacks p={snap} />
-        <SnapHow />
         <SnapAnalysisShowcase />
+        <SnapHow />
         <SnapCatalogue mocks={mocks.map((m) => ({ id: m.id, title: m.title, isTest: m.isTest, questions: m.questions, durationMin: m.durationMin, released: m.released, releaseAt: m.releaseAt }))} />
         <GdpiTeaser />
         <FaqTeaser items={SNAP_FAQS.slice(0, 6)} />

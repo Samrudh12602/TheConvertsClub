@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { ArrowRight, BarChart3, Check, Clock, FileText, Gauge, ListChecks, MonitorPlay, ShieldCheck, Sparkles, Target, TrendingDown } from "lucide-react";
+import { ArrowRight, BarChart3, Check, Clock, FileText, Gauge, Lock, ListChecks, MonitorPlay, ShieldCheck, Sparkles, Target, Timer, TrendingDown, Trophy } from "lucide-react";
 import { PaletteShape } from "@/components/mocks/exam-parts";
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/motion";
@@ -23,7 +23,7 @@ export function ExamPreview() {
       <div className="flex items-center justify-between bg-[#2f2f2f] px-3 py-2 text-[10.5px]"><span className="font-semibold text-[#e8e07a]">SNAP 2026 Mock</span><span className="text-white/80">Tools ▾ · Accessibility · Magnifier</span></div>
       <div className="flex items-center justify-between border-b border-[#ddd] px-3 py-1 text-[9.5px] font-semibold text-[#444]"><span>Section</span><span className="text-[#d9261c]">Time Left : 42:17</span></div>
       <div className="flex border-b border-[#ddd] text-[10px] font-semibold"><span className="bg-[#2f6aa6] px-3 py-1.5 text-white">General English</span><span className="px-3 py-1.5 text-[#2f6aa6]">Logical Reasoning</span><span className="px-3 py-1.5 text-[#2f6aa6]">Quant &amp; DI</span></div>
-      <div className="flex">
+      <div className="flex flex-col sm:flex-row">
         <div className="min-w-0 flex-1 p-3">
           <p className="text-[9.5px] font-bold text-[#b8431a]">Question Type: MCQ</p>
           <p className="mt-2 text-[11px] font-bold">Question No. 7.</p>
@@ -31,7 +31,7 @@ export function ExamPreview() {
           {["lucid; tentative", "exhaustive; vague", "equivocal; unambiguous", "cryptic; ambiguous"].map((o, i) => <p key={o} className="mt-1.5 flex items-center gap-1.5 text-[10px]"><span className={clsx("size-2.5 rounded-full border", i === 2 ? "border-[#3a78b8] bg-[#3a78b8]" : "border-[#999]")} />{o}</p>)}
           <div className="mt-3 flex gap-1.5 text-[9px]"><span className="rounded border border-[#bbb] bg-[#f4f4f4] px-2 py-1">Mark for review and Next</span><span className="rounded border border-[#bbb] bg-[#f4f4f4] px-2 py-1">Clear</span><span className="ml-auto rounded bg-[#3a78b8] px-2 py-1 font-semibold text-white">Save &amp; Next</span></div>
         </div>
-        <div className="w-[34%] flex-none border-l-2 border-[#222] bg-[#dcecf8] p-2.5">
+        <div className="w-full flex-none border-t-2 border-[#222] bg-[#dcecf8] p-2.5 sm:w-[34%] sm:border-l-2 sm:border-t-0">
           <div className="grid grid-cols-4 gap-1.5">{states.map((st, i) => <PaletteShape key={i} state={st} label={i + 1} size={26} />)}</div>
           <p className="mt-2.5 text-[8.5px] font-semibold text-[#333]">Answered · Not answered · Marked · Not visited</p>
         </div>
@@ -41,23 +41,71 @@ export function ExamPreview() {
 }
 
 export function SnapHero({ p }: { p: SnapProducts }) {
+  const stats = [["60", "questions"], ["60 min", "on a server clock"], ["+1 / −0.25", "real marking"], ["3", "sections, like SNAP"], ["PDF", "analysis, with solutions"]] as const;
   return (
     <section className="relative overflow-hidden rounded-3xl border border-line bg-hero shadow-lift">
-      <div className="grid items-center gap-10 px-6 py-10 sm:px-10 sm:py-14 lg:grid-cols-[1.1fr_0.9fr]">
+      <span aria-hidden className="absolute -left-24 top-24 size-72 rounded-full bg-oxblood/10 blur-3xl" />
+      <span aria-hidden className="absolute -right-20 -top-16 size-80 rounded-full bg-gold/20 blur-3xl" />
+      <div className="relative grid items-center gap-12 px-6 py-10 sm:px-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="min-w-0 animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-oxblood-line bg-white/80 px-3 py-1.5 text-[11.5px] font-semibold leading-none text-oxblood shadow-xs backdrop-blur"><span aria-hidden className="relative flex size-2"><span className="absolute inline-flex size-2 animate-ring rounded-full bg-teal/50" /><span className="relative inline-flex size-2 rounded-full bg-teal" /></span>SNAP 2026 · full-length computer-based mocks</span>
-          <h1 className="type-display mt-5 text-ink sm:text-[50px] sm:leading-[1.05]">Sit the mock on the <span className="bg-gradient-to-r from-oxblood via-[#b4414f] to-gold bg-clip-text text-transparent">real SNAP screen</span>. Then see exactly what went wrong.</h1>
-          <p className="mt-5 max-w-[52ch] text-pretty text-[16px] leading-[1.7] text-ink-muted">60 questions in 60 minutes, +1 and −0.25 marking, sections and a question palette just like the exam. The moment you submit you get your analysis: where you lost marks, careless or concept, and a worked solution for every question.</p>
+          <h1 className="type-display mt-5 text-ink sm:text-[54px] sm:leading-[1.03]">Sit the mock on the <span className="bg-gradient-to-r from-oxblood via-[#b4414f] to-gold bg-clip-text text-transparent">real SNAP screen</span>. Then see exactly what went wrong.</h1>
+          <p className="mt-5 max-w-[52ch] text-pretty text-[16px] leading-[1.7] text-ink-muted">Sections, a question palette, review flags and negative marking, just like the exam. The moment you submit you get your analysis: where you lost marks, careless or concept, and a worked solution for every question.</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             {p.test && <ButtonLink href={buyHref(p.test)} size="lg" className="px-6" data-track="snap_hero_test">Take the test mock · {rupees(p.test)} <ArrowRight className="size-4" /></ButtonLink>}
             <ButtonLink href="#packs" variant="secondary" size="lg" className="px-5" data-track="snap_hero_packs">See the packs</ButtonLink>
           </div>
           <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-[12.5px] font-medium text-ink-2">
-            {([[Clock, "60 questions · 60 minutes"], [Target, "Marks, accuracy, topics"], [FileText, "Detailed PDF analysis"]] as const).map(([Icon, t]) => <li key={t} className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-full bg-teal-tint text-teal"><Icon className="size-3.5" aria-hidden /></span>{t}</li>)}
+            {([[ShieldCheck, "Built by people who converted"], [Target, "Marks, accuracy, topics"], [FileText, "Detailed PDF analysis"]] as const).map(([Icon, t]) => <li key={t} className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-full bg-teal-tint text-teal"><Icon className="size-3.5" aria-hidden /></span>{t}</li>)}
           </ul>
         </div>
-        <div className="relative mx-auto w-full max-w-[460px] lg:max-w-none"><div className="sm:rotate-[1.5deg] sm:transition-transform sm:duration-500 sm:hover:rotate-0"><ExamPreview /></div></div>
+        <div className="relative mx-auto w-full max-w-[500px] pb-10 sm:pb-24 sm:pt-8 lg:max-w-none">
+          {/* Illustrations of the product, not live data. */}
+          <div aria-hidden className="absolute -right-2 top-0 z-10 hidden w-[158px] animate-float-slow rounded-2xl border border-line bg-white p-3 shadow-lift sm:block">
+            <p className="type-label text-ink-faint">Timer</p>
+            <div className="mt-2 flex items-center gap-2"><span className="flex size-8 items-center justify-center rounded-lg bg-oxblood-tint text-oxblood"><Timer className="size-4" /></span><div><p className="tnum text-[15px] font-bold leading-none text-ink">42:17</p><p className="mt-1 text-[10.5px] leading-none text-ink-faint">server clock</p></div></div>
+          </div>
+          <div className="sm:rotate-[1.5deg] sm:transition-transform sm:duration-500 sm:hover:rotate-0"><ExamPreview /></div>
+          <div aria-hidden className="absolute -left-4 bottom-0 z-10 hidden w-[190px] animate-float rounded-2xl border border-line bg-white p-3 shadow-lift sm:block">
+            <p className="type-label text-ink-faint">After you submit</p>
+            <div className="mt-2 flex items-center gap-2"><span className="flex size-8 items-center justify-center rounded-lg bg-teal-tint text-teal"><Trophy className="size-4" /></span><div><p className="tnum text-[15px] font-bold leading-none text-ink">34.5 / 60</p><p className="mt-1 text-[10.5px] leading-none text-ink-faint">+ what went wrong</p></div></div>
+          </div>
+          {p.test && (
+            <div className="absolute bottom-0 right-2 z-10 hidden w-[200px] overflow-hidden rounded-2xl bg-night p-4 text-surface shadow-pop ring-1 ring-white/10 sm:block">
+              <span aria-hidden className="absolute -right-8 -top-8 size-24 rounded-full bg-oxblood/50 blur-2xl" />
+              <p className="type-eyebrow relative text-gold">Start here</p>
+              <p className="relative mt-1.5 font-display text-[28px] font-bold leading-none">{rupees(p.test)}</p>
+              <p className="relative mt-1.5 text-[11.5px] leading-[1.5] text-dark-soft">One full mock + full analysis. One per person.</p>
+            </div>
+          )}
+        </div>
       </div>
+      <dl className="relative grid grid-cols-2 border-t border-line bg-white/60 backdrop-blur sm:grid-cols-3 lg:grid-cols-5">
+        {stats.map(([v, l]) => <div key={l} className="border-line px-5 py-4 text-center odd:max-sm:border-r lg:border-r lg:last:border-r-0"><dt className="sr-only">{l}</dt><dd className="font-display text-[20px] font-bold leading-none text-ink">{v}<span className="mt-1.5 block font-sans text-[11.5px] font-medium text-ink-faint">{l}</span></dd></div>)}
+      </dl>
+    </section>
+  );
+}
+
+export function SnapFeatures() {
+  const items = [
+    [MonitorPlay, "The real screen", "Section tabs, question palette, mark for review, clear response and a countdown: the layout you'll see on exam day."],
+    [Lock, "A fair clock", "Time is kept on our server. Refreshing or closing the tab doesn't buy you extra minutes."],
+    [ListChecks, "Real marking", "+1 for a right answer, −0.25 for a wrong one, nothing for a skip. Your score is what the exam would give."],
+    [TrendingDown, "Why you lost marks", "Every miss is sorted: careless, concept gap, too slow, or never reached, so you fix the right thing."],
+    [BarChart3, "Topic-level results", "See which topics and sections cost you, and how your time compared to an even pace."],
+    [FileText, "A PDF to keep", "A detailed report with all 60 worked solutions, stamped with your name, for revision."],
+  ] as const;
+  return (
+    <section aria-labelledby="snap-feat" className="relative overflow-hidden rounded-3xl bg-night px-6 py-12 text-surface shadow-lift ring-1 ring-white/10 sm:px-10 sm:py-14">
+      <span aria-hidden className="absolute -left-16 -top-20 size-64 rounded-full bg-oxblood/40 blur-3xl" />
+      <span aria-hidden className="absolute -bottom-24 right-0 size-72 rounded-full bg-gold/15 blur-3xl" />
+      <Reveal className="relative mx-auto max-w-[640px] text-center"><p className="type-eyebrow text-gold">Why these mocks</p><h2 id="snap-feat" className="mt-3 font-display text-[30px] font-bold leading-[1.12] sm:text-[36px]">Practice that feels like the exam, and teaches you after it.</h2></Reveal>
+      <ul className="relative mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map(([Icon, t, b], i) => (
+          <Reveal key={t} as="li" delay={i * 60} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors hover:bg-white/[0.07]"><span className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-gold"><Icon className="size-5" aria-hidden /></span><h3 className="mt-4 text-[15px] font-bold">{t}</h3><p className="mt-1.5 text-[13px] leading-[1.65] text-dark-body">{b}</p></Reveal>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -121,6 +169,8 @@ export function SnapAnalysisShowcase() {
             <div className="mt-4 grid grid-cols-3 gap-2.5 text-center">{[["Score", "34.5 / 60"], ["Accuracy", "71%"], ["Attempted", "48 / 60"]].map(([k, v]) => <div key={k} className="rounded-xl bg-surface p-3"><p className="type-label text-ink-faint">{k}</p><p className="tnum mt-1.5 font-display text-[17px] font-bold text-ink">{v}</p></div>)}</div>
             <p className="mt-4 text-[12.5px] font-semibold text-ink">What went wrong</p>
             <div className="mt-2 flex flex-col gap-1.5">{[["Rushed and wrong", 5, "w-[40%]"], ["Long time, still wrong", 4, "w-[32%]"], ["Never reached", 8, "w-[64%]"]].map(([k, n, w]) => <div key={k as string}><div className="flex justify-between text-[11.5px] text-ink-2"><span>{k}</span><span className="tnum font-semibold">{n}</span></div><div className="mt-1 h-1.5 rounded-full bg-line-soft"><div className={clsx("h-full rounded-full bg-oxblood/80", w as string)} /></div></div>)}</div>
+            <p className="mt-4 text-[12.5px] font-semibold text-ink">By section</p>
+            <div className="mt-2 grid grid-cols-3 gap-2.5">{[["English", 78, "bg-teal"], ["Reasoning", 52, "bg-gold"], ["Quant & DI", 41, "bg-oxblood"]].map(([k, v, c]) => <div key={k as string} className="rounded-lg bg-surface p-2.5"><p className="text-[11px] text-ink-muted">{k}</p><div className="mt-1.5 h-1.5 rounded-full bg-line-soft"><div className={clsx("h-full rounded-full", c as string)} style={{ width: `${v}%` }} /></div><p className="tnum mt-1 text-[11px] font-semibold text-ink">{v}%</p></div>)}</div>
             <p className="mt-4 text-[12.5px] font-semibold text-ink">Weakest topics</p>
             <p className="mt-1 text-[12px] leading-[1.6] text-ink-muted">Data sufficiency · Seating arrangements · Para jumbles</p>
           </div>
@@ -132,12 +182,17 @@ export function SnapAnalysisShowcase() {
 
 export function SnapCatalogue({ mocks }: { mocks: CatalogueMock[] }) {
   if (mocks.length === 0) return null;
+  const slots = Math.max(0, 10 - mocks.length);
+  const live = mocks.filter((m) => m.released).length;
   return (
     <section aria-labelledby="snap-list">
-      <Reveal className="mb-4"><p className="type-eyebrow text-oxblood">The mocks</p><h2 id="snap-list" className="type-display mt-3 text-ink">What&apos;s live and what&apos;s next</h2></Reveal>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <Reveal className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="type-eyebrow text-oxblood">The mocks</p><h2 id="snap-list" className="type-display mt-3 text-ink">What&apos;s live and what&apos;s next</h2></div><p className="text-[12.5px] font-medium text-ink-muted"><span className="font-bold text-teal">{live} live</span> · more opening before the December exam</p></Reveal>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {mocks.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-xs"><span className={clsx("flex size-10 flex-none items-center justify-center rounded-xl", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-faint")}><FileText className="size-5" aria-hidden /></span><span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{m.title}</span><span className="block text-[12px] text-ink-faint">{m.questions} questions · {m.durationMin} min</span></span><span className={clsx("flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-muted")}>{m.released ? "Live" : m.releaseAt ? `Opens ${fmtWhen(m.releaseAt)}` : "Coming soon"}</span></li>
+          <Reveal key={m.id} as="li" className={clsx("flex items-center gap-3.5 rounded-2xl border p-4 shadow-xs", m.released ? "border-teal/30 bg-card" : "border-line bg-card")}><span className={clsx("flex size-11 flex-none items-center justify-center rounded-xl", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-faint")}><FileText className="size-5" aria-hidden /></span><span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{m.title}</span><span className="block text-[12px] text-ink-faint">{m.questions} questions · {m.durationMin} min</span></span><span className={clsx("flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-muted")}>{m.released ? "Live" : m.releaseAt ? `Opens ${fmtWhen(m.releaseAt)}` : "Coming soon"}</span></Reveal>
+        ))}
+        {Array.from({ length: slots }, (_, i) => (
+          <li key={`slot-${i}`} aria-hidden className="flex items-center gap-3.5 rounded-2xl border border-dashed border-line-strong bg-surface/60 p-4"><span className="flex size-11 flex-none items-center justify-center rounded-xl bg-line-soft text-ink-faint"><Lock className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-[14px] font-semibold text-ink-muted">Mock {mocks.length + i + 1}</span><span className="block text-[12px] text-ink-faint">60 questions · 60 min</span></span><span className="flex-none rounded-full bg-line-soft px-2.5 py-1 text-[11px] font-semibold text-ink-muted">Releasing soon</span></li>
         ))}
       </ul>
     </section>
