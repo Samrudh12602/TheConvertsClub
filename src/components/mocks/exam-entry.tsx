@@ -25,6 +25,8 @@ export function ExamEntry({ slug, title, candidate, durationMin, marks, negative
   if (previewing && previewSections) return <ExamClient slug={slug} attemptId={null} preview title={title} candidate={candidate} durationMin={durationMin} remainingMs={durationMin * 60_000} sections={previewSections} saved={{}} />;
 
   const begin = async () => {
+    // Full screen has to be requested from a click, so it is asked for here, as the exam starts.
+    try { await document.documentElement.requestFullscreen?.(); } catch { /* the exam still works in a window; a banner offers it again */ }
     if (previewSections) { setPreviewing(true); return; }
     setBusy(true);
     const r = await startExamAction(slug);
@@ -89,7 +91,8 @@ export function ExamEntry({ slug, title, candidate, durationMin, marks, negative
             </ol>
             <h2 className="mt-5 font-bold underline">Before you begin:</h2>
             <ul className="ml-8 mt-2 list-disc">
-              <li className={li}>Use a laptop or desktop in a quiet place. The paper cannot be paused once the clock starts, and it can be taken only once.</li>
+              <li className={li}>Use a laptop or desktop in a quiet place. The exam opens in full screen. The paper cannot be paused once the clock starts, and it can be taken only once.</li>
+              <li className={li}>When you submit, this tab closes and your analysis opens in the tab you came from.</li>
               <li className={li}>Staying on this tab is part of the exercise: every time you leave it is counted and shown in your analysis.</li>
               <li className={li}>The correct answers and full solutions appear in your analysis as soon as you submit.</li>
             </ul>

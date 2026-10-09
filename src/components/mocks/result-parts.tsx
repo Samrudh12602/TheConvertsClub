@@ -17,50 +17,99 @@ const TONE: Record<Outcome, { chip: string; icon: React.ReactNode; word: string 
   skipped: { chip: "bg-line-soft text-ink-muted", icon: <Minus className="size-3.5" aria-hidden />, word: "Skipped" },
 };
 
-/** Every question with your answer, the right one and the worked solution, filterable. */
-export function ReviewList({ items }: { items: ReviewItem[] }) {
+export interface MissGroup { kind: string; title: string; hint: string; numbers: number[]; tone: "wrong" | "skip" }
+
+const TILE: Record<Outcome, string> = {
+  correct: "bg-teal text-white",
+  wrong: "bg-oxblood text-white",
+  skipped: "bg-line-soft text-ink-muted ring-1 ring-inset ring-line-strong",
+};
+
+/** The whole paper as one map, why marks were lost, and every question with its solution. Click a square, or a reason, to jump in. */
+export function ReviewExplorer({ items, groups }: { items: ReviewItem[]; groups: MissGroup[] }) {
   const [filter, setFilter] = useState<"all" | Outcome>("all");
+  const [miss, setMiss] = useState<string | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const counts = { all: items.length, wrong: items.filter((i) => i.outcome === "wrong").length, skipped: items.filter((i) => i.outcome === "skipped").length, correct: items.filter((i) => i.outcome === "correct").length };
-  const shown = items.filter((i) => filter === "all" || i.outcome === filter);
+  const activeGroup = groups.find((g) => g.kind === miss) ?? null;
+  const shown = items.filter((i) => (activeGroup ? activeGroup.numbers.includes(i.number) : filter === "all" || i.outcome === filter));
+  const sections = [...new Set(items.map((i) => i.section))];
+
+  const jump = (n: number) => {
+    setFilter("all"); setMiss(null); setOpen(n);
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(`q-${n}`)?.scrollIntoView({ behavior: "smooth", block: "center" })));
+  };
+
   return (
-    <div>
-      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter questions">
-        {(["all", "wrong", "skipped", "correct"] as const).map((f) => (
-          <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={clsx("rounded-full border px-3.5 py-1.5 text-xs font-semibold capitalize transition", filter === f ? "border-ink bg-ink text-surface" : "border-line-strong bg-white text-ink-2 hover:border-oxblood")}>{f === "all" ? "All" : f} · {counts[f]}</button>
-        ))}
-      </div>
-      <ul className="mt-3 flex flex-col gap-2">
-        {shown.map((i) => {
-          const t = TONE[i.outcome];
-          const isOpen = open === i.number;
-          return (
-            <li key={i.number} className="overflow-hidden rounded-xl border border-line bg-card shadow-xs">
-              <button type="button" onClick={() => setOpen(isOpen ? null : i.number)} aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-                <span className="tnum flex size-8 flex-none items-center justify-center rounded-lg bg-surface font-display text-[13px] font-bold text-ink">{i.number}</span>
-                <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink-body">{i.stem.split("\n")[0].slice(0, 120)}</span><span className="mt-0.5 block text-[11px] text-ink-faint">{i.section}{i.topic ? ` · ${i.topic}` : ""} · {mmss(i.timeSec)}</span></span>
-                <span className={clsx("inline-flex flex-none items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", t.chip)}>{t.icon}{t.word} {i.marksEarned > 0 ? `+${i.marksEarned}` : i.marksEarned < 0 ? i.marksEarned : ""}</span>
-                <ChevronDown aria-hidden className={clsx("size-4 flex-none text-ink-faint transition-transform", isOpen && "rotate-180")} />
-              </button>
-              {isOpen && (
-                <div className="border-t border-line-soft px-4 py-4 text-[13px] leading-[1.65] text-ink-body">
-                  {i.context?.lines?.map((l, k) => <p key={k} className={k === 0 ? "font-semibold" : ""}>{l}</p>)}
-                  {i.context?.table && <div className="my-2 overflow-x-auto"><table className="border-collapse text-[12.5px]"><tbody>{i.context.table.map((row, ri) => <tr key={ri}>{row.map((c, ci) => (ri === 0 ? <th key={ci} className="border border-line-strong bg-surface px-2.5 py-1 text-left font-semibold">{c}</th> : <td key={ci} className="border border-line-strong px-2.5 py-1">{c}</td>))}</tr>)}</tbody></table></div>}
-                  <p className="mt-1 whitespace-pre-wrap">{i.stem}</p>
-                  <ul className="mt-3 flex flex-col gap-1.5">
-                    {i.options.map((o, oi) => {
-                      const right = oi === i.correct, mine = oi === i.choice;
-                      return <li key={oi} className={clsx("flex gap-2.5 rounded-lg border px-3 py-2", right ? "border-teal-line bg-teal-tint" : mine ? "border-oxblood-line bg-oxblood-tint" : "border-line-soft")}><span className="font-semibold">{LET[oi]}.</span><span className="min-w-0 flex-1 whitespace-pre-wrap">{o}</span>{right && <span className="flex-none text-[11px] font-bold text-teal">Correct answer</span>}{mine && !right && <span className="flex-none text-[11px] font-bold text-oxblood">Your answer</span>}{mine && right && <span className="flex-none text-[11px] font-bold text-teal">Your answer</span>}</li>;
-                    })}
-                  </ul>
-                  {i.explanation && <div className="mt-3 rounded-lg bg-surface p-3"><p className="type-label text-ink-faint">Solution</p><p className="mt-1 whitespace-pre-wrap">{i.explanation}</p></div>}
-                  <p className="mt-2 text-[11.5px] text-ink-faint">You spent {mmss(i.timeSec)} on this.{i.cohortPct !== null ? ` ${i.cohortPct}% of students who answered got it right.` : ""}</p>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+    <div className="flex flex-col gap-4">
+      <section aria-labelledby="paper-map" className="rounded-2xl border border-line bg-card p-5 shadow-card">
+        <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 id="paper-map" className="font-display text-[17px] font-bold text-ink">Your paper at a glance</h2><p className="mt-0.5 text-[12.5px] text-ink-muted">Tap any square to open that question with its solution.</p></div>
+          <div className="flex flex-wrap gap-3 text-[11.5px] font-medium text-ink-muted">{([["correct", "Right"], ["wrong", "Wrong"], ["skipped", "Blank"]] as const).map(([o, l]) => <span key={o} className="inline-flex items-center gap-1.5"><i className={clsx("size-3 rounded-[4px]", TILE[o])} />{l} · {counts[o]}</span>)}</div></div>
+        <div className="mt-4 flex flex-col gap-4">
+          {sections.map((sec) => (
+            <div key={sec}><p className="type-label mb-2 text-ink-faint">{sec}</p>
+              <div className="flex flex-wrap gap-1.5">{items.filter((i) => i.section === sec).map((i) => <button key={i.number} type="button" onClick={() => jump(i.number)} aria-label={`Question ${i.number}: ${TONE[i.outcome].word}`} className={clsx("tnum flex size-9 items-center justify-center rounded-lg text-[12.5px] font-bold transition hover:-translate-y-0.5 hover:shadow-card", TILE[i.outcome])}>{i.number}</button>)}</div></div>
+          ))}
+        </div>
+      </section>
+
+      {groups.length > 0 && (
+        <section aria-labelledby="why-lost" className="rounded-2xl border border-line bg-card p-5 shadow-card">
+          <h2 id="why-lost" className="font-display text-[17px] font-bold text-ink">Why marks were lost</h2>
+          <p className="mt-0.5 text-[12.5px] text-ink-muted">Tap a reason to see only those questions. These are guides, worked out from your timing and changed answers.</p>
+          <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            {groups.map((g) => (
+              <li key={g.kind}>
+                <button type="button" onClick={() => { setMiss(miss === g.kind ? null : g.kind); setFilter("all"); }} aria-pressed={miss === g.kind} className={clsx("flex h-full w-full items-start gap-3 rounded-xl border p-3.5 text-left transition", miss === g.kind ? "border-oxblood bg-oxblood-tint" : "border-line bg-surface hover:border-line-strong")}>
+                  <span className={clsx("tnum flex size-9 flex-none items-center justify-center rounded-lg font-display text-[15px] font-bold", g.tone === "wrong" ? "bg-oxblood text-white" : "bg-gold text-white")}>{g.numbers.length}</span>
+                  <span className="min-w-0"><span className="block text-[13px] font-semibold text-ink">{g.title}</span><span className="mt-0.5 block text-[12px] leading-[1.5] text-ink-muted">{g.hint}</span></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section aria-labelledby="every-q">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="every-q" className="font-display text-[17px] font-bold text-ink">{activeGroup ? activeGroup.title : "Every question, with the solution"}</h2>
+          {activeGroup
+            ? <button type="button" onClick={() => setMiss(null)} className="inline-flex items-center gap-1 rounded-full border border-line-strong bg-white px-3 py-1.5 text-xs font-semibold text-ink-2 hover:border-ink"><X className="size-3.5" aria-hidden />Clear filter</button>
+            : <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter questions">{(["all", "wrong", "skipped", "correct"] as const).map((f) => <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)} className={clsx("rounded-full border px-3.5 py-1.5 text-xs font-semibold transition", filter === f ? "border-ink bg-ink text-surface" : "border-line-strong bg-white text-ink-2 hover:border-oxblood")}>{f === "all" ? "All" : f === "skipped" ? "Blank" : f === "wrong" ? "Wrong" : "Right"} · {counts[f]}</button>)}</div>}
+        </div>
+        <ul className="mt-3 flex flex-col gap-2">
+          {shown.map((i) => {
+            const t = TONE[i.outcome];
+            const isOpen = open === i.number;
+            return (
+              <li key={i.number} id={`q-${i.number}`} className={clsx("scroll-mt-24 overflow-hidden rounded-xl border bg-card shadow-xs", i.outcome === "correct" ? "border-l-4 border-line border-l-teal" : i.outcome === "wrong" ? "border-l-4 border-line border-l-oxblood" : "border-l-4 border-line border-l-line-strong")}>
+                <button type="button" onClick={() => setOpen(isOpen ? null : i.number)} aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                  <span className="tnum flex size-8 flex-none items-center justify-center rounded-lg bg-surface font-display text-[13px] font-bold text-ink">{i.number}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink-body">{i.stem.split("\n")[0].slice(0, 120)}</span><span className="mt-0.5 block text-[11px] text-ink-faint">{i.section}{i.topic ? ` · ${i.topic}` : ""} · {mmss(i.timeSec)}</span></span>
+                  <span className={clsx("inline-flex flex-none items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", t.chip)}>{t.icon}{t.word} {i.marksEarned > 0 ? `+${i.marksEarned}` : i.marksEarned < 0 ? i.marksEarned : ""}</span>
+                  <ChevronDown aria-hidden className={clsx("size-4 flex-none text-ink-faint transition-transform", isOpen && "rotate-180")} />
+                </button>
+                {isOpen && (
+                  <div className="border-t border-line-soft px-4 py-4 text-[13px] leading-[1.65] text-ink-body">
+                    {i.context?.lines?.map((l, k) => <p key={k} className={k === 0 ? "font-semibold" : ""}>{l}</p>)}
+                    {i.context?.table && <div className="my-2 overflow-x-auto"><table className="border-collapse text-[12.5px]"><tbody>{i.context.table.map((row, ri) => <tr key={ri}>{row.map((c, ci) => (ri === 0 ? <th key={ci} className="border border-line-strong bg-surface px-2.5 py-1 text-left font-semibold">{c}</th> : <td key={ci} className="border border-line-strong px-2.5 py-1">{c}</td>))}</tr>)}</tbody></table></div>}
+                    <p className="mt-1 whitespace-pre-wrap">{i.stem}</p>
+                    <ul className="mt-3 flex flex-col gap-1.5">
+                      {i.options.map((o, oi) => {
+                        const right = oi === i.correct, mine = oi === i.choice;
+                        return <li key={oi} className={clsx("flex gap-2.5 rounded-lg border px-3 py-2", right ? "border-teal-line bg-teal-tint" : mine ? "border-oxblood-line bg-oxblood-tint" : "border-line-soft")}><span className="font-semibold">{LET[oi]}.</span><span className="min-w-0 flex-1 whitespace-pre-wrap">{o}</span>{right && <span className="flex-none text-[11px] font-bold text-teal">{mine ? "Your answer · correct" : "Correct answer"}</span>}{mine && !right && <span className="flex-none text-[11px] font-bold text-oxblood">Your answer</span>}</li>;
+                      })}
+                    </ul>
+                    {i.explanation && <div className="mt-3 rounded-lg bg-surface p-3"><p className="type-label text-ink-faint">How to solve it</p><p className="mt-1 whitespace-pre-wrap">{i.explanation}</p></div>}
+                    <p className="mt-2 text-[11.5px] text-ink-faint">You spent {mmss(i.timeSec)} on this.{i.cohortPct !== null ? ` ${i.cohortPct}% of students who answered got it right.` : ""}</p>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+          {shown.length === 0 && <li className="rounded-xl border border-dashed border-line-strong p-6 text-center text-[13px] text-ink-muted">Nothing here.</li>}
+        </ul>
+      </section>
     </div>
   );
 }

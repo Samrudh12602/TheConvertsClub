@@ -598,3 +598,6 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
 
 Behaviour follows the prompt; looks follow the design. Differences are listed in
 `docs/DESIGN_MAP.md` under "Things in the design that could not be implemented as drawn".
+
+56. **Exam opens in its own tab, full screen; analysis rebuilt.** "Start / Continue" on the student pages opens `/exam/<slug>` with `window.open` (no `noopener`, so the exam tab keeps `window.opener`). The exam asks for full screen on the "I am ready to begin" click (needs a user gesture); a resumed attempt shows a banner with an "Enter full screen" button instead. On submit (or time up) the exam tab exits full screen, sends the opener tab to `/student/mocks/<attemptId>` and closes itself; with no opener (e-mail link) it navigates itself. `beforeunload` is skipped once the paper is in. The submit pop-up is `submit-dialog.tsx` (segmented bar, four count tiles, per-section progress, a warning only when something is unanswered). The analysis page leads with the score/verdict, then plain-English "what to take away" (`src/lib/mock-insights.ts`, tested), section cards, where to work, and a paper map + "why marks were lost" + every solution (`ReviewExplorer`). The portal `Section` grid now uses `minmax(min(Npx,100%),1fr)` so it can't overflow a phone.
+

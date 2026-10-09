@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Accessibility, Calculator as CalcIcon, ChevronDown, ChevronLeft, ChevronRight, Info, UserRound, ZoomIn } from "lucide-react";
+import { Accessibility, Calculator as CalcIcon, ChevronDown, ChevronLeft, ChevronRight, Info, Loader2, Maximize2, UserRound, ZoomIn } from "lucide-react";
 import { nowMs } from "@/lib/datetime";
 import { addTimeAction, saveAnswerAction, submitExamAction, tabSwitchAction } from "@/app/exam/actions";
 import { Calculator, Legend, PaletteShape, QContext, STATE_WORD, type PaletteState } from "@/components/mocks/exam-parts";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { SubmitDialog } from "@/components/mocks/submit-dialog";
 import { useToast } from "@/components/ui/toast";
 
 export interface ExamQuestion { id: string; number: number; stem: string; context: unknown; options: string[]; marks: number; negative: number }
@@ -19,7 +19,7 @@ const LETTERS = ["a", "b", "c", "d", "e"];
 const clock = (s: number) => `${String(Math.floor(Math.max(0, s) / 3600)).padStart(2, "0") === "00" ? "" : String(Math.floor(s / 3600)) + ":"}${String(Math.floor((Math.max(0, s) % 3600) / 60)).padStart(2, "0")}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
 /** The exam screen, laid out like the real SNAP computer-based test: section tabs, question palette, Save & Next, a server-side clock. */
-export function ExamClient({ attemptId, preview = false, title, candidate, durationMin, remainingMs, sections, saved }: Props) {
+export function ExamClient({ attemptId, preview = false, title, candidate, remainingMs, sections, saved }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [states, setStates] = useState<Record<string, SavedState>>(saved);
@@ -41,6 +41,8 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
   const [confirm, setConfirm] = useState(false);
   const [closing, setClosing] = useState<null | "time" | "manual">(null);
   const submitting = useRef(false);
+  const allowLeave = useRef(false);
+  const [fullscreen, setFullscreen] = useState(true);
   const flat = useMemo(() => sections.flatMap((s, si) => s.questions.map((q, qi) => ({ q, si, qi }))), [sections]);
 
   const stateOf = useCallback((id: string, visitedNow = false): PaletteState => {
@@ -56,7 +58,6 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
   // A question counts as visited the moment it is on screen.
   const visitedNow = question.id;
   const palStates = useMemo(() => Object.fromEntries(flat.map(({ q }) => [q.id, stateOf(q.id, q.id === visitedNow)])), [flat, stateOf, visitedNow]);
-  const counts = useMemo(() => { const c: Record<PaletteState, number> = { notVisited: 0, notAnswered: 0, answered: 0, marked: 0, answeredMarked: 0 }; for (const { q } of flat) c[palStates[q.id]]++; return c; }, [flat, palStates]);
   const secCounts = (sIdx: number) => { const c: Record<PaletteState, number> = { notVisited: 0, notAnswered: 0, answered: 0, marked: 0, answeredMarked: 0 }; for (const q of sections[sIdx].questions) c[palStates[q.id]]++; return c; };
 
   // Seconds spent on the question on screen since it appeared (or since the last time they were counted).
@@ -95,16 +96,35 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
     if (!preview && attemptId) report(saveAnswerAction(attemptId, { questionId: question.id, choice: null, marked: false, timeSecDelta: d }));
   };
 
+  // After the paper is in: leave full screen, close this tab and send the tab that opened it to the analysis. If this tab wasn't
+  // opened from the portal (a link in an email, say), it simply moves on to the analysis itself.
+  const finish = useCallback((id: string) => {
+    const url = `/student/mocks/${id}`;
+    allowLeave.current = true;
+    try { if (document.fullscreenElement) void document.exitFullscreen(); } catch { /* not in full screen */ }
+    try {
+      const op = window.opener as Window | null;
+      if (op && !op.closed && op.location.origin === window.location.origin) {
+        op.location.href = url;
+        op.focus();
+        window.close();
+        setTimeout(() => router.replace(url), 600); // still here: the browser refused to close it
+        return;
+      }
+    } catch { /* cross-origin opener: fall through */ }
+    router.replace(url);
+  }, [router]);
+
   const doSubmit = useCallback(async (reason: "time" | "manual") => {
     if (submitting.current) return;
     submitting.current = true;
     setClosing(reason); setConfirm(false);
-    if (preview || !attemptId) { toast.info("Preview only: nothing was saved or scored."); router.replace("/admin/mocks"); return; }
+    if (preview || !attemptId) { allowLeave.current = true; try { if (document.fullscreenElement) void document.exitFullscreen(); } catch { /* ignore */ } toast.info("Preview only: nothing was saved or scored."); router.replace("/admin/mocks"); return; }
     try { const d = takeTime(); if (d > 0) await addTimeAction(attemptId, question.id, d); } catch { /* the deadline may have passed; the save is best-effort */ }
     const r = await submitExamAction(attemptId);
-    if (r.ok) router.replace(`/student/mocks/${attemptId}`);
+    if (r.ok) finish(attemptId);
     else { submitting.current = false; setClosing(null); toast.error(r.error); }
-  }, [preview, attemptId, router, toast, takeTime, question.id]);
+  }, [preview, attemptId, router, toast, takeTime, question.id, finish]);
 
   // The clock mirrors a deadline the server set. At zero the paper is submitted for you.
   const submitRef = useRef(doSubmit);
@@ -128,10 +148,18 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
   useEffect(() => {
     const block = (e: Event) => e.preventDefault();
     document.addEventListener("contextmenu", block); document.addEventListener("copy", block); document.addEventListener("cut", block); document.addEventListener("dragstart", block);
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    const warn = (e: BeforeUnloadEvent) => { if (!allowLeave.current) e.preventDefault(); };
     window.addEventListener("beforeunload", warn);
     return () => { document.removeEventListener("contextmenu", block); document.removeEventListener("copy", block); document.removeEventListener("cut", block); document.removeEventListener("dragstart", block); window.removeEventListener("beforeunload", warn); };
   }, []);
+
+  useEffect(() => {
+    const sync = () => setFullscreen(Boolean(document.fullscreenElement));
+    sync();
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const goFullscreen = () => { void document.documentElement.requestFullscreen?.().catch(() => toast.info("Your browser didn't allow full screen. You can carry on in this window.")); };
 
   const urgent = left <= 300;
   const fs = 16 + fontStep * 2 + (magnify ? 4 : 0);
@@ -159,6 +187,13 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
           <button type="button" onClick={() => setMagnify((v) => !v)} aria-pressed={magnify} className={clsx("flex items-center gap-1.5", magnify ? "text-[#ffd86b]" : "hover:text-white")}><ZoomIn className="size-4 text-[#f5b73b]" aria-hidden /><span className="hidden sm:inline">Screen Magnifier</span></button>
         </div>
       </header>
+
+      {!fullscreen && (
+        <div className="flex flex-none items-center justify-center gap-3 bg-[#fff4d6] px-4 py-1.5 text-[12.5px] text-[#6b4a05]">
+          <span>This exam runs best in full screen.</span>
+          <button type="button" onClick={goFullscreen} className="inline-flex items-center gap-1.5 rounded bg-[#3a78b8] px-3 py-1 text-[12px] font-semibold text-white hover:bg-[#2f6aa6]"><Maximize2 className="size-3.5" aria-hidden />Enter full screen</button>
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1">
         {/* question area */}
@@ -225,13 +260,13 @@ export function ExamClient({ attemptId, preview = false, title, candidate, durat
       </div>
 
       {calc && <Calculator onClose={() => setCalc(false)} />}
-      <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} title="Submit the exam?" confirmLabel="Yes, submit" busy={closing !== null}
-        body={<div className="text-[13px]"><p className="mb-3">You can&apos;t come back to this paper after submitting.</p>
-          <table className="w-full border-collapse text-[12.5px]"><thead><tr className="bg-[#eef3f9] text-left"><th className="border border-[#ccd6e0] px-2 py-1.5">Section</th><th className="border border-[#ccd6e0] px-2 py-1.5">Answered</th><th className="border border-[#ccd6e0] px-2 py-1.5">Not answered</th><th className="border border-[#ccd6e0] px-2 py-1.5">Marked</th><th className="border border-[#ccd6e0] px-2 py-1.5">Not visited</th></tr></thead>
-            <tbody>{sections.map((s, i) => { const c = secCounts(i); return <tr key={s.id}><td className="border border-[#ccd6e0] px-2 py-1.5">{s.name}</td><td className="border border-[#ccd6e0] px-2 py-1.5">{c.answered + c.answeredMarked}</td><td className="border border-[#ccd6e0] px-2 py-1.5">{c.notAnswered}</td><td className="border border-[#ccd6e0] px-2 py-1.5">{c.marked + c.answeredMarked}</td><td className="border border-[#ccd6e0] px-2 py-1.5">{c.notVisited}</td></tr>; })}</tbody></table>
-          <p className="mt-3 text-[12px] text-[#555]">{counts.answered + counts.answeredMarked} of {flat.length} answered · time left {clock(left)} of {durationMin} min. A question marked for review that has an answer still counts.</p></div>}
-        onConfirm={() => void doSubmit("manual")} />
-      {closing === "time" && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 text-white"><div className="text-center"><p className="text-xl font-bold">Time&apos;s up</p><p className="mt-2 text-sm">Submitting your paper…</p></div></div>}
+      <SubmitDialog open={confirm} onClose={() => setConfirm(false)} busy={closing !== null} onSubmit={() => void doSubmit("manual")} timeLeft={clock(left)} secondsLeft={left}
+        sections={sections.map((s, i) => { const c = secCounts(i); return { name: s.name, total: s.questions.length, answered: c.answered + c.answeredMarked, marked: c.marked, notAnswered: c.notAnswered, notVisited: c.notVisited }; })} />
+      {closing !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#16222f]/85 text-white backdrop-blur-sm" role="status">
+          <div className="text-center"><Loader2 className="mx-auto size-9 animate-spin text-[#8fc1ee]" aria-hidden /><p className="mt-4 text-xl font-bold">{closing === "time" ? "Time's up" : "Submitting your paper"}</p><p className="mt-1.5 text-sm text-white/75">{preview ? "Closing the preview…" : "Scoring it and opening your analysis…"}</p></div>
+        </div>
+      )}
       <span className="sr-only" aria-live="polite">{STATE_WORD[palStates[question.id]]}</span>
     </div>
   );

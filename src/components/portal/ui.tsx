@@ -106,7 +106,7 @@ export function Insight({ title, tone, icon, children }: { title: string; tone: 
 }
 
 export function Section({ children, cols = 260 }: { children: React.ReactNode; cols?: number }) {
-  return <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${cols}px, 1fr))` }}>{children}</div>;
+  return <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(${cols}px, 100%), 1fr))` }}>{children}</div>;
 }
 
 export function Flash({ tone = "amber", children }: { tone?: "amber" | "green" | "oxblood"; children: React.ReactNode }) {

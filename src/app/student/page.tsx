@@ -1,3 +1,4 @@
+import { OpenExamButton } from "@/components/mocks/open-exam";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
@@ -66,7 +67,7 @@ export default async function StudentDashboard() {
               <p className="mt-2 max-w-[56ch] text-[13px] leading-[1.65] text-dark-soft">{inProgress ? "Pick up where you left off. The clock has been running since you started." : startable ? "Sit it in one go on the real exam screen, then get the full analysis and solutions." : lastDone ? "Your score, where you lost marks, and a solution for every question." : "One full-length mock with the complete analysis, so you can see the quality for yourself."}</p>
             </div>
             <div className="flex flex-wrap gap-2.5">
-              {inProgress ? <ButtonLink href={`/exam/${inProgress.slug}`} variant="onDark">Continue the exam</ButtonLink> : startable ? <ButtonLink href={`/exam/${startable.slug}`} variant="onDark">Start {startable.title}</ButtonLink> : lastDone?.attempt ? <ButtonLink href={`/student/mocks/${lastDone.attempt.id}`} variant="onDark">Open the analysis</ButtonLink> : null}
+              {inProgress ? <OpenExamButton slug={inProgress.slug} variant="onDark">Continue the exam</OpenExamButton> : startable ? <OpenExamButton slug={startable.slug} variant="onDark">Start {startable.title}</OpenExamButton> : lastDone?.attempt ? <ButtonLink href={`/student/mocks/${lastDone.attempt.id}`} variant="onDark">Open the analysis</ButtonLink> : null}
               <ButtonLink href="/student/mocks" variant="secondary" className="border-white/15 bg-white/10 text-surface hover:bg-white/15 hover:text-surface">All mocks</ButtonLink>
             </div>
           </div>

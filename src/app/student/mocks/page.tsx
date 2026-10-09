@@ -1,3 +1,4 @@
+import { OpenExamButton } from "@/components/mocks/open-exam";
 import Link from "next/link";
 import { ArrowRight, BarChart3, CheckCircle2, Clock, FileCheck2, Lock, Play } from "lucide-react";
 import { PortalPage } from "@/components/portal/portal-page";
@@ -48,11 +49,11 @@ export default async function StudentMocksPage() {
                   {a?.status === "SUBMITTED" ? (
                     <><span className="tnum rounded-lg bg-surface px-3 py-2 font-display text-[16px] font-bold text-ink">{a.score?.toFixed(2).replace(/\.00$/, "")}</span><ButtonLink href={`/student/mocks/${a.id}`} variant="secondary">View analysis <ArrowRight className="size-4" aria-hidden /></ButtonLink></>
                   ) : a?.status === "IN_PROGRESS" ? (
-                    <ButtonLink href={`/exam/${m.slug}`}><Clock className="size-4" aria-hidden />Continue the exam</ButtonLink>
+                    <OpenExamButton slug={m.slug}><Clock className="size-4" aria-hidden />Continue the exam</OpenExamButton>
                   ) : !m.released ? (
                     <StatusPill tone="stone">{m.releaseAt ? `Opens ${fmtWhen(m.releaseAt)}` : "Coming soon"}</StatusPill>
                   ) : m.canStart ? (
-                    <ButtonLink href={`/exam/${m.slug}`}><Play className="size-4" aria-hidden />Start the mock</ButtonLink>
+                    <OpenExamButton slug={m.slug}><Play className="size-4" aria-hidden />Start the mock</OpenExamButton>
                   ) : (
                     <span className="text-[12px] font-medium text-ink-muted">{m.isTest ? "Buy the test mock below" : "Buy a pack below to take it"}</span>
                   )}
