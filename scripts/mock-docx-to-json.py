@@ -8,7 +8,7 @@ Expected layout (what the owner's papers use):
   (a)  <text> ... (d)  <text>            the four options
   Directions (Questions a-b): <text>     a shared passage/data set for a range of questions; a table may follow it
   Answer Key                             then a grid table of  Q | Ans  pairs
-  Detailed Solutions                     then  Qn.  Answer: (x)  <text>  followed by the explanation paragraphs
+  Detailed Solutions                     then  Qn.  [Level]  Answer: (x)  <text>  (the [Level] tag is optional) followed by the explanation paragraphs
 
 The JSON goes to stdout. It is written to a file the owner keeps outside the repository: the paper is the product.
 """
@@ -21,7 +21,7 @@ SECTION = re.compile(r"^Section\s+(\d+)\s*:\s*(.+)$")
 QSTART = re.compile(r"^Q(\d+)\.\s+(.*)$")
 OPTION = re.compile(r"^\(([a-d])\)\s+(.*)$")
 SETDIR = re.compile(r"^Directions\s*\(Questions?\s*(\d+)\s*[–—-]\s*(\d+)\)\s*:\s*(.*)$")
-SOLUTION = re.compile(r"^Q(\d+)\.\s+Answer:\s*\(([a-d])\)\s*(.*)$")
+SOLUTION = re.compile(r"^Q(\d+)\.\s+(?:\[[^\]]*\]\s*)?Answer:\s*\(([a-d])\)\s*(.*)$")
 LETTER = "abcd"
 
 
@@ -56,8 +56,9 @@ def main(path):
             rows = table_rows(it)
             head = [c.lower() for c in rows[0]] if rows else []
             if phase == "key" and rows and head[:2] == ["q", "ans"]:
+                width = 3 if "level" in head else 2  # some papers add a difficulty column: Q | Ans | Level
                 for r in rows[1:]:
-                    for i in range(0, len(r) - 1, 2):
+                    for i in range(0, len(r) - 1, width):
                         if r[i].strip().isdigit() and r[i + 1].strip().lower() in LETTER:
                             key[int(r[i])] = LETTER.index(r[i + 1].strip().lower())
             elif phase == "paper" and rows and head[:1] == ["section"]:

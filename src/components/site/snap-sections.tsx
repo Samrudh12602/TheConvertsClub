@@ -132,7 +132,7 @@ export function SnapPacks({ p }: { p: SnapProducts }) {
   return (
     <section id="packs" aria-labelledby="packs-title" className="scroll-mt-24">
       <Reveal className="mb-5 max-w-[620px]"><p className="type-eyebrow text-oxblood">Pick your pack</p><h2 id="packs-title" className="type-display mt-3 text-ink">Start with one for ₹50. Add more when you&apos;re convinced.</h2></Reveal>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))" }}>
         {p.test && <Reveal><PackCard product={p.test} label="Start here" tone="light" bullets={["One full-length mock, the real exam screen", "The complete analysis and every solution", "A detailed PDF report", "See the quality before you commit"]} note="One per person." /></Reveal>}
         {p.five && <Reveal delay={80}><PackCard product={p.five} tone="light" perMock={per(p.five, 5)} bullets={["5 full-length mocks, taken any time they're live", "Instant analysis and a PDF for each", "Section-wise, topic-wise and time analysis", "What-went-wrong breakdown after every mock"]} /></Reveal>}
         {p.ten && <Reveal delay={160}><PackCard product={p.ten} label="Best value" tone="dark" perMock={`${per(p.ten, 10) ?? ""}${saving > 0 ? ` · saves ${formatPaise(saving)} over two 5-packs` : ""}`} bullets={["10 full-length mocks", "Everything in the 5-pack, for twice the practice", "Track your score and weak topics across mocks", "Best price for the full December run"]} note="Mocks open one after another; see the list below for what's live." /></Reveal>}
@@ -180,9 +180,10 @@ export function SnapAnalysisShowcase() {
   );
 }
 
-export function SnapCatalogue({ mocks }: { mocks: CatalogueMock[] }) {
+/** `planned`: how many mocks the packs on sale promise in total; the spots not yet released are shown as locked. 0 shows none. */
+export function SnapCatalogue({ mocks, planned = 0 }: { mocks: CatalogueMock[]; planned?: number }) {
   if (mocks.length === 0) return null;
-  const slots = Math.max(0, 10 - mocks.length);
+  const slots = Math.max(0, planned - mocks.filter((m) => !m.isTest).length);
   const live = mocks.filter((m) => m.released).length;
   return (
     <section aria-labelledby="snap-list">
@@ -192,7 +193,7 @@ export function SnapCatalogue({ mocks }: { mocks: CatalogueMock[] }) {
           <Reveal key={m.id} as="li" className={clsx("flex items-center gap-3.5 rounded-2xl border p-4 shadow-xs", m.released ? "border-teal/30 bg-card" : "border-line bg-card")}><span className={clsx("flex size-11 flex-none items-center justify-center rounded-xl", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-faint")}><FileText className="size-5" aria-hidden /></span><span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{m.title}</span><span className="block text-[12px] text-ink-faint">{m.questions} questions · {m.durationMin} min</span></span><span className={clsx("flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold", m.released ? "bg-teal-tint text-teal" : "bg-line-soft text-ink-muted")}>{m.released ? "Live" : m.releaseAt ? `Opens ${fmtWhen(m.releaseAt)}` : "Coming soon"}</span></Reveal>
         ))}
         {Array.from({ length: slots }, (_, i) => (
-          <li key={`slot-${i}`} aria-hidden className="flex items-center gap-3.5 rounded-2xl border border-dashed border-line-strong bg-surface/60 p-4"><span className="flex size-11 flex-none items-center justify-center rounded-xl bg-line-soft text-ink-faint"><Lock className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-[14px] font-semibold text-ink-muted">Mock {mocks.length + i + 1}</span><span className="block text-[12px] text-ink-faint">60 questions · 60 min</span></span><span className="flex-none rounded-full bg-line-soft px-2.5 py-1 text-[11px] font-semibold text-ink-muted">Releasing soon</span></li>
+          <li key={`slot-${i}`} aria-hidden className="flex items-center gap-3.5 rounded-2xl border border-dashed border-line-strong bg-surface/60 p-4"><span className="flex size-11 flex-none items-center justify-center rounded-xl bg-line-soft text-ink-faint"><Lock className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-[14px] font-semibold text-ink-muted">Mock {mocks.filter((m) => !m.isTest).length + i + 1}</span><span className="block text-[12px] text-ink-faint">60 questions · 60 min</span></span><span className="flex-none rounded-full bg-line-soft px-2.5 py-1 text-[11px] font-semibold text-ink-muted">Releasing soon</span></li>
         ))}
       </ul>
     </section>

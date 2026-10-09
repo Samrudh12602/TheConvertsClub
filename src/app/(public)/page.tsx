@@ -27,7 +27,7 @@ export default async function HomePage() {
         <SnapPacks p={snap} />
         <SnapAnalysisShowcase />
         <SnapHow />
-        <SnapCatalogue mocks={mocks.map((m) => ({ id: m.id, title: m.title, isTest: m.isTest, questions: m.questions, durationMin: m.durationMin, released: m.released, releaseAt: m.releaseAt }))} />
+        <SnapCatalogue mocks={mocks.map((m) => ({ id: m.id, title: m.title, isTest: m.isTest, questions: m.questions, durationMin: m.durationMin, released: m.released, releaseAt: m.releaseAt }))} planned={snap.ten ? 10 : 0} />
         <GdpiTeaser />
         <FaqTeaser items={SNAP_FAQS.slice(0, 6)} />
         <FinalCta snap />
