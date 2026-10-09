@@ -3,6 +3,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import { Check, Delete, X } from "lucide-react";
+import { RichText } from "@/components/mocks/rich-text";
 
 export type PaletteState = "notVisited" | "notAnswered" | "answered" | "marked" | "answeredMarked";
 
@@ -54,13 +55,13 @@ export function QContext({ context }: { context: unknown }) {
   if (!c || (!c.lines?.length && !c.table)) return null;
   return (
     <div className="mb-3 rounded border border-[#d5dde6] bg-[#f6f9fc] p-3 text-[14px] leading-[1.6] text-[#222]">
-      {c.lines?.map((l, i) => <p key={i} className={i === 0 ? "font-semibold" : ""}>{l}</p>)}
+      {c.lines?.map((l, i) => <p key={i} className={i === 0 ? "font-semibold" : ""}><RichText text={l} /></p>)}
       {c.table && (
         <div className="mt-2 overflow-x-auto">
           <table className="border-collapse text-[13px]">
             <tbody>
               {c.table.map((row, ri) => (
-                <tr key={ri}>{row.map((cell, ci) => (ri === 0 ? <th key={ci} className="border border-[#9aa8b8] bg-[#e4ecf4] px-3 py-1.5 text-left font-semibold">{cell}</th> : <td key={ci} className="border border-[#9aa8b8] px-3 py-1.5">{cell}</td>))}</tr>
+                <tr key={ri}>{row.map((cell, ci) => (ri === 0 ? <th key={ci} className="border border-[#9aa8b8] bg-[#e4ecf4] px-3 py-1.5 text-left font-semibold"><RichText text={cell} /></th> : <td key={ci} className="border border-[#9aa8b8] px-3 py-1.5"><RichText text={cell} /></td>))}</tr>
               ))}
             </tbody>
           </table>

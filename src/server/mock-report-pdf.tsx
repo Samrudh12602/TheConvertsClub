@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { MISS_LABEL, mmss, paceSec, type MissKind } from "@/lib/mock-analysis";
 import type { ResultView } from "@/server/mocks";
+import { splitRich } from "@/lib/rich";
 
 const C = { ink: "#16130F", body: "#3A332B", muted: "#6F655A", line: "#E4DED4", soft: "#F7F4EE", oxblood: "#7A1F2B", tint: "#F5E9EA", green: "#14664F", greenTint: "#E3F1EE", amber: "#9A6A12", amberTint: "#FAF0D8" };
 
@@ -24,6 +25,9 @@ export function pdfSafe(input: string | null | undefined): string {
   // Anything still outside basic Latin and Latin-1 would render as nothing.
   return out.replace(/[^\u0009\u000a -~¡-ÿ]/g, "");
 }
+
+/** Text with <u>underlined</u> words, drawn as real underlines. */
+const rich = (t: string | null | undefined) => splitRich(t).map((p, i) => (p.underline ? <Text key={i} style={{ textDecoration: "underline" }}>{pdfSafe(p.text)}</Text> : pdfSafe(p.text)));
 
 const s = StyleSheet.create({
   page: { paddingTop: 36, paddingBottom: 46, paddingHorizontal: 38, fontSize: 9.5, color: C.body, fontFamily: "Helvetica" },
@@ -127,14 +131,14 @@ function Report({ r, student, only }: { r: ResultView; student: { name: string; 
             return (
               <View key={q.id} style={s.q} wrap={false}>
                 <View style={s.qHead}><Text style={s.qNo}>Q{q.number}</Text><Text style={s.qMeta}>{pdfSafe(q.sectionName)}{q.topic ? ` · ${pdfSafe(q.topic)}` : ""} · {mmss(x.timeSec)}</Text><Text style={[s.chip, { backgroundColor: chip.bg, color: chip.c }]}>{chip.t}</Text></View>
-                {ctx?.lines?.map((l, i) => <Text key={i} style={{ fontFamily: i === 0 ? "Helvetica-Bold" : "Helvetica", marginBottom: 2 }}>{pdfSafe(l)}</Text>)}
-                {ctx?.table && <View style={[s.table, { marginVertical: 4 }]}>{ctx.table.map((row, ri) => <View key={ri} style={s.tr}>{row.map((c, ci) => <Text key={ci} style={[ri === 0 ? s.th : s.td, { flexGrow: 1, flexBasis: 0 }]}>{pdfSafe(c)}</Text>)}</View>)}</View>}
-                <Text>{pdfSafe(q.stem)}</Text>
+                {ctx?.lines?.map((l, i) => <Text key={i} style={{ fontFamily: i === 0 ? "Helvetica-Bold" : "Helvetica", marginBottom: 2 }}>{rich(l)}</Text>)}
+                {ctx?.table && <View style={[s.table, { marginVertical: 4 }]}>{ctx.table.map((row, ri) => <View key={ri} style={s.tr}>{row.map((c, ci) => <Text key={ci} style={[ri === 0 ? s.th : s.td, { flexGrow: 1, flexBasis: 0 }]}>{rich(c)}</Text>)}</View>)}</View>}
+                <Text>{rich(q.stem)}</Text>
                 {q.options.map((o, i) => {
                   const right = i === q.correct, mine = i === x.choice;
-                  return <View key={i} style={[s.opt, right ? { backgroundColor: C.greenTint } : mine ? { backgroundColor: C.tint } : {}]}><Text style={s.optL}>{LET[i]}.</Text><Text style={{ flex: 1 }}>{pdfSafe(o)}{right ? "   (correct answer)" : ""}{mine ? "   (your answer)" : ""}</Text></View>;
+                  return <View key={i} style={[s.opt, right ? { backgroundColor: C.greenTint } : mine ? { backgroundColor: C.tint } : {}]}><Text style={s.optL}>{LET[i]}.</Text><Text style={{ flex: 1 }}>{rich(o)}{right ? "   (correct answer)" : ""}{mine ? "   (your answer)" : ""}</Text></View>;
                 })}
-                {q.explanation && <View style={s.sol}><Text style={s.solL}>SOLUTION</Text><Text>{pdfSafe(q.explanation)}</Text></View>}
+                {q.explanation && <View style={s.sol}><Text style={s.solL}>SOLUTION</Text><Text>{rich(q.explanation)}</Text></View>}
               </View>
             );
           })}

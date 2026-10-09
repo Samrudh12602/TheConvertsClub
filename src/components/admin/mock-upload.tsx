@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { RichText } from "@/components/mocks/rich-text";
 import { createMockFromPaperAction, inspectMockPaperAction, type PaperSummary } from "@/app/admin/actions";
 
 const field = "min-h-10 w-full rounded-lg border border-line-strong bg-white px-3 text-[13px] text-ink";
@@ -73,8 +74,8 @@ export function MockUpload({ nextNumber }: { nextNumber: number }) {
             )}
             {sum.sample && !blocked && (
               <details className="mt-3 text-[12px] text-ink-2"><summary className="cursor-pointer font-semibold text-ink">Check question {sum.sample.number}</summary>
-                <p className="mt-2 whitespace-pre-wrap leading-[1.6]">{sum.sample.stem}</p>
-                <ul className="mt-1.5 flex flex-col gap-1">{sum.sample.options.map((o, i) => <li key={i} className={clsx(i === sum.sample!.correct && "font-semibold text-teal")}>{"abcd"[i]}) {o}{i === sum.sample!.correct ? "  ← correct" : ""}</li>)}</ul></details>
+                <p className="mt-2 whitespace-pre-wrap leading-[1.6]"><RichText text={sum.sample.stem} /></p>
+                <ul className="mt-1.5 flex flex-col gap-1">{sum.sample.options.map((o, i) => <li key={i} className={clsx(i === sum.sample!.correct && "font-semibold text-teal")}>{"abcd"[i]}) <RichText text={o} />{i === sum.sample!.correct ? "  ← correct" : ""}</li>)}</ul></details>
             )}
           </div>
 

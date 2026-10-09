@@ -8,6 +8,7 @@ import { nowMs } from "@/lib/datetime";
 import { addTimeAction, saveAnswerAction, submitExamAction, tabSwitchAction } from "@/app/exam/actions";
 import { Calculator, Legend, PaletteShape, QContext, STATE_WORD, type PaletteState } from "@/components/mocks/exam-parts";
 import { SubmitDialog } from "@/components/mocks/submit-dialog";
+import { RichText } from "@/components/mocks/rich-text";
 import { useToast } from "@/components/ui/toast";
 
 export interface ExamQuestion { id: string; number: number; stem: string; context: unknown; options: string[]; marks: number; negative: number }
@@ -214,14 +215,14 @@ export function ExamClient({ attemptId, preview = false, title, candidate, remai
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3" style={{ fontSize: fs }}>
             <h2 className="mb-3 text-[1.1em] font-bold">Question No. {question.number}.</h2>
             <QContext context={question.context} />
-            <p className="whitespace-pre-wrap leading-[1.6]">{question.stem}</p>
+            <p className="whitespace-pre-wrap leading-[1.6]"><RichText text={question.stem} /></p>
             <fieldset className="mt-5">
               <legend className="sr-only">Choose one option</legend>
               <div className="flex flex-col gap-3.5">
                 {question.options.map((o, i) => (
                   <label key={i} className="flex cursor-pointer items-start gap-3 leading-[1.5]">
                     <input type="radio" name={`q-${question.id}`} checked={draft === i} onChange={() => setDraft(i)} className="mt-[5px] size-4 accent-[#3a78b8]" />
-                    <span className="whitespace-pre-wrap"><span className="sr-only">Option {LETTERS[i]}: </span>{o}</span>
+                    <span className="whitespace-pre-wrap"><span className="sr-only">Option {LETTERS[i]}: </span><RichText text={o} /></span>
                   </label>
                 ))}
               </div>

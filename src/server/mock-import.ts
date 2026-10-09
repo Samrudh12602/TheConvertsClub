@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { ParsedMock } from "@/lib/mock-docx";
 import { topicFor } from "@/lib/mock-topics";
+import { stripMarkup } from "@/lib/rich";
 
 export class MockImportError extends Error {}
 
@@ -25,7 +26,7 @@ async function writeQuestions(tx: Tx, mockId: string, p: ParsedMock, marks: numb
     await tx.mockQuestion.createMany({
       data: s.questions.map((q) => {
         const ctxText = q.context?.lines?.join(" ") ?? "";
-        return { mockId, sectionId: sec.id, number: q.number, stem: q.stem, context: q.context ?? undefined, options: q.options, correct: q.correct, explanation: q.explanation, topic: topicFor(s.name, `${ctxText} ${q.stem}`, q.number), marks, negative };
+        return { mockId, sectionId: sec.id, number: q.number, stem: q.stem, context: q.context ?? undefined, options: q.options, correct: q.correct, explanation: q.explanation, topic: topicFor(s.name, stripMarkup(`${ctxText} ${q.stem}`), q.number), marks, negative };
       }),
     });
   }
