@@ -3,6 +3,7 @@ import { MISS_LABEL, mmss, paceSec, type MissKind } from "@/lib/mock-analysis";
 import type { ResultView } from "@/server/mocks";
 import { splitRich, type RichPart } from "@/lib/rich";
 import { topicLabel } from "@/lib/mock-topics";
+import { PdfMark } from "@/server/pdf-mark";
 
 const C = { ink: "#16130F", body: "#3A332B", muted: "#6F655A", line: "#E4DED4", soft: "#F7F4EE", oxblood: "#7A1F2B", tint: "#F5E9EA", green: "#14664F", greenTint: "#E3F1EE", amber: "#9A6A12", amberTint: "#FAF0D8" };
 
@@ -79,8 +80,6 @@ function PdfRich({ text, imgs, suffix, style }: { text: string | null | undefine
 const s = StyleSheet.create({
   page: { paddingTop: 36, paddingBottom: 46, paddingHorizontal: 38, fontSize: 9.5, color: C.body, fontFamily: "Helvetica" },
   brandRow: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
-  mark: { width: 22, height: 22, backgroundColor: C.oxblood, borderRadius: 5, alignItems: "center", justifyContent: "center" },
-  markT: { color: "#fff", fontFamily: "Helvetica-Bold", fontSize: 11 },
   brand: { fontFamily: "Helvetica-Bold", fontSize: 12, color: C.ink, marginLeft: 7 },
   h1: { fontFamily: "Helvetica-Bold", fontSize: 19, color: C.ink },
   sub: { fontSize: 9.5, color: C.muted, marginTop: 3 },
@@ -120,7 +119,7 @@ function Report({ r, student, only, imgs }: { r: ResultView; student: { name: st
   return (
     <Document title={pdfSafe(`${r.mock.title} - analysis`)} author="The Converts Club">
       {only !== "solutions" && <Page size="A4" style={s.page}>
-        <View style={s.brandRow}><View style={s.mark}><Text style={s.markT}>C</Text></View><Text style={s.brand}>The Converts Club</Text></View>
+        <View style={s.brandRow}><PdfMark height={24} /><Text style={s.brand}>The Converts Club</Text></View>
         <Text style={s.h1}>{pdfSafe(r.mock.title)}: your analysis</Text>
         <Text style={s.sub}>{pdfSafe(student.name)} · {when} · {r.mock.durationMin} minutes · {a.results.length} questions</Text>
         <View style={s.cards}>

@@ -6,11 +6,12 @@ import { useState } from "react";
 import clsx from "clsx";
 import type { NavGroup, PortalRole } from "@/lib/portal-nav";
 import { NavIcon } from "@/components/portal/nav-icons";
+import { LogoMark } from "@/components/brand/logo-mark";
 
-const BRAND: Record<PortalRole, { mark: string; sub: string | null }> = {
-  student: { mark: "bg-brand shadow-glow", sub: null },
-  mentor: { mark: "bg-gradient-to-b from-[#2a241e] to-ink shadow-card", sub: "Mentor" },
-  admin: { mark: "bg-brand shadow-glow", sub: "Admin console" },
+const BRAND: Record<PortalRole, { sub: string | null }> = {
+  student: { sub: null },
+  mentor: { sub: "Mentor" },
+  admin: { sub: "Admin console" },
 };
 
 function isActive(pathname: string, href: string, match: string[] = []) {
@@ -41,9 +42,7 @@ export function PortalSidebar({ role, groups, footer }: { role: PortalRole; grou
     >
       <div className="flex items-center justify-between gap-3 px-5 py-3 md:px-5 md:pb-4 md:pt-5">
         <Link href={`/${role}`} className="flex items-center gap-[9px] no-underline hover:no-underline" aria-label={`Converts Club ${role} home`}>
-          <span aria-hidden className={clsx("flex size-[26px] items-center justify-center rounded-md font-display text-[13px] font-bold leading-none text-white", brand.mark)}>
-            C
-          </span>
+          <LogoMark tone={dark ? "paper" : "color"} className="h-7 w-auto flex-none" />
           <span className="min-w-0">
             <span className={clsx("block font-display text-[13px] font-bold leading-[1.15]", dark ? "text-surface" : "text-ink")}>Converts Club</span>
             {brand.sub && (

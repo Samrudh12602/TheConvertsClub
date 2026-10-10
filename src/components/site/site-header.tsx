@@ -6,6 +6,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { ButtonLink } from "@/components/ui/button";
 import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 const NAV_SOON = [
   { href: "/", label: "Home" },
@@ -54,9 +55,7 @@ export function SiteHeader({ account, comingSoon = false }: { account: { role: R
     <header className="glass sticky top-0 z-20 border-b border-line shadow-xs">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 px-5 py-3">
         <Link href="/" className="mr-1.5 flex items-center gap-[9px] no-underline hover:no-underline" aria-label="The Converts Club, home">
-          <span aria-hidden className="flex size-[28px] items-center justify-center rounded-lg bg-brand font-display text-[14px] font-bold leading-none text-white shadow-glow">
-            C
-          </span>
+          <LogoMark className="h-[30px] w-auto flex-none" />
           <span className="font-display text-sm font-bold leading-tight text-ink">The Converts Club</span>
         </Link>
 

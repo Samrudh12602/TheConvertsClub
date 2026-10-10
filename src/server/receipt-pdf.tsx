@@ -1,4 +1,5 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { PdfMark } from "@/server/pdf-mark";
 
 const C = {
   ink: "#16130F", body: "#4A4239", muted: "#6F655A", line: "#E4DED4", lineSoft: "#EFEAE2",
@@ -38,8 +39,6 @@ const s = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: C.body, fontFamily: "Helvetica" },
 
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 },
-  mark: { width: 24, height: 24, backgroundColor: C.oxblood, borderRadius: 5, alignItems: "center", justifyContent: "center" },
-  markText: { color: "#FFFFFF", fontFamily: "Helvetica-Bold", fontSize: 12 },
   brand: { fontFamily: "Helvetica-Bold", fontSize: 13, color: C.ink, marginLeft: 8 },
   brandRow: { flexDirection: "row", alignItems: "center" },
 
@@ -100,7 +99,7 @@ export function ReceiptDocument({ r }: { r: ReceiptData }) {
         <View style={s.headerRow}>
           <View>
             <View style={s.brandRow}>
-              <View style={s.mark}><Text style={s.markText}>C</Text></View>
+              <PdfMark height={24} />
               <Text style={s.brand}>The Converts Club</Text>
             </View>
           </View>

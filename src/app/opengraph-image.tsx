@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { gdpiComingSoon } from "@/server/site-mode";
+import { MARK_PATHS } from "@/components/brand/mark-geometry";
 
 export const alt = "The Converts Club";
 export const size = { width: 1200, height: 630 };
@@ -14,7 +15,7 @@ export default async function OpengraphImage() {
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72, background: "#16130f", color: "#f6f3ee", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 14, background: "#7a1f2b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, fontWeight: 800 }}>C</div>
+          <svg width={67} height={60} viewBox="0 0 970 873"><path fill="#FBF9F6" d={MARK_PATHS.frame} /><path fill="#FBF9F6" d={MARK_PATHS.wedge} /><path fill="#C98F2A" d={MARK_PATHS.door} /></svg>
           <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5 }}>The Converts Club</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>

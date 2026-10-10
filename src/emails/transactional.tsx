@@ -1,4 +1,5 @@
-import { Body, Button, Container, Head, Html, Preview, Section, Text } from "@react-email/components";
+import { Body, Button, Container, Head, Html, Img, Preview, Section, Text } from "@react-email/components";
+import { appUrl } from "@/lib/env";
 
 /** Email shell from the Claude Design handoff: logo row, heading, body, optional detail rows, one CTA, footer. */
 export interface EmailProps {
@@ -23,7 +24,7 @@ export function TransactionalEmail({ preview, head, body, details, cta, footer }
         <Container style={{ maxWidth: 520, background: "#fff", borderRadius: 8, padding: 24 }}>
           <Section style={{ paddingBottom: 16, borderBottom: `1px solid ${C.line}` }}>
             <table role="presentation"><tbody><tr>
-              <td style={{ width: 22, height: 22, background: C.oxblood, borderRadius: 5, textAlign: "center", color: "#fff", fontFamily: display, fontWeight: 700, fontSize: 11 }}>C</td>
+              <td style={{ width: 28, lineHeight: 0 }}><Img src={`${appUrl()}/brand/mark.png`} width="28" height="25" alt="" style={{ display: "block" }} /></td>
               <td style={{ paddingLeft: 8, fontFamily: display, fontWeight: 700, fontSize: 12, color: C.ink }}>The Converts Club</td>
             </tr></tbody></table>
           </Section>

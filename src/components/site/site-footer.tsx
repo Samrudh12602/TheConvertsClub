@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PORTAL_LABEL, type RoleName } from "@/lib/roles";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 const GROUPS = [
   { title: "Prepare", links: [{ href: "/packages", label: "Packages" }, { href: "/how-it-works", label: "How it works" }, { href: "/mentors", label: "Mentors" }, { href: "/faq", label: "FAQ" }] },
@@ -17,7 +18,7 @@ export function SiteFooter({ account, comingSoon = false }: { account: { role: R
       <div className="mx-auto grid max-w-[1120px] gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <div className="flex items-center gap-2.5">
-            <span aria-hidden className="flex size-[30px] items-center justify-center rounded-lg bg-brand font-display text-[15px] font-bold leading-none text-white shadow-glow">C</span>
+            <LogoMark tone="paper" className="h-8 w-auto flex-none" />
             <span className="font-display text-base font-bold leading-tight text-surface">The Converts Club</span>
           </div>
           <p className="mt-3.5 max-w-[34ch] text-[13px] leading-[1.7] text-dark-muted">
