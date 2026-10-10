@@ -9,7 +9,7 @@ import { TEMPLATES, buildProps, type TemplateKey } from "@/server/email-template
 
 export type EmailProvider = "gmail" | "resend" | null;
 
-/** Gmail (an app password) wins over Resend when both are set, so the owner's own inbox is the sender. */
+/** Gmail (an app password) wins over Resend when both are set. To send from the domain address, remove the Gmail variables and set EMAIL_FROM. */
 export function emailProvider(env: Record<string, string | undefined> = process.env): EmailProvider {
   if (env.GMAIL_USER && env.GMAIL_APP_PASSWORD) return "gmail";
   if (env.RESEND_API_KEY) return "resend";
@@ -35,7 +35,7 @@ export interface SendArgs {
   details?: { k: string; v: string }[];
   /** Path or absolute URL for the CTA button. */
   url?: string;
-  /** Where replies go. Defaults to the sending mailbox, so replies land in the owner's inbox. */
+  /** Where replies go. Defaults to the sending mailbox (Gmail) or EMAIL_REPLY_TO / the From address (Resend). */
   replyTo?: string;
   attachments?: EmailAttachment[];
 }
@@ -55,7 +55,7 @@ async function deliverGmail(to: string, r: Rendered, replyTo?: string, attachmen
 async function deliverResend(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
   const from = process.env.EMAIL_FROM || "The Converts Club <onboarding@resend.dev>";
   const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from, to, subject: r.subject, html: r.html, text: r.text, ...(replyTo ? { replyTo } : {}),
+    from, to, subject: r.subject, html: r.html, text: r.text, ...(replyTo ?? process.env.EMAIL_REPLY_TO ? { replyTo: replyTo ?? process.env.EMAIL_REPLY_TO } : {}),
     attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content })),
   });
   if (error) throw new Error(error.message);
