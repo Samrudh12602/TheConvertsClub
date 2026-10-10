@@ -566,19 +566,19 @@ export async function setMockStatusAction(input: unknown): Promise<Result> {
 
 // ───────────── SNAP mocks: upload a paper, edit, replace, delete ─────────────
 
-const MAX_DOCX_BYTES = 6 * 1024 * 1024;
+const MAX_DOCX_BYTES = 20 * 1024 * 1024;
 const refreshMocks = () => { for (const p of ["/admin/mocks", "/mocks", "/student/mocks", "/student", "/"]) revalidatePath(p); };
 
 async function readPaper(fd: FormData): Promise<ParsedMock> {
   const f = fd.get("file");
   if (!(f instanceof File) || f.size === 0) throw new AdminError("Choose a Word file (.docx) first.");
   if (!f.name.toLowerCase().endsWith(".docx")) throw new AdminError("Please upload a Word document (.docx). Older .doc files and PDFs can't be read.");
-  if (f.size > MAX_DOCX_BYTES) throw new AdminError("That file is too large (the limit is 6 MB).");
+  if (f.size > MAX_DOCX_BYTES) throw new AdminError("That file is too large (the limit is 20 MB).");
   try { return parseMockDocx(new Uint8Array(await f.arrayBuffer())); } catch (e) { if (e instanceof DocxError) throw new AdminError(e.message); throw e; }
 }
 
 export interface PaperSummary {
-  detectedTitle: string | null; total: number; sections: { name: string; count: number }[]; solutions: number; problems: string[]; warnings: string[]; underlined: number[];
+  detectedTitle: string | null; total: number; sections: { name: string; count: number }[]; solutions: number; problems: string[]; warnings: string[]; underlined: number[]; pictures: { inQuestions: number; inSolutions: number };
   sample: { number: number; section: string; stem: string; options: string[]; correct: number } | null;
   suggestedNumber: number; suggestedTitle: string; suggestedSlug: string;
 }
@@ -588,13 +588,15 @@ export async function inspectMockPaperAction(fd: FormData): Promise<({ ok: true 
   try {
     await guard("mock-inspect");
     const p = await readPaper(fd);
+    const all = p.sections.flatMap((s) => s.questions);
     const first = p.sections.find((s) => s.questions.length)?.questions[0];
     const n = await nextMockNumber();
     return {
       ok: true, detectedTitle: p.title, total: p.total, sections: p.sections.map((s) => ({ name: s.name, count: s.questions.length })),
       solutions: p.sections.reduce((t, s) => t + s.questions.filter((q) => q.explanation).length, 0), problems: p.problems.slice(0, 12), warnings: p.warnings.slice(0, 12),
       underlined: p.sections.flatMap((s) => s.questions).filter((q) => /<u>/.test(q.stem + q.options.join("") + (q.context?.lines.join("") ?? ""))).map((q) => q.number),
-      sample: first ? { number: first.number, section: p.sections.find((s) => s.questions.includes(first))!.name, stem: first.stem.slice(0, 280), options: first.options, correct: first.correct } : null,
+      pictures: { inQuestions: new Set(all.flatMap((q) => [q.stem, ...q.options, ...(q.context?.lines ?? [])].flatMap((t) => [...t.matchAll(/\[\[img:(\d+)/g)].map((m) => m[1])))).size, inSolutions: new Set(all.flatMap((q) => [...(q.explanation ?? "").matchAll(/\[\[img:(\d+)/g)].map((m) => m[1]))).size },
+      sample: first ? { number: first.number, section: p.sections.find((s) => s.questions.includes(first))!.name, stem: first.stem.slice(0, 280).replace(/\[\[img:[^\]]+\]\]/g, "[picture]"), options: first.options.map((o) => o.replace(/\[\[img:[^\]]+\]\]/g, "[picture]")), correct: first.correct } : null,
       suggestedNumber: n, suggestedTitle: `SNAP 2026 Mock ${n}`, suggestedSlug: `snap-mock-${n}`,
     };
   } catch (e) { const r = fail(e); return r.ok ? { ok: false, error: "Something went wrong." } : r; }

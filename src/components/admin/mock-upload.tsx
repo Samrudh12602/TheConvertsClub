@@ -72,6 +72,7 @@ export function MockUpload({ nextNumber }: { nextNumber: number }) {
             {blocked && (
               <ul className="mt-3 list-disc pl-5 text-[12px] leading-[1.6] text-oxblood">{sum.problems.map((p) => <li key={p}>{p}</li>)}</ul>
             )}
+            {(sum.pictures.inQuestions > 0 || sum.pictures.inSolutions > 0) && <p className="mt-2.5 text-[12px] leading-[1.55] text-ink-2"><b>Pictures kept:</b> {sum.pictures.inQuestions} in the questions (shown inside the question) and {sum.pictures.inSolutions} in the solutions (shown in the answer review and the PDF after the student submits).</p>}
             {sum.underlined.length > 0 && <p className="mt-2.5 text-[12px] leading-[1.55] text-ink-2"><b>Underlined words kept</b> in question{sum.underlined.length === 1 ? "" : "s"} {sum.underlined.join(", ")} (students see them underlined).</p>}
             {sum.sample && !blocked && (
               <details className="mt-3 text-[12px] text-ink-2"><summary className="cursor-pointer font-semibold text-ink">Check question {sum.sample.number}</summary>

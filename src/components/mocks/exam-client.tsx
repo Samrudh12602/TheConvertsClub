@@ -9,6 +9,7 @@ import { addTimeAction, saveAnswerAction, submitExamAction, tabSwitchAction } fr
 import { Calculator, Legend, PaletteShape, QContext, STATE_WORD, type PaletteState } from "@/components/mocks/exam-parts";
 import { SubmitDialog } from "@/components/mocks/submit-dialog";
 import { RichText } from "@/components/mocks/rich-text";
+import { imageIds } from "@/lib/rich";
 import { useToast } from "@/components/ui/toast";
 
 export interface ExamQuestion { id: string; number: number; stem: string; context: unknown; options: string[]; marks: number; negative: number }
@@ -161,6 +162,16 @@ export function ExamClient({ attemptId, preview = false, title, candidate, remai
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
   const goFullscreen = () => { void document.documentElement.requestFullscreen?.().catch(() => toast.info("Your browser didn't allow full screen. You can carry on in this window.")); };
+
+  // The paper's pictures are fetched once the exam opens, so none of them pops in half-way through a question.
+  useEffect(() => {
+    const ids = new Set<string>();
+    for (const sec of sections) for (const q of sec.questions) {
+      const ctx = q.context as { lines?: string[]; table?: string[][] | null } | null;
+      for (const t of [q.stem, ...q.options, ...(ctx?.lines ?? []), ...(ctx?.table?.flat() ?? [])]) for (const id of imageIds(t)) ids.add(id);
+    }
+    for (const id of ids) { const img = new window.Image(); img.src = `/api/mock-images/${id}`; }
+  }, [sections]);
 
   const urgent = left <= 300;
   const fs = 16 + fontStep * 2 + (magnify ? 4 : 0);

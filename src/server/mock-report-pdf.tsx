@@ -1,7 +1,7 @@
-import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { MISS_LABEL, mmss, paceSec, type MissKind } from "@/lib/mock-analysis";
 import type { ResultView } from "@/server/mocks";
-import { splitRich } from "@/lib/rich";
+import { splitRich, type RichPart } from "@/lib/rich";
 
 const C = { ink: "#16130F", body: "#3A332B", muted: "#6F655A", line: "#E4DED4", soft: "#F7F4EE", oxblood: "#7A1F2B", tint: "#F5E9EA", green: "#14664F", greenTint: "#E3F1EE", amber: "#9A6A12", amberTint: "#FAF0D8" };
 
@@ -26,8 +26,54 @@ export function pdfSafe(input: string | null | undefined): string {
   return out.replace(/[^\u0009\u000a -~¡-ÿ]/g, "");
 }
 
-/** Text with <u>underlined</u> words, drawn as real underlines. */
-const rich = (t: string | null | undefined) => splitRich(t).map((p, i) => (p.underline ? <Text key={i} style={{ textDecoration: "underline" }}>{pdfSafe(p.text)}</Text> : pdfSafe(p.text)));
+/** Text parts with <u>underlined</u> words drawn as real underlines (a picture inside plain text becomes "[figure]"). */
+const richParts = (parts: RichPart[]) => parts.map((p, i) => (p.image ? "[figure]" : p.underline ? <Text key={i} style={{ textDecoration: "underline" }}>{pdfSafe(p.text)}</Text> : pdfSafe(p.text)));
+const rich = (t: string | null | undefined) => richParts(splitRich(t));
+
+/** A picture ready for the PDF: PNG or JPEG bytes and the size it is drawn at, in points. */
+export interface PdfImage { data: Buffer; format: "png" | "jpg"; w: number; h: number }
+export type PdfImages = Map<string, PdfImage>;
+
+/** Natural pixel size of a PNG or JPEG, so a picture is drawn in proportion and never taller than a page can hold. */
+export function imageSize(b: Uint8Array): { w: number; h: number } | null {
+  if (b.length > 24 && b[0] === 0x89 && b[1] === 0x50) return { w: (b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19], h: (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23] };
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    for (let i = 2; i + 9 < b.length; ) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const m = b[i + 1];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { h: (b[i + 5] << 8) | b[i + 6], w: (b[i + 7] << 8) | b[i + 8] };
+      i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+    }
+  }
+  return null;
+}
+/** Where a picture's size comes from: the width it had in Word if known, else its own pixels; at most 400 x 250 points. */
+export function fitImage(natural: { w: number; h: number } | null, wordWidthPx: number | null): { w: number; h: number } {
+  const ratio = natural && natural.w > 0 ? natural.h / natural.w : 0.6;
+  let w = Math.min(400, (wordWidthPx ?? (natural ? natural.w : 320)) * 0.75);
+  let h = w * ratio;
+  if (h > 250) { h = 250; w = h / ratio; }
+  return { w: Math.max(40, w), h: Math.max(30, h) };
+}
+
+/** Text that may hold pictures: text and pictures alternate as blocks. Without a picture it is a single Text, as before. */
+function PdfRich({ text, imgs, suffix, style }: { text: string | null | undefined; imgs: PdfImages; suffix?: string; style?: { fontFamily?: string; marginBottom?: number } }) {
+  const parts = splitRich(text);
+  if (!parts.some((p) => p.image)) return <Text style={style}>{richParts(parts)}{suffix}</Text>;
+  const out: React.ReactNode[] = [];
+  let buf: RichPart[] = [];
+  const flush = (last = false) => { if (buf.length || (last && suffix)) out.push(<Text key={`t${out.length}`} style={style}>{richParts(buf)}{last ? suffix : ""}</Text>); buf = []; };
+  for (const p of parts) {
+    if (!p.image) { buf.push(p); continue; }
+    flush();
+    const im = imgs.get(p.image.id);
+    const size = im ? fitImage({ w: im.w, h: im.h }, p.image.width) : null;
+    /* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's Image has no alt text */
+    out.push(im && size ? <Image key={`i${out.length}`} src={{ data: im.data, format: im.format }} style={{ width: size.w, height: size.h, marginVertical: 4 }} /> : <Text key={`i${out.length}`} style={style}>[figure]</Text>);
+  }
+  flush(true);
+  return <View>{out}</View>;
+}
 
 const s = StyleSheet.create({
   page: { paddingTop: 36, paddingBottom: 46, paddingHorizontal: 38, fontSize: 9.5, color: C.body, fontFamily: "Helvetica" },
@@ -64,7 +110,7 @@ const s = StyleSheet.create({
 const LET = ["A", "B", "C", "D", "E"];
 const marks = (n: number) => String(Math.round(n * 100) / 100);
 
-function Report({ r, student, only }: { r: ResultView; student: { name: string; email: string }; only?: "summary" | "solutions" }) {
+function Report({ r, student, only, imgs }: { r: ResultView; student: { name: string; email: string }; only?: "summary" | "solutions"; imgs: PdfImages }) {
   const a = r.analysis;
   const pace = paceSec(r.mock.durationMin * 60, a.results.length);
   const kinds = (Object.keys(MISS_LABEL) as MissKind[]).filter((k) => a.misses[k].length > 0);
@@ -131,14 +177,14 @@ function Report({ r, student, only }: { r: ResultView; student: { name: string; 
             return (
               <View key={q.id} style={s.q} wrap={false}>
                 <View style={s.qHead}><Text style={s.qNo}>Q{q.number}</Text><Text style={s.qMeta}>{pdfSafe(q.sectionName)}{q.topic ? ` · ${pdfSafe(q.topic)}` : ""} · {mmss(x.timeSec)}</Text><Text style={[s.chip, { backgroundColor: chip.bg, color: chip.c }]}>{chip.t}</Text></View>
-                {ctx?.lines?.map((l, i) => <Text key={i} style={{ fontFamily: i === 0 ? "Helvetica-Bold" : "Helvetica", marginBottom: 2 }}>{rich(l)}</Text>)}
+                {ctx?.lines?.map((l, i) => <PdfRich key={i} text={l} imgs={imgs} style={{ fontFamily: i === 0 ? "Helvetica-Bold" : "Helvetica", marginBottom: 2 }} />)}
                 {ctx?.table && <View style={[s.table, { marginVertical: 4 }]}>{ctx.table.map((row, ri) => <View key={ri} style={s.tr}>{row.map((c, ci) => <Text key={ci} style={[ri === 0 ? s.th : s.td, { flexGrow: 1, flexBasis: 0 }]}>{rich(c)}</Text>)}</View>)}</View>}
-                <Text>{rich(q.stem)}</Text>
+                <PdfRich text={q.stem} imgs={imgs} />
                 {q.options.map((o, i) => {
                   const right = i === q.correct, mine = i === x.choice;
-                  return <View key={i} style={[s.opt, right ? { backgroundColor: C.greenTint } : mine ? { backgroundColor: C.tint } : {}]}><Text style={s.optL}>{LET[i]}.</Text><Text style={{ flex: 1 }}>{rich(o)}{right ? "   (correct answer)" : ""}{mine ? "   (your answer)" : ""}</Text></View>;
+                  return <View key={i} style={[s.opt, right ? { backgroundColor: C.greenTint } : mine ? { backgroundColor: C.tint } : {}]}><Text style={s.optL}>{LET[i]}.</Text><View style={{ flex: 1 }}><PdfRich text={o} imgs={imgs} suffix={`${right ? "   (correct answer)" : ""}${mine ? "   (your answer)" : ""}`} /></View></View>;
                 })}
-                {q.explanation && <View style={s.sol}><Text style={s.solL}>SOLUTION</Text><Text>{rich(q.explanation)}</Text></View>}
+                {q.explanation && <View style={s.sol}><Text style={s.solL}>SOLUTION</Text><PdfRich text={q.explanation} imgs={imgs} /></View>}
               </View>
             );
           })}
@@ -149,4 +195,4 @@ function Report({ r, student, only }: { r: ResultView; student: { name: string; 
   );
 }
 
-export const renderMockReport = (r: ResultView, student: { name: string; email: string }, only?: "summary" | "solutions") => renderToBuffer(<Report r={r} student={student} only={only} />);
+export const renderMockReport = (r: ResultView, student: { name: string; email: string }, only?: "summary" | "solutions", imgs: PdfImages = new Map()) => renderToBuffer(<Report r={r} student={student} only={only} imgs={imgs} />);

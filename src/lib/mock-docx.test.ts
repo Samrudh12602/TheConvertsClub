@@ -89,13 +89,13 @@ describe("parseMockDocx", () => {
     const sols: string[] = [];
     for (let i = 1; i <= 20; i++) {
       body.push(p(`Q${i}.  q${i}?`), p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4"));
-      if (i === 3) body.push(`<w:p><w:r><w:drawing/></w:r></w:p>`);
+      if (i === 3) body.push(`<w:p><w:r><w:drawing><a:graphic/></w:drawing></w:r></w:p>`);
       rows.push([String(i), "B"]);
       sols.push(p(`Q${i}.  Answer: (b)  2`), p("because"));
     }
     const r = parseMockDocx(docx(body.join("") + p("Answer Key") + tbl(rows) + p("Detailed Solutions") + sols.join("")));
     expect(r.problems).toEqual([]);
-    expect(r.warnings.join(" ")).toMatch(/Pictures or Word equations found in Q3/);
+    expect(r.warnings.join(" ")).toMatch(/picture that can't be used, or a Word equation, is in Q3/);
     expect(r.warnings.join(" ")).toMatch(/Answers are bunched/);
     expect(r.warnings.join(" ")).toMatch(/real SNAP has 60/);
   });
@@ -104,6 +104,54 @@ describe("parseMockDocx", () => {
     expect(empty.problems.join(" ")).toMatch(/Q1/);
     const dup = parseMockDocx(docx([p("Section 1: A"), p("Q1.  x?"), p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4"), p("Q1.  y?"), p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4")].join("")));
     expect(dup.problems.join(" ")).toMatch(/question numbers/);
+  });
+
+  describe("pictures", () => {
+    const PNG = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="), (c) => c.charCodeAt(0));
+    const drawing = (rid: string, cx = 1905000) => `<w:r><w:drawing><wp:inline><wp:extent cx="${cx}" cy="952500"/><a:graphic><a:graphicData><pic:pic><pic:blipFill><a:blip r:embed="${rid}"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+    const withMedia = (body: string, rels: string, media: Record<string, Uint8Array>) => zipSync({
+      "word/document.xml": strToU8(`<?xml version="1.0"?><w:document xmlns:w="x"><w:body>${body}</w:body></w:document>`),
+      "word/_rels/document.xml.rels": strToU8(`<Relationships>${rels}</Relationships>`),
+      ...Object.fromEntries(Object.entries(media).map(([k, v]) => [`word/media/${k}`, v])),
+    });
+    const rel = (id: string, file: string) => `<Relationship Id="${id}" Type="image" Target="media/${file}"/>`;
+    const paper = (qExtra: string, solExtra: string) => [
+      p("Section 1: A"), p("Q1.  Look at the chart."), `<w:p>${qExtra}</w:p>`, p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4"),
+      p("Answer Key"), tbl([["Q", "Ans"], ["1", "B"]]), p("Detailed Solutions"), p("Q1.  Answer: (b)  2"), `<w:p>${solExtra}</w:p>`, p("because"),
+    ].join("");
+
+    it("keeps a picture in a question and one in a solution, with their width, once per file", () => {
+      const r = parseMockDocx(withMedia(paper(drawing("rId5"), drawing("rId5")), rel("rId5", "image1.png"), { "image1.png": PNG }));
+      expect(r.problems).toEqual([]);
+      expect(r.images).toHaveLength(1);
+      expect(r.images![0].contentType).toBe("image/png");
+      const q = r.sections[0].questions[0];
+      expect(q.stem).toBe("Look at the chart.\n[[img:0|200]]");
+      expect(q.explanation).toContain("[[img:0|200]]");
+    });
+    it("keeps a picture used as an option and one inside a table cell", () => {
+      const body = [p("Section 1: A"), p("Q1.  Which figure?"), p("(a)  x"), p("(b)  y"), `<w:p><w:r><w:t xml:space="preserve">(c)  </w:t></w:r>${drawing("rId5")}</w:p>`, p("(d)  z"), `<w:tbl><w:tr><w:tc><w:p>${drawing("rId5")}</w:p></w:tc></w:tr></w:tbl>`,
+        p("Answer Key"), tbl([["Q", "Ans"], ["1", "C"]]), p("Detailed Solutions"), p("Q1.  Answer: (c)  figure"), p("because")].join("");
+      const r = parseMockDocx(withMedia(body, rel("rId5", "image1.png"), { "image1.png": PNG }));
+      expect(r.sections[0].questions[0].options[2]).toMatch(/^\[\[img:0\|200\]\]$/);
+      expect(r.sections[0].questions[0].context?.table?.[0][0]).toBe("[[img:0|200]]");
+    });
+    it("uses one copy when Word writes a picture twice (modern and fallback)", () => {
+      const both = `<mc:AlternateContent><mc:Choice>${drawing("rId5")}</mc:Choice><mc:Fallback><w:pict><v:imagedata r:id="rId5"/></w:pict></mc:Fallback></mc:AlternateContent>`;
+      const r = parseMockDocx(withMedia(paper(both, ""), rel("rId5", "image1.png"), { "image1.png": PNG }));
+      expect((r.sections[0].questions[0].stem.match(/\[\[img:/g) ?? []).length).toBe(1);
+    });
+    it("warns, and leaves a marker out, for a picture it can't use (EMF)", () => {
+      const r = parseMockDocx(withMedia(paper(drawing("rId6"), ""), rel("rId6", "image2.emf"), { "image2.emf": new Uint8Array([1, 2, 3]) }));
+      expect(r.images).toHaveLength(0);
+      expect(r.warnings.join(" ")).toMatch(/picture that can't be used.*Q1/);
+      expect(r.sections[0].questions[0].stem).toBe("Look at the chart.");
+    });
+    it("blocks a picture over the size limit", () => {
+      const big = new Uint8Array(3 * 1024 * 1024 + 10);
+      const r = parseMockDocx(withMedia(paper(drawing("rId7"), ""), rel("rId7", "big.png"), { "big.png": big }));
+      expect(r.problems.join(" ")).toMatch(/larger than 3 MB/);
+    });
   });
 });
 

@@ -1001,6 +1001,12 @@ enum MockStatus {
   PUBLISHED
 }
 
+/// Where a picture from a mock paper is used: inside a question (shown in the exam) or in a solution (shown only after submitting).
+enum MockImageScope {
+  QUESTION
+  SOLUTION
+}
+
 enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
@@ -1025,6 +1031,20 @@ model Mock {
   sections    MockSection[]
   questions   MockQuestion[]
   attempts    MockAttempt[]
+  images      MockImage[]
+}
+
+/// A picture from the Word paper (a diagram, a chart). Referenced from question and solution text as [[img:<id>]]; served only to people allowed to see that part of the paper.
+model MockImage {
+  id          String         @id
+  mockId      String
+  scope       MockImageScope
+  contentType String
+  bytes       Bytes
+  createdAt   DateTime       @default(now())
+  mock        Mock           @relation(fields: [mockId], references: [id], onDelete: Cascade)
+
+  @@index([mockId])
 }
 
 model MockSection {

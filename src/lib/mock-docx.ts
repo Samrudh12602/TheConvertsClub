@@ -18,7 +18,16 @@ export { stripMarkup };
 
 export interface ParsedQuestion { number: number; stem: string; options: string[]; correct: number; explanation: string | null; context: { lines: string[]; table: string[][] | null } | null }
 export interface ParsedSection { name: string; questions: ParsedQuestion[] }
-export interface ParsedMock { title: string | null; sections: ParsedSection[]; problems: string[]; warnings: string[]; total: number }
+/** A picture found in the paper. Question and solution text refer to it as [[img:<index>|<width px>]]; the importer swaps the index for a stored id. */
+export interface ParsedImage { index: number; contentType: string; bytes: Uint8Array }
+export interface ParsedMock { title: string | null; sections: ParsedSection[]; problems: string[]; warnings: string[]; total: number; images?: ParsedImage[] }
+
+/** What a picture needs to be shown in the browser and in the PDF. */
+const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" };
+export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+export const MAX_IMAGES_TOTAL_BYTES = 15 * 1024 * 1024;
+
+interface ImgCtx { rels: Map<string, string>; media: Record<string, Uint8Array>; images: ParsedImage[]; byPath: Map<string, number>; unsupported: string[]; tooBig: string[] }
 
 
 
@@ -40,11 +49,34 @@ const SUB: Record<string, string> = { "0": "₀", "1": "₁", "2": "₂", "3": "
 const raise = (t: string, map: Record<string, string>, fallback: string) => (t && [...t].every((c) => map[c]) ? [...t].map((c) => map[c]).join("") : t ? `${fallback}(${t})` : "");
 
 /** The text of one run: its words, with tabs and line breaks, and its underline / superscript / subscript kept. */
-function runText(xml: string): string {
+/** A picture in a run: stored once per media file, and written into the text as a [[img:…]] marker. */
+function pictureMarker(xml: string, ctx: ImgCtx): string {
+  const drawing = xml.startsWith("<w:drawing");
+  const rid = drawing ? /<a:blip\b[^>]*?r:embed="([^"]+)"/.exec(xml)?.[1] : /<v:imagedata\b[^>]*?r:id="([^"]+)"/.exec(xml)?.[1];
+  const target = rid ? ctx.rels.get(rid) : undefined;
+  const label = target ? target.split("/").pop()! : "a picture";
+  if (!target) { ctx.unsupported.push(label); return ""; }
+  const ext = label.split(".").pop()!.toLowerCase();
+  const type = IMAGE_TYPES[ext];
+  if (!type) { ctx.unsupported.push(label); return ""; }
+  const path = target.startsWith("/") ? target.slice(1) : `word/${target.replace(/^\.\//, "")}`;
+  const bytes = ctx.media[path];
+  if (!bytes) { ctx.unsupported.push(label); return ""; }
+  if (bytes.length > MAX_IMAGE_BYTES) { ctx.tooBig.push(label); return ""; }
+  let idx = ctx.byPath.get(path);
+  if (idx === undefined) { idx = ctx.images.length; ctx.images.push({ index: idx, contentType: type, bytes }); ctx.byPath.set(path, idx); }
+  let width: number | null = null;
+  if (drawing) { const cx = /<wp:extent\s+cx="(\d+)"/.exec(xml)?.[1]; if (cx) width = Math.round(Number(cx) / 9525); }
+  else { const pt = /width:\s*([\d.]+)pt/.exec(xml)?.[1]; if (pt) width = Math.round((Number(pt) * 96) / 72); }
+  return `[[img:${idx}${width ? `|${width}` : ""}]]`;
+}
+
+function runText(xml: string, ctx: ImgCtx): string {
   let out = "";
-  const re = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\s*\/>|<w:br\b([^>]*)\/?>|<w:cr\s*\/>|<w:noBreakHyphen\s*\/>|<m:t(?:\s[^>]*)?>([^<]*)<\/m:t>/g;
+  const re = /<w:drawing\b[\s\S]*?<\/w:drawing>|<w:pict\b[\s\S]*?<\/w:pict>|<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\s*\/>|<w:br\b([^>]*)\/?>|<w:cr\s*\/>|<w:noBreakHyphen\s*\/>|<m:t(?:\s[^>]*)?>([^<]*)<\/m:t>/g;
   for (let m = re.exec(xml); m; m = re.exec(xml)) {
-    if (m[1] !== undefined) out += decode(m[1]);
+    if (m[0].startsWith("<w:drawing") || m[0].startsWith("<w:pict")) out += pictureMarker(m[0], ctx);
+    else if (m[1] !== undefined) out += decode(m[1]);
     else if (m[3] !== undefined) out += decode(m[3]);
     else if (m[0].startsWith("<w:tab")) out += "\t";
     else if (m[0].startsWith("<w:br")) { if (!/w:type="(page|column)"/.test(m[2] ?? "")) out += "\n"; }
@@ -62,27 +94,27 @@ function runText(xml: string): string {
 }
 
 /** The text of one <w:p>…</w:p>, the way Word shows it (tabs and line breaks kept, underlines marked). */
-function paragraphText(xml: string): string {
+function paragraphText(rawXml: string, ctx: ImgCtx): string {
+  const xml = rawXml.replace(/<mc:Fallback\b[\s\S]*?<\/mc:Fallback>/g, ""); // Word writes a picture twice (modern + fallback): keep one
   let out = "";
   const re = /<w:r\b[^>]*?(?:\/>|>([\s\S]*?)<\/w:r>)|<m:oMath\b[^>]*>[\s\S]*?<\/m:oMath>/g;
-  for (let m = re.exec(xml); m; m = re.exec(xml)) out += m[0].startsWith("<m:oMath") ? runText(m[0]) : runText(m[1] ?? "");
+  for (let m = re.exec(xml); m; m = re.exec(xml)) out += m[0].startsWith("<m:oMath") ? runText(m[0], ctx) : runText(m[1] ?? "", ctx);
   return out.replace(/<\/u><u>/g, "");
 }
 
-/** Pictures and equations can't be shown as text; the importer warns so they aren't lost silently. */
-const hasPicture = (xml: string) => /<w:drawing\b|<w:pict\b|<w:object\b|<mc:AlternateContent\b/.test(xml);
+/** Pictures that couldn't be used (wrong format, too big) and equations can't be shown as text; the importer warns so they aren't lost silently. */
 const hasEquation = (xml: string) => /<m:oMath\b/.test(xml);
 
 type Block = { kind: "p"; text: string; pic: boolean; math: boolean } | { kind: "tbl"; rows: string[][]; pic: boolean; math: boolean };
 
-function paragraphsIn(xml: string): string[] {
+function paragraphsIn(xml: string, ctx: ImgCtx): string[] {
   const out: string[] = [];
   const re = /<w:p\b[^>]*?(?:\/>|>([\s\S]*?)<\/w:p>)/g;
-  for (let m = re.exec(xml); m; m = re.exec(xml)) out.push(paragraphText(m[1] ?? ""));
+  for (let m = re.exec(xml); m; m = re.exec(xml)) out.push(paragraphText(m[1] ?? "", ctx));
   return out;
 }
 
-function tableRows(xml: string): string[][] {
+function tableRows(xml: string, ctx: ImgCtx): string[][] {
   const rows: string[][] = [];
   const rowRe = /<w:tr\b[^>]*>([\s\S]*?)<\/w:tr>/g;
   for (let r = rowRe.exec(xml); r; r = rowRe.exec(xml)) {
@@ -90,7 +122,7 @@ function tableRows(xml: string): string[][] {
     const cellRe = /<w:tc\b[^>]*>([\s\S]*?)<\/w:tc>/g;
     for (let c = cellRe.exec(r[1]); c; c = cellRe.exec(r[1])) {
       const span = /<w:gridSpan\s+w:val="(\d+)"/.exec(c[1]);
-      const text = paragraphsIn(c[1]).join("\n").trim();
+      const text = paragraphsIn(c[1], ctx).join("\n").trim();
       for (let k = 0; k < (span ? Math.max(1, parseInt(span[1], 10)) : 1); k++) cells.push(text);
     }
     rows.push(cells);
@@ -99,7 +131,7 @@ function tableRows(xml: string): string[][] {
 }
 
 /** The body's paragraphs and tables, in document order (a table's own paragraphs belong to the table). */
-function blocks(documentXml: string): Block[] {
+function blocks(documentXml: string, ctx: ImgCtx): Block[] {
   const body = /<w:body\b[^>]*>([\s\S]*)<\/w:body>/.exec(documentXml)?.[1] ?? documentXml;
   const out: Block[] = [];
   const re = /<w:(p|tbl)\b[^>]*?(\/>|>)/g;
@@ -122,7 +154,10 @@ function blocks(documentXml: string): Block[] {
     }
     if (end < 0) break;
     const inner = body.slice(re.lastIndex, end);
-    out.push(tag === "p" ? { kind: "p", text: paragraphText(inner), pic: hasPicture(inner), math: hasEquation(inner) } : { kind: "tbl", rows: tableRows(inner), pic: hasPicture(inner), math: hasEquation(inner) });
+    const before = ctx.unsupported.length + ctx.tooBig.length;
+    const block: Block = tag === "p" ? { kind: "p", text: paragraphText(inner, ctx), pic: false, math: hasEquation(inner) } : { kind: "tbl", rows: tableRows(inner, ctx), pic: false, math: hasEquation(inner) };
+    block.pic = ctx.unsupported.length + ctx.tooBig.length > before;
+    out.push(block);
     i = end + close.length;
   }
   return out;
@@ -132,10 +167,17 @@ export class DocxError extends Error {}
 
 export function parseMockDocx(bytes: Uint8Array): ParsedMock {
   let files: Record<string, Uint8Array>;
-  try { files = unzipSync(bytes, { filter: (f) => f.name === "word/document.xml" }); } catch { throw new DocxError("That doesn't look like a Word (.docx) file."); }
+  try { files = unzipSync(bytes, { filter: (f) => f.name === "word/document.xml" || f.name === "word/_rels/document.xml.rels" || f.name.startsWith("word/media/") }); } catch { throw new DocxError("That doesn't look like a Word (.docx) file."); }
   const doc = files["word/document.xml"];
   if (!doc) throw new DocxError("That doesn't look like a Word (.docx) file.");
-  const items = blocks(strFromU8(doc));
+  const rels = new Map<string, string>();
+  const relXml = files["word/_rels/document.xml.rels"] ? strFromU8(files["word/_rels/document.xml.rels"]) : "";
+  for (const m of relXml.matchAll(/<Relationship\b([^>]*)\/?>/g)) {
+    const id = /\bId="([^"]+)"/.exec(m[1])?.[1], target = /\bTarget="([^"]+)"/.exec(m[1])?.[1];
+    if (id && target) rels.set(id, target);
+  }
+  const ctx: ImgCtx = { rels, media: files, images: [], byPath: new Map(), unsupported: [], tooBig: [] };
+  const items = blocks(strFromU8(doc), ctx);
 
   let title: string | null = null;
   const warnings: string[] = [];
@@ -200,6 +242,7 @@ export function parseMockDocx(bytes: Uint8Array): ParsedMock {
       if (m && curQ) { curQ.options.push(m[2].trim()); continue; }
       if (curQ && curQ.options.length === 0) curQ.stem.push(raw.replace(/^\n+|\n+$/g, ""));
       else if (!curQ && setCtx) setCtx.context.lines.push(s);
+      else if (curQ) warnings.push(`Q${curQ.number}: text after its options was left out: “${stripMarkup(s).slice(0, 60)}”. Put it before the options if it belongs to the question.`);
     } else if (phase === "solutions") {
       if (SECTION.test(stripMarkup(s))) continue;
       const m = SOLUTION.exec(stripMarkup(s));
@@ -254,6 +297,9 @@ export function parseMockDocx(bytes: Uint8Array): ParsedMock {
   }
   const seen = new Map<string, number>();
   for (const q of all) { const k = norm(q.stem + "|" + JSON.stringify(q.context?.lines ?? [])); if (k.length > 30) { const prev = seen.get(k); if (prev) warnings.push(`Q${q.number} repeats Q${prev}`); else seen.set(k, q.number); } }
-  if (flagged.size) warnings.push(`Pictures or Word equations found in ${[...flagged].slice(0, 6).join(", ")}${flagged.size > 6 ? "…" : ""}. They can't be shown as text: check how those questions read.`);
-  return { title, sections: out, problems, warnings, total };
+  if (flagged.size) warnings.push(`A picture that can't be used, or a Word equation, is in ${[...flagged].slice(0, 6).join(", ")}${flagged.size > 6 ? "…" : ""}. Pictures must be PNG or JPG (paste them into Word as a picture); equations can't be shown, so write them as plain text.`);
+  if (ctx.tooBig.length) problems.push(`A picture is larger than ${MAX_IMAGE_BYTES / 1024 / 1024} MB (${[...new Set(ctx.tooBig)].slice(0, 3).join(", ")}). Shrink it in Word and upload again.`);
+  const totalImageBytes = ctx.images.reduce((n, i) => n + i.bytes.length, 0);
+  if (totalImageBytes > MAX_IMAGES_TOTAL_BYTES) problems.push(`The pictures add up to ${(totalImageBytes / 1024 / 1024).toFixed(1)} MB (the limit is ${MAX_IMAGES_TOTAL_BYTES / 1024 / 1024} MB). Shrink some in Word and upload again.`);
+  return { title, sections: out, problems, warnings, total, images: ctx.images };
 }

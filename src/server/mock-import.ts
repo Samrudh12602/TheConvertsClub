@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import type { ParsedMock } from "@/lib/mock-docx";
 import { topicFor } from "@/lib/mock-topics";
@@ -20,16 +21,32 @@ function assertSound(p: ParsedMock) {
 
 type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 
+/**
+ * Writes the sections and questions, and stores the pictures they use. A picture used in a question (stem, options, passage) is stored for
+ * the exam; one used in a solution is stored separately, so it is only ever served after the student has submitted.
+ */
 async function writeQuestions(tx: Tx, mockId: string, p: ParsedMock, marks: number, negative: number) {
+  const images = p.images ?? [];
+  const stored = new Map<string, { id: string; index: number; scope: "QUESTION" | "SOLUTION" }>();
+  const fix = (text: string | null | undefined, scope: "QUESTION" | "SOLUTION") => (text ?? "").replace(/\[\[img:(\d+)(\|\d+)?\]\]/g, (m, idx: string, w: string | undefined) => {
+    const index = Number(idx);
+    if (!images[index]) return "";
+    const key = `${index}|${scope}`;
+    let row = stored.get(key);
+    if (!row) { row = { id: randomBytes(12).toString("hex"), index, scope }; stored.set(key, row); }
+    return `[[img:${row.id}${w ?? ""}]]`;
+  });
   for (const [si, s] of p.sections.entries()) {
     const sec = await tx.mockSection.create({ data: { mockId, name: s.name, sortOrder: si } });
     await tx.mockQuestion.createMany({
       data: s.questions.map((q) => {
         const ctxText = q.context?.lines?.join(" ") ?? "";
-        return { mockId, sectionId: sec.id, number: q.number, stem: q.stem, context: q.context ?? undefined, options: q.options, correct: q.correct, explanation: q.explanation, topic: topicFor(s.name, stripMarkup(`${ctxText} ${q.stem}`), q.number), marks, negative };
+        const context = q.context ? { lines: q.context.lines.map((l) => fix(l, "QUESTION")), table: q.context.table ? q.context.table.map((r) => r.map((c) => fix(c, "QUESTION"))) : null } : undefined;
+        return { mockId, sectionId: sec.id, number: q.number, stem: fix(q.stem, "QUESTION"), context, options: q.options.map((o) => fix(o, "QUESTION")), correct: q.correct, explanation: q.explanation === null ? null : fix(q.explanation, "SOLUTION"), topic: topicFor(s.name, stripMarkup(`${ctxText} ${q.stem}`), q.number), marks, negative };
       }),
     });
   }
+  if (stored.size) await tx.mockImage.createMany({ data: [...stored.values()].map((r) => ({ id: r.id, mockId, scope: r.scope, contentType: images[r.index].contentType, bytes: Buffer.from(images[r.index].bytes) })) });
 }
 
 /** Creates a mock from a parsed paper. With `replaceSlug`, an existing mock with that slug is replaced, but only while nobody has attempted it. */
@@ -63,6 +80,7 @@ export async function replaceMockPaper(mockId: string, p: ParsedMock, marking?: 
   await db.$transaction(async (tx) => {
     await tx.mockSection.deleteMany({ where: { mockId } }); // questions go with their sections
     await tx.mockQuestion.deleteMany({ where: { mockId } });
+    await tx.mockImage.deleteMany({ where: { mockId } });
     await writeQuestions(tx, mockId, p, marks, negative);
     if (m.status === "PUBLISHED") await tx.mock.update({ where: { id: mockId }, data: { status: "DRAFT" } }); // re-check it before students see it
   }, { timeout: 60_000, maxWait: 15_000 });
