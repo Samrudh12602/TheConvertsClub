@@ -2,6 +2,7 @@ import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@
 import { MISS_LABEL, mmss, paceSec, type MissKind } from "@/lib/mock-analysis";
 import type { ResultView } from "@/server/mocks";
 import { splitRich, type RichPart } from "@/lib/rich";
+import { topicLabel } from "@/lib/mock-topics";
 
 const C = { ink: "#16130F", body: "#3A332B", muted: "#6F655A", line: "#E4DED4", soft: "#F7F4EE", oxblood: "#7A1F2B", tint: "#F5E9EA", green: "#14664F", greenTint: "#E3F1EE", amber: "#9A6A12", amberTint: "#FAF0D8" };
 
@@ -176,7 +177,7 @@ function Report({ r, student, only, imgs }: { r: ResultView; student: { name: st
             const ctx = q.context as { lines?: string[]; table?: string[][] | null } | null;
             return (
               <View key={q.id} style={s.q} wrap={false}>
-                <View style={s.qHead}><Text style={s.qNo}>Q{q.number}</Text><Text style={s.qMeta}>{pdfSafe(q.sectionName)}{q.topic ? ` · ${pdfSafe(q.topic)}` : ""} · {mmss(x.timeSec)}</Text><Text style={[s.chip, { backgroundColor: chip.bg, color: chip.c }]}>{chip.t}</Text></View>
+                <View style={s.qHead}><Text style={s.qNo}>Q{q.number}</Text><Text style={s.qMeta}>{pdfSafe(q.sectionName)}{topicLabel(q.sectionName, q.topic) ? ` · ${pdfSafe(topicLabel(q.sectionName, q.topic))}` : ""} · {mmss(x.timeSec)}</Text><Text style={[s.chip, { backgroundColor: chip.bg, color: chip.c }]}>{chip.t}</Text></View>
                 {ctx?.lines?.map((l, i) => <PdfRich key={i} text={l} imgs={imgs} style={{ fontFamily: i === 0 ? "Helvetica-Bold" : "Helvetica", marginBottom: 2 }} />)}
                 {ctx?.table && <View style={[s.table, { marginVertical: 4 }]}>{ctx.table.map((row, ri) => <View key={ri} style={s.tr}>{row.map((c, ci) => <Text key={ci} style={[ri === 0 ? s.th : s.td, { flexGrow: 1, flexBasis: 0 }]}>{rich(c)}</Text>)}</View>)}</View>}
                 <PdfRich text={q.stem} imgs={imgs} />

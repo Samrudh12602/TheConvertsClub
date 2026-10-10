@@ -147,6 +147,29 @@ describe("parseMockDocx", () => {
       expect(r.warnings.join(" ")).toMatch(/picture that can't be used.*Q1/);
       expect(r.sections[0].questions[0].stem).toBe("Look at the chart.");
     });
+    it("shows a chart placed inside the first question of a data set with every question of the set", () => {
+      const PNG2 = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="), (c) => c.charCodeAt(0));
+      const q = (n: number, extra = "") => [p(`Q${n}.  Question ${n}?`), extra, p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4")].join("");
+      const body = [p("Section 1: A"), p("Directions (Questions 1–3): Study the chart."), q(1, `<w:p>${drawing("rId5")}</w:p>`), q(2), q(3), q(4, `<w:p>${drawing("rId5")}</w:p>`),
+        p("Answer Key"), tbl([["Q", "Ans"], ["1", "A"], ["2", "A"], ["3", "A"], ["4", "A"]]), p("Detailed Solutions"),
+        ...[1, 2, 3, 4].flatMap((n) => [p(`Q${n}.  Answer: (a)  1`), p("because")])].join("");
+      const r = parseMockDocx(withMedia(body, rel("rId5", "image1.png"), { "image1.png": PNG2 }));
+      const [a, b, c, d] = r.sections[0].questions;
+      expect(a.stem).toBe("Question 1?");
+      expect(a.context?.lines.at(-1)).toBe("[[img:0|200]]");
+      expect(b.context?.lines.at(-1)).toBe("[[img:0|200]]");
+      expect(c.context?.lines.at(-1)).toBe("[[img:0|200]]");
+      expect(d.context).toBeNull();
+      expect(d.stem).toContain("[[img:0|200]]"); // a picture of its own, outside the set, stays with its question
+    });
+    it("keeps each picture with its own question when the others in the set have pictures too", () => {
+      const q = (n: number) => [p(`Q${n}.  Question ${n}?`), `<w:p>${drawing("rId5")}</w:p>`, p("(a)  1"), p("(b)  2"), p("(c)  3"), p("(d)  4")].join("");
+      const body = [p("Section 1: A"), p("Directions (Questions 1–2): Look at the figures."), q(1), q(2), p("Answer Key"), tbl([["Q", "Ans"], ["1", "A"], ["2", "A"]]), p("Detailed Solutions"), p("Q1.  Answer: (a)  1"), p("x"), p("Q2.  Answer: (a)  1"), p("y")].join("");
+      const r = parseMockDocx(withMedia(body, rel("rId5", "image1.png"), { "image1.png": PNG }));
+      expect(r.sections[0].questions[0].stem).toContain("[[img:0|200]]");
+      expect(r.sections[0].questions[1].stem).toContain("[[img:0|200]]");
+      expect(r.sections[0].questions[0].context?.lines).toHaveLength(1);
+    });
     it("blocks a picture over the size limit", () => {
       const big = new Uint8Array(3 * 1024 * 1024 + 10);
       const r = parseMockDocx(withMedia(paper(drawing("rId7"), ""), rel("rId7", "big.png"), { "big.png": big }));
@@ -154,4 +177,3 @@ describe("parseMockDocx", () => {
     });
   });
 });
-

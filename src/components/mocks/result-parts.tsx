@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { Check, ChevronDown, Minus, X } from "lucide-react";
 import { mmss, type Outcome } from "@/lib/mock-analysis";
 import { stripMarkup } from "@/lib/rich";
+import { topicLabel } from "@/lib/mock-topics";
 import { RichText } from "@/components/mocks/rich-text";
 
 export interface ReviewItem {
@@ -87,7 +88,7 @@ export function ReviewExplorer({ items, groups }: { items: ReviewItem[]; groups:
               <li key={i.number} id={`q-${i.number}`} className={clsx("scroll-mt-24 overflow-hidden rounded-xl border bg-card shadow-xs", i.outcome === "correct" ? "border-l-4 border-line border-l-teal" : i.outcome === "wrong" ? "border-l-4 border-line border-l-oxblood" : "border-l-4 border-line border-l-line-strong")}>
                 <button type="button" onClick={() => setOpen(isOpen ? null : i.number)} aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left">
                   <span className="tnum flex size-8 flex-none items-center justify-center rounded-lg bg-surface font-display text-[13px] font-bold text-ink">{i.number}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink-body">{stripMarkup(i.stem).split("\n")[0].slice(0, 120)}</span><span className="mt-0.5 block text-[11px] text-ink-faint">{i.section}{i.topic ? ` · ${i.topic}` : ""} · {mmss(i.timeSec)}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink-body">{stripMarkup(i.stem).split("\n")[0].slice(0, 120)}</span><span className="mt-0.5 block text-[11px] text-ink-faint">{i.section}{topicLabel(i.section, i.topic) ? ` · ${topicLabel(i.section, i.topic)}` : ""} · {mmss(i.timeSec)}</span></span>
                   <span className={clsx("inline-flex flex-none items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", t.chip)}>{t.icon}{t.word} {i.marksEarned > 0 ? `+${i.marksEarned}` : i.marksEarned < 0 ? i.marksEarned : ""}</span>
                   <ChevronDown aria-hidden className={clsx("size-4 flex-none text-ink-faint transition-transform", isOpen && "rotate-180")} />
                 </button>

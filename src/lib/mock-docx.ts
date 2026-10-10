@@ -182,7 +182,7 @@ export function parseMockDocx(bytes: Uint8Array): ParsedMock {
   let title: string | null = null;
   const warnings: string[] = [];
   const flagged = new Set<string>();
-  type Q = { number: number; stem: string[]; options: string[]; context: { lines: string[]; table: string[][] | null } | null };
+  type Q = { number: number; stem: string[]; options: string[]; context: { lines: string[]; table: string[][] | null } | null; setFrom: number | null };
   const secs: { name: string; questions: Q[] }[] = [];
   let curSec: { name: string; questions: Q[] } | null = null;
   let curQ: Q | null = null;
@@ -233,9 +233,10 @@ export function parseMockDocx(bytes: Uint8Array): ParsedMock {
         closeQ();
         const n = Number(m[1]);
         let ctx: Q["context"] = null;
-        if (setCtx && setCtx.from <= n && n <= setCtx.to) ctx = JSON.parse(JSON.stringify(setCtx.context));
+        let setFrom: number | null = null;
+        if (setCtx && setCtx.from <= n && n <= setCtx.to) { ctx = JSON.parse(JSON.stringify(setCtx.context)); setFrom = setCtx.from; }
         else if (setCtx && n > setCtx.to) setCtx = null;
-        curQ = { number: n, stem: [m[2]], options: [], context: ctx };
+        curQ = { number: n, stem: [m[2]], options: [], context: ctx, setFrom };
         continue;
       }
       m = OPTION.exec(s);
@@ -251,6 +252,25 @@ export function parseMockDocx(bytes: Uint8Array): ParsedMock {
     }
   }
   closeQ();
+
+  // A shared chart or table that Word placed inside the FIRST question of a data set ("Study the chart and answer the THREE questions...")
+  // belongs to every question in the set: move it into the set's shared passage, so question 2 and 3 show it too.
+  // Only when the other questions of the set carry no picture or table of their own (otherwise each is its own).
+  const IMG_TOKEN = /\[\[img:\d+(?:\|\d+)?\]\]/g;
+  const groups = new Map<number, Q[]>();
+  for (const sec of secs) for (const q of sec.questions) if (q.setFrom !== null) groups.set(q.setFrom, [...(groups.get(q.setFrom) ?? []), q]);
+  for (const [from, qs] of groups) {
+    const first = qs.find((q) => q.number === from);
+    if (!first || qs.length < 2) continue;
+    const others = qs.filter((q) => q !== first);
+    const stemText = first.stem.join("\n");
+    const tokens = stemText.match(IMG_TOKEN) ?? [];
+    if (tokens.length && others.every((q) => !(q.stem.join("\n").match(IMG_TOKEN) ?? []).length)) {
+      first.stem = stemText.replace(IMG_TOKEN, "").replace(/\n{2,}/g, "\n").replace(/\s+$/, "").split("\n");
+      for (const q of qs) { q.context = q.context ?? { lines: [], table: null }; q.context.lines = [...q.context.lines, ...tokens]; }
+    }
+    if (first.context?.table && others.every((q) => !q.context?.table)) for (const q of others) { q.context = q.context ?? { lines: [], table: null }; q.context.table = first.context.table; }
+  }
 
   const problems: string[] = [];
   let total = 0;

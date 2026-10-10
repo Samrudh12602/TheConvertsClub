@@ -79,3 +79,10 @@ const AREA: Record<string, string> = {
   "Ethical dilemmas": "Ethics and values",
 };
 export const areaFor = (topic: string | null, section: string): string => (topic && AREA[topic]) || section.replace(/&/g, "and").replace(/\s+/g, " ").trim();
+
+/** The topic to show next to a section name, or null when the topic is just the section's own name (written a little differently). */
+export function topicLabel(section: string, topic: string | null): string | null {
+  if (!topic) return null;
+  const norm = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+  return norm(topic) === norm(section) ? null : topic;
+}

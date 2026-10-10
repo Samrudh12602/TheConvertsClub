@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaFor, topicFor } from "./mock-topics";
+import { areaFor, topicFor, topicLabel } from "./mock-topics";
 
 describe("topic tagging", () => {
   it("recognises common SNAP question types from the text", () => {
@@ -29,5 +29,13 @@ describe("skill areas", () => {
   it("uses the section name for a topic it doesn't know", () => {
     expect(areaFor("Something new", "Quantitative Ability & DI")).toBe("Quantitative Ability and DI");
     expect(areaFor(null, "General English")).toBe("General English");
+  });
+});
+
+describe("topicLabel", () => {
+  it("hides a topic that is only the section's own name", () => {
+    expect(topicLabel("Analytical & Logical Reasoning", "Analytical and Logical Reasoning")).toBeNull();
+    expect(topicLabel("Quantitative Ability", "Profit, loss & discount")).toBe("Profit, loss & discount");
+    expect(topicLabel("A", null)).toBeNull();
   });
 });
