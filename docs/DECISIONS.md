@@ -316,7 +316,7 @@ from one place. **Business numbers are read from `src/lib/settings.ts` / `src/li
       their next sign-in. Demo accounts and admins are never asked.
     - *Admin sees proof* on each student's and mentor's page ("Terms accepted").
     - *Operator and venue (confirmed by the owner):* "Samrudh Dhaimodkar, sole proprietor, trading as
-      The Convert Club"; disputes and arbitration are seated in Goa. Both live in `src/lib/business.ts`.
+      The Converts Club"; disputes and arbitration are seated in Goa. Both live in `src/lib/business.ts`.
       If this ever becomes a company/LLP, change `operator` and bump `LEGAL_VERSION` in `src/lib/legal.ts`.
       (Version bumped to 2026-10-04 for this change.)
     - **This is a thorough draft, not legal advice.** Have an Indian advocate review it before taking

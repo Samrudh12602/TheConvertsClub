@@ -101,7 +101,7 @@ export function ReceiptDocument({ r }: { r: ReceiptData }) {
           <View>
             <View style={s.brandRow}>
               <View style={s.mark}><Text style={s.markText}>C</Text></View>
-              <Text style={s.brand}>The Convert Club</Text>
+              <Text style={s.brand}>The Converts Club</Text>
             </View>
           </View>
           <View style={s.headerRight}>
@@ -160,7 +160,7 @@ export function ReceiptDocument({ r }: { r: ReceiptData }) {
         </View>
 
         <View style={s.footer} fixed>
-          <Text style={s.footerBrand}>The Convert Club</Text>
+          <Text style={s.footerBrand}>The Converts Club</Text>
           <Text style={s.footerMuted}>Thank you for choosing us.</Text>
         </View>
       </Page>

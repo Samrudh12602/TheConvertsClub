@@ -14,7 +14,7 @@ export default async function Messages() {
     <PortalPage width="max-w-[700px]">
       <MessageThread
         messages={thread.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
-        otherLabel="The Convert Club team"
+        otherLabel="The Converts Club team"
         empty="No messages yet. Write to us here about sessions, pay or anything you need."
       />
       <Panel title="Message the team" flush={false}>

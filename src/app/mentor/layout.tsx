@@ -7,7 +7,7 @@ import { firstName, fmtDay, relative } from "@/lib/format";
 import { getSettings } from "@/lib/settings-db";
 import { requireMentor } from "@/server/session";
 
-export const metadata: Metadata = { title: { default: "Mentor portal", template: "%s · The Convert Club" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { default: "Mentor portal", template: "%s · The Converts Club" }, robots: { index: false, follow: false } };
 
 export default async function MentorLayout({ children }: { children: React.ReactNode }) {
   const { user, mentor } = await requireMentor();

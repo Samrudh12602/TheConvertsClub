@@ -118,9 +118,9 @@ function Report({ r, student, only, imgs }: { r: ResultView; student: { name: st
   const when = r.submittedAt ? new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" }).format(r.submittedAt) : "";
   const stamp = `Prepared for ${pdfSafe(student.name)} (${pdfSafe(student.email)}). Personal copy: please don't share.`;
   return (
-    <Document title={pdfSafe(`${r.mock.title} - analysis`)} author="The Convert Club">
+    <Document title={pdfSafe(`${r.mock.title} - analysis`)} author="The Converts Club">
       {only !== "solutions" && <Page size="A4" style={s.page}>
-        <View style={s.brandRow}><View style={s.mark}><Text style={s.markT}>C</Text></View><Text style={s.brand}>The Convert Club</Text></View>
+        <View style={s.brandRow}><View style={s.mark}><Text style={s.markT}>C</Text></View><Text style={s.brand}>The Converts Club</Text></View>
         <Text style={s.h1}>{pdfSafe(r.mock.title)}: your analysis</Text>
         <Text style={s.sub}>{pdfSafe(student.name)} · {when} · {r.mock.durationMin} minutes · {a.results.length} questions</Text>
         <View style={s.cards}>

@@ -46,7 +46,7 @@ echo "Gmail sends (and lets replies land back in) your own inbox — no domain n
 plain  GMAIL_USER "Your Gmail address, e.g. you@gmail.com (skip to use Resend instead)"
 secret GMAIL_APP_PASSWORD "Gmail App Password (16 chars, from myaccount.google.com/apppasswords — needs 2-Step Verification on)"
 secret RESEND_API_KEY "Resend API key (skip if you set Gmail above)"
-plain  EMAIL_FROM "Resend from address, e.g. The Convert Club <hello@yourdomain.example> (only used if Gmail isn't set)"
+plain  EMAIL_FROM "Resend from address, e.g. The Converts Club <hello@yourdomain.example> (only used if Gmail isn't set)"
 plain  AUTH_GOOGLE_ID "Google OAuth client ID"
 secret AUTH_GOOGLE_SECRET "Google OAuth client secret"
 plain  ADMIN_EMAIL "Admin email (the one account seeded as Admin)"

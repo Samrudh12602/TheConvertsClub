@@ -18,7 +18,7 @@ export function SiteFooter({ account, comingSoon = false }: { account: { role: R
         <div>
           <div className="flex items-center gap-2.5">
             <span aria-hidden className="flex size-[30px] items-center justify-center rounded-lg bg-brand font-display text-[15px] font-bold leading-none text-white shadow-glow">C</span>
-            <span className="font-display text-base font-bold leading-tight text-surface">The Convert Club</span>
+            <span className="font-display text-base font-bold leading-tight text-surface">The Converts Club</span>
           </div>
           <p className="mt-3.5 max-w-[34ch] text-[13px] leading-[1.7] text-dark-muted">
             {comingSoon ? "SNAP mocks on the real exam screen, with an analysis of what went wrong. GDPI prep from people who converted is coming soon." : "GDPI prep run by people who converted last season. Real mocks, honest feedback, prices in the open."}
@@ -33,7 +33,7 @@ export function SiteFooter({ account, comingSoon = false }: { account: { role: R
         ))}
       </div>
       <p className="mx-auto mt-10 max-w-[1120px] border-t border-white/10 pt-5 text-[12px] leading-[1.6] text-dark-muted">
-        © {new Date().getFullYear()} The Convert Club. Practice and feedback only: we don&apos;t promise admission, and we&apos;re not affiliated with any institute.
+        © {new Date().getFullYear()} The Converts Club. Practice and feedback only: we don&apos;t promise admission, and we&apos;re not affiliated with any institute.
       </p>
     </footer>
   );

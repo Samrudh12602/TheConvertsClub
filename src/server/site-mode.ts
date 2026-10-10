@@ -15,5 +15,5 @@ export async function isSellable(slug: string): Promise<boolean> {
 /** Titles and descriptions of the GDPI-only public pages: neutral while they show "coming soon", so search and link previews don't advertise what can't be bought. */
 export async function gatedMetadata(real: Metadata): Promise<Metadata> {
   if (!(await gdpiComingSoon())) return real;
-  return { title: real.title, description: "Coming soon from The Convert Club. SNAP 2026 mocks are open now." };
+  return { title: real.title, description: "Coming soon from The Converts Club. SNAP 2026 mocks are open now." };
 }

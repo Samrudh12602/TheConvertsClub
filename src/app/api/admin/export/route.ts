@@ -29,5 +29,5 @@ export async function GET(req: NextRequest) {
     body = csv(["Order", "Date", "Name", "Email", "Product", "Status", "List price (INR)", "Discount (INR)", "Paid (INR)", "Coupon", "Early bird"], rows.map((o) => [o.id, o.createdAt, o.guestName, o.guestEmail, o.product.name, o.status, o.listPricePaise / 100, o.discountPaise / 100, o.amountPaise / 100, o.coupon?.code, o.earlyBird ? "yes" : ""]));
   } else return NextResponse.json({ error: "unknown export" }, { status: 400 });
   await audit({ actorId: user.id, action: "admin.export", entity: "Export", entityId: type, ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null });
-  return new NextResponse(body, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="convert-club-${type}-${new Date().toISOString().slice(0, 10)}.csv"`, "cache-control": "no-store" } });
+  return new NextResponse(body, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="converts-club-${type}-${new Date().toISOString().slice(0, 10)}.csv"`, "cache-control": "no-store" } });
 }

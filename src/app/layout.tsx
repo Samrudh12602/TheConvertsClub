@@ -22,9 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = soon ? SNAP_DESCRIPTION : GDPI_DESCRIPTION;
   return {
     metadataBase: new URL(appUrl()),
-    title: { default: soon ? "The Convert Club: SNAP 2026 mocks on the real exam screen" : "The Convert Club — GDPI prep by recent converts", template: "%s · The Convert Club" },
+    title: { default: soon ? "The Converts Club: SNAP 2026 mocks on the real exam screen" : "The Converts Club — GDPI prep by recent converts", template: "%s · The Converts Club" },
     description,
-    openGraph: { siteName: "The Convert Club", type: "website", locale: "en_IN" },
+    openGraph: { siteName: "The Converts Club", type: "website", locale: "en_IN" },
     twitter: { card: "summary_large_image" },
   };
 }

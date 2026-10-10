@@ -28,7 +28,7 @@ export default async function MocksPage() {
       <SnapCatalogue mocks={mocks.map((m) => ({ id: m.id, title: m.title, isTest: m.isTest, questions: m.questions, durationMin: m.durationMin, released: m.released, releaseAt: m.releaseAt }))} planned={ten ? 10 : 0} />
       <FaqTeaser items={SNAP_FAQS} />
       {soon && <GdpiTeaser />}
-      <p className="text-center text-[11.5px] leading-[1.6] text-ink-faint">SNAP is conducted by Symbiosis International (Deemed University). The Convert Club is an independent practice provider and is not affiliated with Symbiosis. These are practice papers: marks and percentiles are for practice and do not predict the real result. <Link href="/refunds" className="underline">Refund policy</Link>.</p>
+      <p className="text-center text-[11.5px] leading-[1.6] text-ink-faint">SNAP is conducted by Symbiosis International (Deemed University). The Converts Club is an independent practice provider and is not affiliated with Symbiosis. These are practice papers: marks and percentiles are for practice and do not predict the real result. <Link href="/refunds" className="underline">Refund policy</Link>.</p>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
 import { MOCK_ONLY_NAV, isMockOnly } from "@/server/student-kind";
 
-export const metadata: Metadata = { title: { default: "Student portal", template: "%s · The Convert Club" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { default: "Student portal", template: "%s · The Converts Club" }, robots: { index: false, follow: false } };
 
 /** "IIM Ahmedabad" -> "IIM A"; "XLRI Jamshedpur" -> "XLRI". */
 const shortName = (s: string) => (/^IIM\s+\w/i.test(s) ? `IIM ${s.split(/\s+/)[1][0].toUpperCase()}` : s.split(/\s+/)[0]);

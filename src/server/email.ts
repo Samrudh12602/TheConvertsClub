@@ -46,14 +46,14 @@ async function deliverGmail(to: string, r: Rendered, replyTo?: string, attachmen
   const user = process.env.GMAIL_USER as string;
   const transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass: process.env.GMAIL_APP_PASSWORD as string } });
   const info = await transport.sendMail({
-    from: { name: "The Convert Club", address: user }, to, replyTo: replyTo ?? user, subject: r.subject, html: r.html, text: r.text,
+    from: { name: "The Converts Club", address: user }, to, replyTo: replyTo ?? user, subject: r.subject, html: r.html, text: r.text,
     attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
   });
   return info.messageId as string;
 }
 
 async function deliverResend(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
-  const from = process.env.EMAIL_FROM || "The Convert Club <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM || "The Converts Club <onboarding@resend.dev>";
   const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
     from, to, subject: r.subject, html: r.html, text: r.text, ...(replyTo ? { replyTo } : {}),
     attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content })),

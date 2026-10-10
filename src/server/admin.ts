@@ -82,7 +82,7 @@ export async function confirmRequested(actor: Actor, sessionId: string) {
   const meetingUrl = await ensureMeetingUrl(s.id);
   if (s.student && s.startsAt) {
     await sendEmail({ template: "booking_confirmed", to: s.student.email, vars: { session: sessionTitle(s.type, s.focus), when: fmtWhen(s.startsAt), deadline: "" }, url: `/student/sessions/${s.id}`,
-      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${sessionTitle(s.type, s.focus)} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, url: meetingUrl })] : undefined });
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${sessionTitle(s.type, s.focus)} — The Converts Club`, startsAt: s.startsAt, endsAt: s.endsAt, url: meetingUrl })] : undefined });
     await notify(s.student.id, { title: `Confirmed: ${sessionTitle(s.type, s.focus)}, ${fmtWhen(s.startsAt)}`, href: `/student/sessions/${s.id}` });
   }
   if (s.mentor) await notify(s.mentor.userId, { title: "A session was confirmed for you", href: `/mentor/sessions/${s.id}` });

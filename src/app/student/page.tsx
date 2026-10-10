@@ -86,7 +86,7 @@ export default async function StudentDashboard() {
               <Link href={`/student/sessions/${next.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-[#3A332B] px-3.5 text-[13px] font-medium leading-none text-dark-text no-underline hover:border-dark-muted hover:text-dark-text hover:no-underline">Details &amp; reschedule</Link>
             </div>
           </div>
-          {next.status === "CONFIRMED" && <div className="basis-full"><AddToCalendar tone="dark" id={next.id} title={sessionTitle(next.type, next.focus)} startsAtIso={next.startsAt!.toISOString()} details={next.meetingUrl ? `Join: ${next.meetingUrl}` : "The Convert Club session"} /></div>}
+          {next.status === "CONFIRMED" && <div className="basis-full"><AddToCalendar tone="dark" id={next.id} title={sessionTitle(next.type, next.focus)} startsAtIso={next.startsAt!.toISOString()} details={next.meetingUrl ? `Join: ${next.meetingUrl}` : "The Converts Club session"} /></div>}
           <div className="flex-[0_1_240px] border-dark-line md:border-l md:pl-5">
             <p className="type-eyebrow text-dark-muted">Prepare</p>
             {[...prep, "Keep your resume open in another tab."].slice(0, 3).map((p) => <p key={p} className="mt-2 text-[12.5px] leading-normal text-[#D5CEC5]">{p}</p>)}

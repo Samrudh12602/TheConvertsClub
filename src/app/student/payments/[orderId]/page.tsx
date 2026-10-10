@@ -22,7 +22,7 @@ export default async function Receipt({ params }: { params: Promise<{ orderId: s
     <PortalPage width="max-w-[560px]">
       <div className="rounded-xl border border-line bg-card p-6 print:border-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-display text-lg font-bold text-ink">The Convert Club · Receipt</p>
+          <p className="font-display text-lg font-bold text-ink">The Converts Club · Receipt</p>
           {hasReceipt && <ButtonAnchor href={`/api/receipts/${o.id}`} download variant="secondary" className="print:hidden">Download PDF</ButtonAnchor>}
         </div>
         <dl className="mt-4 flex flex-col gap-2">

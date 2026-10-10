@@ -3,9 +3,9 @@
  * if you register a company or LLP, change `operator` to its exact registered name and add its address.
  */
 export const BUSINESS = {
-  brand: "The Convert Club",
+  brand: "The Converts Club",
   /** Who legally operates the service. A sole proprietor is the person; a company is its registered name. */
-  operator: "Samrudh Dhaimodkar, sole proprietor, trading as The Convert Club",
+  operator: "Samrudh Dhaimodkar, sole proprietor, trading as The Converts Club",
   /** Where disputes are heard and arbitration is seated. */
   jurisdiction: "Goa, India",
   grievanceOfficer: "Samrudh Dhaimodkar",

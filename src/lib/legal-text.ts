@@ -55,9 +55,9 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
           "Coupon and referral codes are single-use per order, cannot be combined unless stated, have no cash value, and may be refused, cancelled or reversed by us if they are used in a way that is fraudulent, abusive or against their purpose. A mentor may not use their own referral code.",
         ] },
         { heading: "SNAP mock tests", items: [
-          "A SNAP mock is a practice paper written by The Convert Club in the SNAP format. You can take each mock once, in one sitting. The clock is kept on our server and the paper closes and is submitted when it runs out. A mock credit is used when you begin the mock.",
+          "A SNAP mock is a practice paper written by The Converts Club in the SNAP format. You can take each mock once, in one sitting. The clock is kept on our server and the paper closes and is submitted when it runs out. A mock credit is used when you begin the mock.",
           "Scores, accuracy, topic and “what went wrong” analysis, and any percentile are for practice. They are a guide to where you can improve, not a prediction of, or a promise about, your result in the real exam. A percentile is shown only once enough students have taken the mock for it to be meaningful.",
-          "SNAP is conducted by Symbiosis International (Deemed University). The Convert Club is independent and is not affiliated with Symbiosis.",
+          "SNAP is conducted by Symbiosis International (Deemed University). The Converts Club is independent and is not affiliated with Symbiosis.",
           "The papers, questions, answer keys, solutions and analysis reports are our copyright and are licensed to you for your own personal study. You must not copy, photograph, record, publish, share, sell or otherwise pass them on, or share your account. Reports carry your name and we may use that to trace a leak. We may suspend an account that does this, without refund.",
           "If a mock cannot be completed because of a fault on our side, we may reopen the attempt or give the credit back, at our discretion. Refunds follow our Refund Policy: an unused credit within the refund window can be refunded; a mock you have begun cannot.",
         ] },
@@ -71,7 +71,7 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
         { heading: "How you must behave", items: [
           "Be honest, respectful and professional with mentors, staff and other students. Do not harass, abuse, threaten, discriminate against, or sexually or otherwise inappropriately approach anyone. We have zero tolerance for this and may end your access immediately and without refund.",
           "Do not impersonate anyone, give false information, or submit work that is not yours and present it as yours.",
-          "Do not attempt to bypass the platform: do not ask mentors to take payments, bookings or services outside The Convert Club, and do not contact mentors for paid services other than through us.",
+          "Do not attempt to bypass the platform: do not ask mentors to take payments, bookings or services outside The Converts Club, and do not contact mentors for paid services other than through us.",
           "Do not misuse the site: no scraping, probing, overloading, reverse engineering, or attempts to access other people’s data or accounts.",
           "Group discussion batches contain other students. Do not record, copy or share what other participants say or reveal who took part.",
         ] },

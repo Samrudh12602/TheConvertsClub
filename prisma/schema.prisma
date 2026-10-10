@@ -1,4 +1,4 @@
-// The Convert Club. Money is integer paise. Timestamps are UTC (displayed in IST).
+// The Converts Club. Money is integer paise. Timestamps are UTC (displayed in IST).
 
 generator client {
   provider = "prisma-client"

@@ -23,7 +23,7 @@ export interface IcsEvent { uid: string; title: string; startsAt: Date; endsAt: 
 /** A single-event calendar file. Opens as "Add to calendar" in Gmail, Apple Mail and Outlook. */
 export function buildIcs(e: IcsEvent, now = new Date()): string {
   const lines = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Convert Club//Sessions//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Converts Club//Sessions//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${e.uid}@convertclub`, `DTSTAMP:${stamp(now)}`, `DTSTART:${stamp(e.startsAt)}`, `DTEND:${stamp(e.endsAt)}`,
     `SUMMARY:${esc(e.title)}`,

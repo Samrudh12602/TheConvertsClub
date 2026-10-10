@@ -10,7 +10,7 @@ export function AddToCalendar({ id, title, startsAtIso, durationMin = 60, detail
   const start = new Date(startsAtIso);
   const end = new Date(start.getTime() + durationMin * 60_000);
   const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${stamp(start)}/${stamp(end)}&details=${encodeURIComponent(details ?? "")}`;
-  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Convert Club//EN", "BEGIN:VEVENT", `UID:${id}@convertclub`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`, `SUMMARY:${esc(title)}`, `DESCRIPTION:${esc(details ?? "")}`, "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Starts in 1 hour", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The Converts Club//EN", "BEGIN:VEVENT", `UID:${id}@convertclub`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`, `SUMMARY:${esc(title)}`, `DESCRIPTION:${esc(details ?? "")}`, "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Starts in 1 hour", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
   const cls = tone === "dark"
     ? "border-white/15 text-dark-text hover:border-white/40 hover:text-white"
     : "border-line-strong bg-white text-ink hover:border-oxblood";

@@ -39,7 +39,7 @@ export const { handlers, auth, signIn, signOut, unstable_update: refreshSession 
     ...(googleEnabled() ? [Google({ allowDangerousEmailAccountLinking: false })] : []),
     Resend({
       apiKey: process.env.RESEND_API_KEY,
-      from: process.env.EMAIL_FROM || "The Convert Club <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM || "The Converts Club <onboarding@resend.dev>",
       maxAge: 24 * 60 * 60,
       async sendVerificationRequest({ identifier, url }) {
         const r = await sendEmail({ template: "magic_link", to: identifier, url });

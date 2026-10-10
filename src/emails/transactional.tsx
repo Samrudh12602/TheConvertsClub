@@ -24,7 +24,7 @@ export function TransactionalEmail({ preview, head, body, details, cta, footer }
           <Section style={{ paddingBottom: 16, borderBottom: `1px solid ${C.line}` }}>
             <table role="presentation"><tbody><tr>
               <td style={{ width: 22, height: 22, background: C.oxblood, borderRadius: 5, textAlign: "center", color: "#fff", fontFamily: display, fontWeight: 700, fontSize: 11 }}>C</td>
-              <td style={{ paddingLeft: 8, fontFamily: display, fontWeight: 700, fontSize: 12, color: C.ink }}>The Convert Club</td>
+              <td style={{ paddingLeft: 8, fontFamily: display, fontWeight: 700, fontSize: 12, color: C.ink }}>The Converts Club</td>
             </tr></tbody></table>
           </Section>
           <Text style={{ fontFamily: display, fontWeight: 700, fontSize: 18, lineHeight: "1.3", color: C.ink, margin: "16px 0 0" }}>{head}</Text>

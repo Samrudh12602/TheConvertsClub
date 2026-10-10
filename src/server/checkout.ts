@@ -124,7 +124,7 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   await db.order.update({ where: { id: order.id }, data: { razorpayOrderId: rz.id } });
   return {
     orderId: order.id, razorpayOrderId: rz.id, amountPaise: q.totalPaise, keyId: process.env.RAZORPAY_KEY_ID!,
-    name: "The Convert Club", description: q.product.name, prefill: { name: parsed.data.name.trim(), email, contact: `+91${phone}` },
+    name: "The Converts Club", description: q.product.name, prefill: { name: parsed.data.name.trim(), email, contact: `+91${phone}` },
   };
 }
 

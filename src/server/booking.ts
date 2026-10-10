@@ -190,7 +190,7 @@ async function afterBooked(sessionId: string, kind: "new" | "moved") {
   if (s.status === "CONFIRMED") {
     await sendEmail({ template: kind === "new" ? "booking_confirmed" : "session_rescheduled", to: s.student.email, vars: { ...vars, detail: `Your ${title} is now ${vars.when} IST.` }, url: `/student/sessions/${s.id}`,
       details: [{ k: "Session", v: title }, { k: "When", v: `${vars.when} IST` }],
-      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} — The Convert Club`, startsAt: s.startsAt, endsAt: s.endsAt, description: "Mock interview session booked on The Convert Club.", url: s.meetingUrl })] : undefined });
+      attachments: s.endsAt ? [icsAttachment({ uid: s.id, title: `${title} — The Converts Club`, startsAt: s.startsAt, endsAt: s.endsAt, description: "Mock interview session booked on The Converts Club.", url: s.meetingUrl })] : undefined });
   } else {
     await sendEmail({ template: "booking_requested", to: s.student.email, vars, url: "/student/sessions" });
   }
@@ -222,7 +222,7 @@ export async function cancelSession(studentId: string, sessionId: string, opts: 
     await tx.session.update({ where: { id: sess.id }, data: { status: "CANCELLED", cancelledAt: t } });
     if (sess.slotId) await tx.slot.update({ where: { id: sess.slotId }, data: { status: "OPEN", heldById: null, heldUntil: null } });
     if (sess.type === "PANEL_PI") await releasePanelSeats(tx, sess.id);
-    if (outcome === "RELEASE") await releaseCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: opts.byStaff ? "Cancelled by The Convert Club" : "Cancelled with notice" });
+    if (outcome === "RELEASE") await releaseCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: opts.byStaff ? "Cancelled by The Converts Club" : "Cancelled with notice" });
     else await consumeCredit(tx, { userId: studentId, kind, sessionId: sess.id, reason: `Late cancel (under ${s.cancelNoticeHours}h)` });
     if (sess.gdBatchId) await tx.gdParticipant.updateMany({ where: { batchId: sess.gdBatchId, studentId }, data: { status: "LEFT" } });
     return { sess, outcome };

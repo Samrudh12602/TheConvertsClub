@@ -1,4 +1,4 @@
-# The Convert Club
+# The Converts Club
 
 GDPI (MBA group discussion and personal interview) prep platform: a public
 marketing site plus Student, Mentor and Admin portals behind one login.

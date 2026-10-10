@@ -96,7 +96,7 @@ export default async function SessionDetail({ params, searchParams }: { params: 
               <h3 className="mt-2 font-display text-[18px] font-bold leading-[1.25]">{s.status === "CONFIRMED" ? "Your meeting link" : "We\u2019re confirming a mentor"}</h3>
               <p className="mt-1.5 text-[12.5px] leading-[1.55] text-dark-soft">{s.status === "CONFIRMED" ? "Join a couple of minutes early. Keep your resume open in another tab." : "You\u2019ll get an email the moment it\u2019s confirmed. Nothing else to do."}</p>
             </div>
-            {s.status === "CONFIRMED" && <AddToCalendar tone="dark" id={s.id} title={title} startsAtIso={s.startsAt.toISOString()} details={s.meetingUrl ? `Join: ${s.meetingUrl}` : "The Convert Club session"} />}
+            {s.status === "CONFIRMED" && <AddToCalendar tone="dark" id={s.id} title={title} startsAtIso={s.startsAt.toISOString()} details={s.meetingUrl ? `Join: ${s.meetingUrl}` : "The Converts Club session"} />}
             {s.status === "CONFIRMED" && s.meetingUrl && <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-[14px] font-semibold leading-none text-white no-underline shadow-glow transition hover:brightness-110 hover:text-white hover:no-underline"><Video aria-hidden className="size-4" />Join meeting</a>}
           </div>
           <div className="rounded-2xl border border-line bg-card p-5 shadow-card">

@@ -19,5 +19,5 @@ export async function GET() {
   ]);
   await audit({ actorId: user.id, action: "account.export", entity: "User", entityId: user.id });
   const body = JSON.stringify({ exportedAt: new Date().toISOString(), account: { id: user.id, email: user.email, name: user.name, phone: user.phone, createdAt: user.createdAt }, profile, calls, sessions, reviews, orders, creditLedger: ledger }, null, 2);
-  return new NextResponse(body, { headers: { "content-type": "application/json", "content-disposition": 'attachment; filename="convert-club-my-data.json"', "cache-control": "private, no-store" } });
+  return new NextResponse(body, { headers: { "content-type": "application/json", "content-disposition": 'attachment; filename="converts-club-my-data.json"', "cache-control": "private, no-store" } });
 }

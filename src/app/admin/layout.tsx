@@ -5,7 +5,7 @@ import { UserChip } from "@/components/portal/user-chip";
 import { adminDb } from "@/server/demo";
 import { requireAdmin } from "@/server/session";
 
-export const metadata: Metadata = { title: { default: "Admin console", template: "%s · The Convert Club" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { default: "Admin console", template: "%s · The Converts Club" }, robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const db = await adminDb();

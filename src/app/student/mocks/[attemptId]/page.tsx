@@ -149,7 +149,7 @@ export default async function MockResultPage({ params }: { params: Promise<{ att
       {/* 4. the paper, why, and every solution */}
       <ReviewExplorer items={review} groups={groups} />
 
-      <p className="flex items-start gap-2 text-[11.5px] text-ink-faint"><AlertTriangle aria-hidden className="mt-0.5 size-3.5 flex-none" />These are practice papers written by The Convert Club. Marks and percentiles are for practice and are not a prediction of the real exam result.</p>
+      <p className="flex items-start gap-2 text-[11.5px] text-ink-faint"><AlertTriangle aria-hidden className="mt-0.5 size-3.5 flex-none" />These are practice papers written by The Converts Club. Marks and percentiles are for practice and are not a prediction of the real exam result.</p>
     </PortalPage>
   );
 }

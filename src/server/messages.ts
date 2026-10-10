@@ -28,7 +28,7 @@ export async function sendMessage(sender: Sender, input: { body: string; toUserI
     const to = await db.user.findUnique({ where: { id: input.toUserId }, select: { id: true, role: true, status: true, deletedAt: true } });
     if (!to || to.deletedAt || to.status !== "ACTIVE" || to.role === "ADMIN") throw new MessageError("That person can't be messaged.");
     await db.message.create({ data: { fromUserId: sender.id, toUserId: to.id, body } });
-    await notify(to.id, { title: "New message from The Convert Club", body: body.slice(0, 140), href: homeFor(to.role, to.id) });
+    await notify(to.id, { title: "New message from The Converts Club", body: body.slice(0, 140), href: homeFor(to.role, to.id) });
     return;
   }
 

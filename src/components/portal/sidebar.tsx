@@ -40,12 +40,12 @@ export function PortalSidebar({ role, groups, footer }: { role: PortalRole; grou
       )}
     >
       <div className="flex items-center justify-between gap-3 px-5 py-3 md:px-5 md:pb-4 md:pt-5">
-        <Link href={`/${role}`} className="flex items-center gap-[9px] no-underline hover:no-underline" aria-label={`Convert Club ${role} home`}>
+        <Link href={`/${role}`} className="flex items-center gap-[9px] no-underline hover:no-underline" aria-label={`Converts Club ${role} home`}>
           <span aria-hidden className={clsx("flex size-[26px] items-center justify-center rounded-md font-display text-[13px] font-bold leading-none text-white", brand.mark)}>
             C
           </span>
           <span className="min-w-0">
-            <span className={clsx("block font-display text-[13px] font-bold leading-[1.15]", dark ? "text-surface" : "text-ink")}>Convert Club</span>
+            <span className={clsx("block font-display text-[13px] font-bold leading-[1.15]", dark ? "text-surface" : "text-ink")}>Converts Club</span>
             {brand.sub && (
               <span className={clsx("block text-[10px] font-semibold uppercase leading-[1.3] tracking-[0.1em]", dark ? "text-dark-muted" : "text-ink-faint")}>
                 {brand.sub}
