@@ -578,7 +578,7 @@ async function readPaper(fd: FormData): Promise<ParsedMock> {
 }
 
 export interface PaperSummary {
-  detectedTitle: string | null; total: number; sections: { name: string; count: number }[]; solutions: number; problems: string[];
+  detectedTitle: string | null; total: number; sections: { name: string; count: number }[]; solutions: number; problems: string[]; warnings: string[]; underlined: number[];
   sample: { number: number; section: string; stem: string; options: string[]; correct: number } | null;
   suggestedNumber: number; suggestedTitle: string; suggestedSlug: string;
 }
@@ -592,7 +592,8 @@ export async function inspectMockPaperAction(fd: FormData): Promise<({ ok: true 
     const n = await nextMockNumber();
     return {
       ok: true, detectedTitle: p.title, total: p.total, sections: p.sections.map((s) => ({ name: s.name, count: s.questions.length })),
-      solutions: p.sections.reduce((t, s) => t + s.questions.filter((q) => q.explanation).length, 0), problems: p.problems.slice(0, 12),
+      solutions: p.sections.reduce((t, s) => t + s.questions.filter((q) => q.explanation).length, 0), problems: p.problems.slice(0, 12), warnings: p.warnings.slice(0, 12),
+      underlined: p.sections.flatMap((s) => s.questions).filter((q) => /<u>/.test(q.stem + q.options.join("") + (q.context?.lines.join("") ?? ""))).map((q) => q.number),
       sample: first ? { number: first.number, section: p.sections.find((s) => s.questions.includes(first))!.name, stem: first.stem.slice(0, 280), options: first.options, correct: first.correct } : null,
       suggestedNumber: n, suggestedTitle: `SNAP 2026 Mock ${n}`, suggestedSlug: `snap-mock-${n}`,
     };

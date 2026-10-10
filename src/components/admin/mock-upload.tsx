@@ -72,12 +72,21 @@ export function MockUpload({ nextNumber }: { nextNumber: number }) {
             {blocked && (
               <ul className="mt-3 list-disc pl-5 text-[12px] leading-[1.6] text-oxblood">{sum.problems.map((p) => <li key={p}>{p}</li>)}</ul>
             )}
+            {sum.underlined.length > 0 && <p className="mt-2.5 text-[12px] leading-[1.55] text-ink-2"><b>Underlined words kept</b> in question{sum.underlined.length === 1 ? "" : "s"} {sum.underlined.join(", ")} (students see them underlined).</p>}
             {sum.sample && !blocked && (
               <details className="mt-3 text-[12px] text-ink-2"><summary className="cursor-pointer font-semibold text-ink">Check question {sum.sample.number}</summary>
                 <p className="mt-2 whitespace-pre-wrap leading-[1.6]"><RichText text={sum.sample.stem} /></p>
                 <ul className="mt-1.5 flex flex-col gap-1">{sum.sample.options.map((o, i) => <li key={i} className={clsx(i === sum.sample!.correct && "font-semibold text-teal")}>{"abcd"[i]}) <RichText text={o} />{i === sum.sample!.correct ? "  ← correct" : ""}</li>)}</ul></details>
             )}
           </div>
+
+          {sum.warnings.length > 0 && (
+            <div className="rounded-2xl border border-gold-line bg-gold-tint p-4" role="status">
+              <p className="flex items-center gap-2 text-[13px] font-semibold text-gold-deep"><AlertTriangle className="size-4" aria-hidden />Worth a look before you publish</p>
+              <ul className="mt-1.5 list-disc pl-5 text-[12px] leading-[1.6] text-gold-deep">{sum.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+              <p className="mt-1.5 text-[11.5px] text-gold-deep/80">These don&apos;t stop you creating the mock. Save it as a draft and use Preview to check.</p>
+            </div>
+          )}
 
           {!blocked && (
             <div className="rounded-2xl border border-line bg-card p-4">
