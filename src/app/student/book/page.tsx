@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
 import { BookFlow } from "@/components/student/book-flow";
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Book a session" };
 
 export default async function BookPage({ searchParams }: { searchParams: Promise<{ reschedule?: string; mentor?: string; type?: string; focus?: string }> }) {
+  await guardGdpi("book");
   const user = await requireStudent();
   const { reschedule: rid, mentor: mentorParam, type: typeParam, focus: focusParam } = await searchParams;
   const [bal, guidance] = await Promise.all([getBalances(db, user.id), getProduct("quick-guidance")]);

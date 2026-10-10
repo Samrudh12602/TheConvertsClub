@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Insight, StatusPill } from "@/components/portal/ui";
@@ -13,6 +14,7 @@ export const metadata = { title: "WAT & SOP" };
 const lines = (s?: string | null) => (s ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
 
 export default async function ReviewsPage() {
+  await guardGdpi("reviews");
   const user = await requireStudent();
   const [bal, reviews] = await Promise.all([getBalances(db, user.id), db.review.findMany({ where: { studentId: user.id }, orderBy: { submittedAt: "desc" }, include: { feedback: true } })]);
   const kinds = (["WAT", "SOP_DETAILED", "SOP_BASIC"] as const).filter((k) => (bal[k]?.available ?? 0) > 0);

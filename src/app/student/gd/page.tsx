@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Flash, StatusPill } from "@/components/portal/ui";
 import { GdButton } from "@/components/student/gd-actions";
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "GD / GE batches" };
 
 export default async function GdPage() {
+  await guardGdpi("gd");
   const user = await requireStudent();
   const batches = await db.gdBatch.findMany({
     where: { startsAt: { gt: new Date() }, status: { not: "CANCELLED" } },

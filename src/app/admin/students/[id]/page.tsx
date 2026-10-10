@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
+import { ProfileDocumentsView } from "@/components/admin/profile-documents-view";
 import { CreditBreakdown } from "@/components/portal/credit-breakdown";
 import { Empty, Panel, StatusPill } from "@/components/portal/ui";
 import { BookForStudent } from "@/components/admin/admin-schedule";
@@ -18,7 +19,7 @@ const nm = (n?: string | null) => n?.replace(/\s*\(demo.*?\)/, "") ?? "—";
 
 export default async function StudentDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const student = await db.user.findUnique({ where: { id, role: "STUDENT" }, include: { studentProfile: true, calls: true } });
+  const student = await db.user.findUnique({ where: { id, role: "STUDENT" }, include: { studentProfile: true, calls: true, profileDocuments: { orderBy: { createdAt: "desc" } } } });
   if (!student) notFound();
   const [creditSummary, enrollments, sessions, orders, ledger] = await Promise.all([
     getCreditSummary(db, id),
@@ -42,9 +43,21 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
       </div>
 
       <Panel title="Profile" flush={false}>
-        <dl className="grid gap-3 text-[13px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
-          {([["College", p?.college], ["Degree", p?.degree], ["Work-ex", p?.workExMonths != null ? `${p.workExMonths} mo` : null], ["Targets", p?.targetInstitutes.join(", ")], ["Weak areas", p?.weakAreas.join(", ")]] as [string, string | null | undefined][]).map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v || "—"}</dd></div>)}
+        <dl className="grid gap-3 text-[13px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+          {([
+            ["Date of birth", p?.dob ? p.dob.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null], ["State", [p?.city, p?.state].filter(Boolean).join(", ") || null], ["Exams", p?.examsAppearing?.join(", ")],
+            ["10th", p?.tenthPercent != null ? `${p.tenthPercent}%${p.tenthBoard ? ` · ${p.tenthBoard}` : ""}${p.tenthYear ? ` · ${p.tenthYear}` : ""}` : null],
+            ["12th", p?.twelfthPercent != null ? `${p.twelfthPercent}%${p.twelfthStream ? ` · ${p.twelfthStream}` : ""}${p.twelfthBoard ? ` · ${p.twelfthBoard}` : ""}${p.twelfthYear ? ` · ${p.twelfthYear}` : ""}` : null],
+            ["College", [p?.college, p?.degree].filter(Boolean).join(" · ") || null], ["Graduated", [p?.gradYear, p?.gradScore].filter(Boolean).join(" · ") || null],
+            ["Work-ex", p?.workExMonths != null ? `${p.workExMonths} mo${p.company ? ` · ${p.company}` : ""}${p.jobRole ? `, ${p.jobRole}` : ""}` : null],
+            ["Targets", p?.targetInstitutes.join(", ")], ["Weak areas", p?.weakAreas.join(", ")],
+          ] as [string, string | null | undefined][]).map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v || "—"}</dd></div>)}
         </dl>
+        {p?.about && <p className="mt-3 whitespace-pre-wrap rounded-lg bg-surface p-3 text-[12.5px] leading-[1.6] text-ink-2">{p.about}</p>}
+      </Panel>
+
+      <Panel title="Exam results and call letters" flush={false}>
+        <ProfileDocumentsView docs={student.profileDocuments.map((d) => ({ id: d.id, kind: d.kind, title: d.title, year: d.year, score: d.score, note: d.note, hasFile: Boolean(d.fileKey) }))} empty="Nothing added yet." />
       </Panel>
 
       <Panel title="Terms accepted" flush={false}><LegalRecord userId={student.id} role="STUDENT" /></Panel>

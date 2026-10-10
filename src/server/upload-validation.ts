@@ -43,3 +43,14 @@ export function sniffImage(name: string, bytes: Uint8Array): { ext: string; mime
   if (ext === ".webp" && !isWebp) throw new UploadError("That file isn't a valid WEBP.");
   return { ext: ext === ".jpeg" ? ".jpg" : ext, mime };
 }
+
+/** A profile document: a PDF or a photo/scan of a letter or marksheet. The real file signature is checked, not just the name. */
+export function sniffProfileFile(name: string, bytes: Uint8Array): { ext: string; mime: string } {
+  const ext = name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? "";
+  if (ext === ".pdf") {
+    if (!String.fromCharCode(...bytes.slice(0, 4)).startsWith("%PDF")) throw new UploadError("That file isn't a valid PDF.");
+    return { ext, mime: "application/pdf" };
+  }
+  if ([".jpg", ".jpeg", ".png"].includes(ext)) return sniffImage(name, bytes);
+  throw new UploadError("Upload a PDF, or a JPG or PNG photo or scan.");
+}

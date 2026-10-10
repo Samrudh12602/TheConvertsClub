@@ -9,8 +9,9 @@ export const runtime = "nodejs";
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  const [profile, calls, sessions, reviews, orders, ledger] = await Promise.all([
+  const [profile, documents, calls, sessions, reviews, orders, ledger] = await Promise.all([
     db.studentProfile.findUnique({ where: { userId: user.id } }),
+    db.profileDocument.findMany({ where: { userId: user.id }, select: { kind: true, title: true, year: true, score: true, note: true, fileName: true, createdAt: true } }),
     db.callTracker.findMany({ where: { studentId: user.id } }),
     db.session.findMany({ where: { studentId: user.id }, include: { feedback: { select: { scores: true, overall: true, strengths: true, weaknesses: true, redFlags: true, answerFraming: true, questionsToPrepare: true, recommendation: true, submittedAt: true } }, rating: true } }),
     db.review.findMany({ where: { studentId: user.id }, select: { kind: true, title: true, fileName: true, textBody: true, status: true, submittedAt: true, completedAt: true } }),
@@ -18,6 +19,6 @@ export async function GET() {
     db.creditLedger.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
   ]);
   await audit({ actorId: user.id, action: "account.export", entity: "User", entityId: user.id });
-  const body = JSON.stringify({ exportedAt: new Date().toISOString(), account: { id: user.id, email: user.email, name: user.name, phone: user.phone, createdAt: user.createdAt }, profile, calls, sessions, reviews, orders, creditLedger: ledger }, null, 2);
+  const body = JSON.stringify({ exportedAt: new Date().toISOString(), account: { id: user.id, email: user.email, name: user.name, phone: user.phone, createdAt: user.createdAt }, profile, documents, calls, sessions, reviews, orders, creditLedger: ledger }, null, 2);
   return new NextResponse(body, { headers: { "content-type": "application/json", "content-disposition": 'attachment; filename="converts-club-my-data.json"', "cache-control": "private, no-store" } });
 }

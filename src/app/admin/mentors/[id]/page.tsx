@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalPage } from "@/components/portal/portal-page";
+import { ProfileDocumentsView } from "@/components/admin/profile-documents-view";
 import { Empty, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { AdminHoursForm } from "@/components/admin/admin-schedule";
 import { MentorCouponEditor, PublicVisibleToggle, ResendLoginButton, StatusSelect, TierSelect } from "@/components/admin/mentor-controls";
@@ -26,7 +27,7 @@ function maskPayout(enc: string | null): string {
 
 export default async function MentorDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const m = await db.mentorProfile.findUnique({ where: { id }, include: { user: true, referralCoupon: true } });
+  const m = await db.mentorProfile.findUnique({ where: { id }, include: { user: { include: { profileDocuments: { orderBy: { createdAt: "desc" } } } }, referralCoupon: true } });
   if (!m) notFound();
   const [rates, awards, accruals, sessions, ratings, referralOrders] = await Promise.all([
     db.payRate.findMany({ where: { tier: m.tier }, orderBy: { service: "asc" } }),
@@ -106,6 +107,12 @@ export default async function MentorDetail({ params }: { params: Promise<{ id: s
         </Panel>
       )}
 
+      <Panel title="Background and proof" flush={false}>
+        <dl className="mb-3 grid gap-3 text-[13px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+          {([["Converted", m.convertedInstitutes.join(", ")], ["Exam scores", m.examScores], ["Works at", [m.company, m.jobRole].filter(Boolean).join(", ")]] as [string, string | null | undefined][]).map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v || "—"}</dd></div>)}
+        </dl>
+        <ProfileDocumentsView docs={m.user.profileDocuments.map((d) => ({ id: d.id, kind: d.kind, title: d.title, year: d.year, score: d.score, note: d.note, hasFile: Boolean(d.fileKey) }))} empty="No letters or results added yet." />
+      </Panel>
       <Panel title="Terms accepted" flush={false}><LegalRecord userId={m.userId} role="MENTOR" /></Panel>
 
       <Panel title="Going on leave? Move their sessions" flush={false}>

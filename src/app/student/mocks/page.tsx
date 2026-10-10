@@ -3,14 +3,12 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, CheckCircle2, Clock, FileCheck2, Lock, Play } from "lucide-react";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Kpi, KpiGrid, Panel, StatusPill } from "@/components/portal/ui";
-import { PortalBuy } from "@/components/student/portal-buy";
+import { SnapOffers } from "@/components/student/snap-offers";
 import { ButtonLink } from "@/components/ui/button";
-import { getProduct } from "@/lib/catalog";
 import { fmtWhen } from "@/lib/format";
-import { formatPaise } from "@/lib/money";
-import { priceView } from "@/lib/pricing";
-import { paymentsConfigured } from "@/server/razorpay";
-import { hadTestMock, listMocksFor } from "@/server/mocks";
+import { listMocksFor } from "@/server/mocks";
+import { snapStanding } from "@/server/snap-offers";
+import { db } from "@/lib/db";
 import { requireStudent } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -18,15 +16,10 @@ export const metadata = { title: "SNAP Mocks" };
 
 export default async function StudentMocksPage() {
   const user = await requireStudent();
-  const [{ mocks, balances }, hadTest, test, five, ten] = await Promise.all([listMocksFor(user.id), hadTestMock(user.id), getProduct("snap-test-mock"), getProduct("snap-mocks-5"), getProduct("snap-mocks-10")]);
-  const me = { name: user.name?.replace(/\s*\(demo\)/, "") ?? "", email: user.email, phone: user.phone ?? "" };
-  const canPay = paymentsConfigured();
+  const [{ mocks, balances }, standing] = await Promise.all([listMocksFor(user.id), snapStanding(db, user.id)]);
   const done = mocks.filter((m) => m.attempt?.status === "SUBMITTED");
   const scores = done.map((m) => m.attempt!.score).filter((s): s is number => s !== null);
   const best = scores.length ? Math.max(...scores) : null;
-  const low = balances.series === 0;
-  // The test mock is one per person: once they've bought or taken it, only the packs are offered, and only when they have none left.
-  const offers = [!hadTest && balances.test === 0 ? test : null, low ? five : null, low ? ten : null].filter((p): p is NonNullable<typeof p> => Boolean(p));
   return (
     <PortalPage width="max-w-[980px]">
       <KpiGrid>
@@ -66,22 +59,7 @@ export default async function StudentMocksPage() {
         )}
       </Panel>
 
-      {offers.length > 0 && (
-        <section aria-label="Get more mocks" className="overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5">
-          <p className="type-eyebrow text-gold">Get mocks</p>
-          <h2 className="mt-1.5 font-display text-[20px] font-bold leading-[1.2]">{hadTest ? "Ready for more? Take the full mocks" : "Take the real thing, then see exactly what went wrong"}</h2>
-          <div className="mt-4 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))" }}>
-            {offers.map((p) => (
-              <div key={p.slug} className="flex flex-col gap-2 rounded-xl bg-white/[0.07] p-4 ring-1 ring-white/10">
-                <p className="text-[13.5px] font-semibold">{p.name}</p>
-                <p className="tnum font-display text-[26px] font-bold leading-none">{formatPaise(priceView(p).payablePaise)}</p>
-                <p className="text-[12px] leading-[1.5] text-dark-soft">{p.summary}</p>
-                {canPay && <PortalBuy slug={p.slug} me={me} label="Buy" variant="onDark" />}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <SnapOffers user={user} title={standing.five ? "Want all 10? Add 5 more mocks" : standing.test ? "Ready for more? Take the full mocks" : "Pick a plan and take your first mock"} lead={standing.five ? undefined : "A mock is only worth the time you spend learning from it: every one ends with an analysis of exactly where your marks went."} />
       <p className="text-[11.5px] text-ink-faint">Each mock can be taken once, in one sitting, on a laptop or desktop. <Link href="/student/help" className="underline">Need help?</Link></p>
     </PortalPage>
   );

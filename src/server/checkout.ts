@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { ADDITIONAL_PI_NOT_ELIGIBLE, ADDITIONAL_PI_SLUG, canBuyAdditionalPi } from "@/server/eligibility";
 import { PANEL_UPGRADE_SLUG, convertPiToPanel, panelUpgradeStatus } from "@/server/panel-upgrade";
+import { SNAP_UPGRADE_SLUG, snapStanding, upgradeStatus } from "@/server/snap-offers";
 import { getProduct } from "@/lib/catalog";
 import { checkCoupon, describeCredit, priceView } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
@@ -84,6 +85,11 @@ export async function startCheckout(input: { slug: string; name: string; email: 
   // The Rs 199 Panel PI upgrade: only for Call Convert Plus students, at most twice, and only while they still hold an unused PI.
   if (q.product.slug === PANEL_UPGRADE_SLUG) {
     const st = await panelUpgradeStatus(db, buyer!.id);
+    if (!st.eligible) throw new CheckoutError(st.reason ?? "You can't upgrade right now.");
+  }
+  // The +5 upgrade to 10 mocks: only for a student who holds the 5-pack and hasn't already gone to 10.
+  if (q.product.slug === SNAP_UPGRADE_SLUG) {
+    const st = upgradeStatus(await snapStanding(db, buyer!.id));
     if (!st.eligible) throw new CheckoutError(st.reason ?? "You can't upgrade right now.");
   }
   const email = parsed.data.email.toLowerCase();

@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import { PortalPage } from "@/components/portal/portal-page";
 import { KpiGrid, Kpi } from "@/components/portal/ui";
 import { CalendarCheck, CheckCircle2, Star } from "lucide-react";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "My sessions" };
 
 export default async function SessionsPage() {
+  await guardGdpi("sessions");
   const user = await requireStudent();
   const sessions = await db.session.findMany({
     where: { studentId: user.id, startsAt: { not: null } },

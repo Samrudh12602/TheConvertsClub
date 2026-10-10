@@ -37,7 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {overdueReviewCount} review{overdueReviewCount === 1 ? "" : "s"} overdue
             </Link>
           )}
-          <UserChip name={user.name} />
+          <UserChip name={user.name} userId={user.id} avatarKey={user.avatarKey} profileHref="/admin/profile" />
         </>
       }
     >

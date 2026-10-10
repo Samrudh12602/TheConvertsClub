@@ -83,12 +83,13 @@ export function PortalSidebar({ role, groups, footer }: { role: PortalRole; grou
                           "group relative flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 leading-[1.2] no-underline transition-all duration-150 hover:no-underline",
                           dark
                             ? clsx("text-[12.5px] font-medium", active ? "bg-white/[0.08] text-surface shadow-inset" : "text-dark-soft hover:bg-white/[0.05] hover:text-surface")
-                            : clsx("text-[13px]", active ? "bg-white font-semibold text-ink shadow-card ring-1 ring-line" : "font-normal text-ink-muted hover:bg-white/70 hover:text-ink"),
+                            : clsx("text-[13px]", active ? "bg-white font-semibold text-ink shadow-card ring-1 ring-line" : it.lock ? "font-normal text-ink-faint hover:bg-white/70 hover:text-ink-muted" : "font-normal text-ink-muted hover:bg-white/70 hover:text-ink"),
                         )}
                       >
                         {active && <span aria-hidden className="absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-oxblood shadow-[0_0_10px_rgba(147,40,54,0.7)]" />}
-                        <NavIcon href={it.href} className={clsx("size-[17px] flex-none transition-colors", active ? (dark ? "text-[#e7a0a8]" : "text-oxblood") : "opacity-75 group-hover:opacity-100")} />
+                        <NavIcon href={it.iconHref ?? it.href} className={clsx("size-[17px] flex-none transition-colors", active ? (dark ? "text-[#e7a0a8]" : "text-oxblood") : "opacity-75 group-hover:opacity-100")} />
                         <span className="min-w-0 flex-1 truncate">{it.label}</span>
+                        {it.lock && <span className={clsx("flex-none rounded-full px-1.5 py-[3px] text-[9.5px] font-semibold leading-none", dark ? "bg-white/10 text-dark-muted" : "bg-line-soft text-ink-faint")}>{it.lock === "soon" ? "Soon" : "Locked"}</span>}
                       </Link>
                     </li>
                   );

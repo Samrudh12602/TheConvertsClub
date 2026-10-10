@@ -24,7 +24,7 @@ export default async function MentorLayout({ children }: { children: React.React
         <>
           {user.role === "ADMIN" && <Link href="/admin" className="inline-flex items-center rounded-lg border border-line-strong bg-white px-2.5 py-[7px] text-[11.5px] font-semibold text-ink no-underline hover:border-ink hover:no-underline">← Admin console</Link>}
           {due.length > 0 && soonest && <TopPill tone="amber">{due.length} feedback due {relative(soonest)}</TopPill>}
-          <UserChip name={user.name} />
+          <UserChip name={user.name} userId={user.id} avatarKey={user.avatarKey} profileHref="/mentor/profile" />
         </>
       }
     >

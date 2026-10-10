@@ -221,6 +221,8 @@ model User {
   name                  String?
   image                 String?
   phone                 String?
+  /// Blob key of the person's own profile photo (private store, served by /api/avatar/[userId] to them and the admin only).
+  avatarKey             String?
   role                  Role       @default(STUDENT)
   status                UserStatus @default(ACTIVE)
   isDemo                Boolean    @default(false)
@@ -237,6 +239,7 @@ model User {
   accounts         Account[]
   studentProfile   StudentProfile?
   mentorProfile    MentorProfile?
+  profileDocuments ProfileDocument[]
   orders           Order[]
   enrollments      Enrollment[]
   ledger           CreditLedger[]
@@ -293,7 +296,54 @@ model StudentProfile {
   preferences      Json?
   onboardingStep   Int       @default(0)
   onboardedAt      DateTime?
+  /// Background the student chooses to share on their profile page.
+  dob              DateTime?
+  state            String?
+  city             String?
+  examsAppearing   String[]  @default([])
+  tenthBoard       String?
+  tenthPercent     Float?
+  tenthYear        Int?
+  twelfthBoard     String?
+  twelfthStream    String?
+  twelfthPercent   Float?
+  twelfthYear      Int?
+  gradYear         Int?
+  gradScore        String?
+  company          String?
+  jobRole          String?
+  industry         String?
+  about            String?
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ProfileDocKind {
+  CALL_LETTER
+  ADMIT_LETTER
+  EXAM_RESULT
+  OTHER
+}
+
+/// A call letter, admit letter or exam result a student or mentor chose to add to their profile. The file (if any) is private:
+/// only the owner and the admin can open it.
+model ProfileDocument {
+  id          String         @id @default(cuid())
+  userId      String
+  kind        ProfileDocKind
+  /// The exam (CAT, XAT, SNAP...) for a result; the institute for a call or admit letter.
+  title       String
+  year        Int?
+  /// Free text: "98.4 percentile", "210 / 300", "Shortlisted for PI".
+  score       String?
+  note        String?
+  fileKey     String?
+  fileName    String?
+  contentType String?
+  sizeBytes   Int?
+  createdAt   DateTime       @default(now())
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
 }
 
 model CallTracker {
@@ -321,6 +371,12 @@ model MentorProfile {
   photoKey        String?
   /// External photo URL, used only when photoKey is not set (e.g. admin pastes a link instead of uploading).
   photoUrl        String?
+  /// Institutes this mentor converted (their own list, shown to the admin; the public page uses `college`).
+  convertedInstitutes String[] @default([])
+  /// Their entrance-exam scores, in their own words ("CAT 99.2 percentile, XAT 98").
+  examScores      String?
+  company         String?
+  jobRole         String?
   /// Admin's own reference only. Never shown on the public site.
   linkedinUrl     String?
   /// AES-GCM encrypted JSON (UPI / bank). Never returned to the client in plaintext.

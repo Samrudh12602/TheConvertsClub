@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import { PortalPage } from "@/components/portal/portal-page";
 import { nowMs } from "@/lib/datetime";
 import { Empty, StatusPill } from "@/components/portal/ui";
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "My calls" };
 
 export default async function CallsPage() {
+  await guardGdpi("calls");
   const user = await requireStudent();
   const calls = await db.callTracker.findMany({ where: { studentId: user.id }, orderBy: [{ interviewDate: { sort: "asc", nulls: "last" } }] });
   return (

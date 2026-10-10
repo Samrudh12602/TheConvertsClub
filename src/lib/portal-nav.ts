@@ -14,6 +14,10 @@ export interface NavItem {
   sub: string;
   /** Extra path prefixes that keep this item highlighted (e.g. detail pages). */
   match?: string[];
+  /** Shown but not usable yet: "soon" (not open yet) or "buy" (needs a plan). */
+  lock?: "soon" | "buy";
+  /** The route the icon is chosen from, when `href` has been pointed somewhere else (a locked page). */
+  iconHref?: string;
 }
 
 export interface NavGroup {
@@ -63,6 +67,8 @@ export const studentPortal: PortalConfig = {
   details: [
     { pattern: /^\/student\/sessions\/[^/]+$/, title: "Feedback report", sub: "Session details and feedback" },
     { pattern: /^\/student\/mocks\/[^/]+$/, title: "Mock analysis", sub: "Your score, what went wrong and the solutions" },
+    { pattern: /^\/student\/locked\/[^/]+$/, title: "Not open to you yet", sub: "What it is, and how to unlock it" },
+    { pattern: /^\/student\/profile$/, title: "Your profile", sub: "About you, your exam results and call letters" },
   ],
 };
 
@@ -139,6 +145,7 @@ export const adminPortal: PortalConfig = {
   ],
   details: [
     { pattern: /^\/admin\/calendar$/, title: "Schedule", sub: "Delivery · Week calendar" },
+    { pattern: /^\/admin\/profile$/, title: "Your profile", sub: "Account · Profile" },
     { pattern: /^\/admin\/students\/[^/]+$/, title: "Student", sub: "People · Students", crumb: "People · Students" },
     { pattern: /^\/admin\/mentors\/[^/]+$/, title: "Mentor", sub: "People · Mentors", crumb: "People · Mentors" },
   ],

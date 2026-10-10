@@ -1,3 +1,4 @@
+import { guardGdpi } from "@/server/gdpi-guard";
 import { CalendarPlus, Flame, Target, TrendingUp, Trophy } from "lucide-react";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Empty, Insight, Kpi, KpiGrid, Meter } from "@/components/portal/ui";
@@ -14,6 +15,7 @@ export const metadata = { title: "Progress" };
 const TARGET = 8.5;
 
 export default async function ProgressPage() {
+  await guardGdpi("progress");
   const user = await requireStudent();
   const fb = await db.feedback.findMany({
     where: { OR: [{ session: { studentId: user.id } }, { review: { studentId: user.id } }] },

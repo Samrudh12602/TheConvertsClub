@@ -8,7 +8,8 @@ import { CREDIT_KIND_ORDER, CREDIT_LABEL } from "@/lib/labels";
 import { studentPortal } from "@/lib/portal-nav";
 import { getCreditSummary } from "@/server/credits";
 import { requireStudent } from "@/server/session";
-import { MOCK_ONLY_NAV, isMockOnly } from "@/server/student-kind";
+import { NEW_STUDENT_NAV, lockedKeyFor, studentStage } from "@/server/student-kind";
+import { gdpiComingSoon } from "@/server/site-mode";
 
 export const metadata: Metadata = { title: { default: "Student portal", template: "%s · The Converts Club" }, robots: { index: false, follow: false } };
 
@@ -28,10 +29,17 @@ export default async function StudentLayout({ children }: { children: React.Reac
   });
   const days = nextCall?.interviewDate ? Math.ceil((nextCall.interviewDate.getTime() - nowMs()) / 86_400_000) : null;
   const onboarded = Boolean(user.studentProfile?.onboardedAt);
-  const mockOnly = await isMockOnly(db, user.id);
-  const navGroups = mockOnly
-    ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => MOCK_ONLY_NAV.includes(i.href)) }))
-    : onboarded ? studentPortal.groups.map((g) => ({ ...g, items: g.items.filter((i) => i.href !== "/student/onboarding") })) : studentPortal.groups;
+  const [stage, soon] = await Promise.all([studentStage(db, user.id), gdpiComingSoon()]);
+  const navGroups = studentPortal.groups.map((g) => ({
+    ...g,
+    items:
+      stage === "new"
+        ? g.items.filter((i) => NEW_STUDENT_NAV.includes(i.href))
+        : stage === "mocks"
+          // Bought mocks only: the rest of the portal is listed but locked, so they can see what a plan adds.
+          ? g.items.filter((i) => i.href !== "/student/onboarding").map((i) => { const k = lockedKeyFor(i.href); return k ? { ...i, href: `/student/locked/${k}`, iconHref: i.href, lock: soon ? ("soon" as const) : ("buy" as const) } : i; })
+          : onboarded ? g.items.filter((i) => i.href !== "/student/onboarding") : g.items,
+  }));
 
   return (
     <PortalFrame
@@ -42,7 +50,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       topRight={
         <>
           {nextCall && days !== null && <TopPill>{shortName(nextCall.institute)} in {days} day{days === 1 ? "" : "s"}</TopPill>}
-          <UserChip name={user.name} />
+          <UserChip name={user.name} userId={user.id} avatarKey={user.avatarKey} profileHref="/student/profile" />
         </>
       }
     >

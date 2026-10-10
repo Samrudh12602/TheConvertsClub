@@ -19,7 +19,8 @@ import { priceView } from "@/lib/pricing";
 import { isSinglePiStudent } from "@/server/eligibility";
 import { listMocksFor } from "@/server/mocks";
 import { gdpiComingSoon } from "@/server/site-mode";
-import { isMockOnly } from "@/server/student-kind";
+import { studentStage } from "@/server/student-kind";
+import { SnapOffers } from "@/components/student/snap-offers";
 import { paymentsConfigured } from "@/server/razorpay";
 import { requireStudent } from "@/server/session";
 
@@ -41,7 +42,7 @@ export default async function StudentDashboard() {
     getCreditSummary(db, user.id),
   ]);
   const bookable = (["PI", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "GD"] as const).reduce((n, k) => n + (creditSummary[k]?.available ?? 0), 0);
-  const [soon, mockOnly, snap] = await Promise.all([gdpiComingSoon(), isMockOnly(db, user.id), listMocksFor(user.id)]);
+  const [soon, stage, snap] = await Promise.all([gdpiComingSoon(), studentStage(db, user.id), listMocksFor(user.id)]);
   const inProgress = snap.mocks.find((m) => m.attempt?.status === "IN_PROGRESS");
   const startable = snap.mocks.find((m) => m.canStart);
   const lastDone = [...snap.mocks].reverse().find((m) => m.attempt?.status === "SUBMITTED");
@@ -56,8 +57,13 @@ export default async function StudentDashboard() {
 
   return (
     <PortalPage>
-      {enrolledCount > 0 && !mockOnly && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
-      {(mockOnly || (soon && enrolledCount === 0 && !next)) ? (
+      {enrolledCount > 0 && stage === "gdpi" && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
+      {stage === "new" ? (
+        <>
+          <SnapOffers user={user} title="Welcome. Pick a plan and take your first SNAP mock" lead="Sit a full-length mock on the real exam screen, then see exactly where your marks went. Start with the ₹50 test mock, or take a pack of 5 or 10." />
+          {!soon && <p className="text-[12.5px] text-ink-muted">Looking for interview prep? <Link href="/packages" className="font-semibold">See the interview-prep plans</Link>.</p>}
+        </>
+      ) : stage === "mocks" ? (
         <section className="relative overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5" aria-label="SNAP mocks">
           <span aria-hidden className="absolute -right-12 -top-12 size-44 rounded-full bg-oxblood/40 blur-3xl" />
           <div className="relative flex flex-wrap items-center gap-5">
@@ -108,6 +114,8 @@ export default async function StudentDashboard() {
         </div>
       )}
 
+      {stage === "mocks" && <SnapOffers user={user} title="Want more mocks?" />}
+
       {promoPanel && panelProduct && !soon && (
         <section className="relative overflow-hidden rounded-2xl bg-night p-5 text-surface shadow-lift ring-1 ring-white/5" aria-label="Panel PI">
           <span aria-hidden className="absolute -right-12 -top-12 size-44 rounded-full bg-oxblood/40 blur-3xl" />
@@ -127,7 +135,7 @@ export default async function StudentDashboard() {
       )}
 
       {rings.length > 0 && (
-        <Panel title="Your credits" action={<Link href="/student/book" className="text-xs font-semibold">Book a session</Link>} flush={false}>
+        <Panel title="Your credits" action={stage === "gdpi" ? <Link href="/student/book" className="text-xs font-semibold">Book a session</Link> : undefined} flush={false}>
           <div className="flex flex-wrap gap-x-7 gap-y-5">
             {rings.map((r, i) => (
               <ProgressRing key={r.kind} value={r.available} max={r.granted} label={r.available} sub={`${CREDIT_LABEL[r.kind]}${r.reserved > 0 ? ` · ${r.reserved} held` : ""}`} tone={(["oxblood", "teal", "gold", "indigo"] as const)[i % 4]} size={78} stroke={7} />
@@ -136,7 +144,7 @@ export default async function StudentDashboard() {
         </Panel>
       )}
 
-      <Section cols={260}>
+      {stage === "gdpi" && <Section cols={260}>
         <Panel title="Upcoming" action={<Link href="/student/sessions" className="text-xs font-semibold">All sessions</Link>}>
           {rest.length === 0 ? <Empty art="calendar">No other sessions booked.</Empty> : rest.map((u) => (
             <Row key={u.id} href={`/student/sessions/${u.id}`}>
@@ -159,7 +167,7 @@ export default async function StudentDashboard() {
             </Row>
           ))}
         </Panel>
-      </Section>
+      </Section>}
     </PortalPage>
   );
 }
