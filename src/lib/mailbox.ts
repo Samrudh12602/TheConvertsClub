@@ -138,6 +138,12 @@ export function composeHtml(body: string, sender: Sender | null, logoSrc: string
   return `<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:${BODY};max-width:600px;margin:0 auto;padding:8px 4px">${header}${blocks}${signature}</div>`;
 }
 
+/** Writes each person's own first name where the message says {{first_name}} ("there" when we do not know it). */
+export const fillMergeFields = (text: string, firstName: string | null | undefined) => text.replace(/\{\{\s*first_name\s*\}\}/gi, firstName?.trim() || "there");
+
+/** "Priya Nair (demo)" -> "Priya". */
+export const firstNameOf = (name: string | null | undefined) => (name ?? "").replace(/\s*\(demo.*?\)/i, "").trim().split(/\s+/)[0] ?? "";
+
 /** Limits for files attached to an email written here. */
 export const ATTACH_MAX_FILES = 5;
 export const ATTACH_MAX_FILE_BYTES = 10 * 1024 * 1024;

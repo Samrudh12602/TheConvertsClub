@@ -5,7 +5,7 @@ import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import nodemailer from "nodemailer";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { db } from "@/lib/db";
-import { LOGO_CID, LOGO_URL, composeHtml, composeText, fileSizeLabel, formatAddress, senderFor, signatureText, threadHeaders } from "@/lib/mailbox";
+import { LOGO_CID, LOGO_URL, composeHtml, composeText, fileSizeLabel, fillMergeFields, formatAddress, senderFor, signatureText, threadHeaders } from "@/lib/mailbox";
 
 /** The website's mailbox, read over IMAP and written over SMTP with the same login the site already sends with. */
 export class MailboxError extends Error {}
@@ -269,6 +269,8 @@ export interface SendArgs {
   /** Added to the end of every message of a bulk send. */
   footer?: string;
   files?: MailFile[];
+  /** First name by (lower-case) address, for {{first_name}}. */
+  names?: Record<string, string>;
 }
 
 export interface SendResult { batchId: string; sent: number; failed: { to: string; error: string }[] }
@@ -283,29 +285,32 @@ export async function sendDirect(a: SendArgs): Promise<SendResult> {
   const body = a.footer ? `${a.body.trim()}\n\n${a.footer}` : a.body;
   const logo = await loadLogo();
   const files = a.files ?? [];
-  const text = composeText(body, signature);
-  const html = composeHtml(body, a.signature ? sender : null, logo ? `cid:${LOGO_CID}` : LOGO_URL);
   const attachments = [
     ...(logo ? [{ filename: "logo.png", content: logo, contentType: "image/png", cid: LOGO_CID, contentDisposition: "inline" as const }] : []),
     ...files.map((f) => ({ filename: f.filename, content: f.content, contentType: f.contentType })),
   ];
-  const logged = files.length ? `${text}\n\n[Attachments: ${files.map((f) => `${f.filename} (${fileSizeLabel(f.content.length)})`).join(", ")}]` : text;
+  const attachedNote = files.length ? `\n\n[Attachments: ${files.map((f) => `${f.filename} (${fileSizeLabel(f.content.length)})`).join(", ")}]` : "";
   const batchId = randomUUID();
   const failed: { to: string; error: string }[] = [];
   const copies: Buffer[] = [];
   let sent = 0;
   try {
     for (const to of a.recipients) {
-      const mail = { from: { name: sender.name, address: sender.address }, to, replyTo: sender.address, subject: a.subject, text, html, attachments, ...threadHeaders(a.thread?.messageId, a.thread?.references) };
+      const mine = fillMergeFields(body, a.names?.[to]);
+      const subject = fillMergeFields(a.subject, a.names?.[to]);
+      const text = composeText(mine, signature);
+      const html = composeHtml(mine, a.signature ? sender : null, logo ? `cid:${LOGO_CID}` : LOGO_URL);
+      const logged = text + attachedNote;
+      const mail = { from: { name: sender.name, address: sender.address }, to, replyTo: sender.address, subject, text, html, attachments, ...threadHeaders(a.thread?.messageId, a.thread?.references) };
       try {
         const info = await transport.sendMail(mail);
         sent++;
-        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: logged, status: "SENT", messageId: info.messageId ?? null, sentById: a.sentById } });
+        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject, body: logged, status: "SENT", messageId: info.messageId ?? null, sentById: a.sentById } });
         if (a.recipients.length <= COPY_TO_SENT_UP_TO) copies.push(await new MailComposer({ ...mail, messageId: info.messageId }).compile().build());
       } catch (e) {
         const error = e instanceof Error ? e.message : "Send failed";
         failed.push({ to, error });
-        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: logged, status: "FAILED", error, sentById: a.sentById } });
+        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject, body: logged, status: "FAILED", error, sentById: a.sentById } });
       }
     }
   } finally {

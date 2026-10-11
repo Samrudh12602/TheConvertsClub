@@ -9,6 +9,8 @@ import { MailActions } from "@/components/admin/mail-actions";
 import { MailComposer, type ComposerDefaults } from "@/components/admin/mail-composer";
 import { MailFrame } from "@/components/admin/mail-frame";
 import { formatIstDateTime } from "@/lib/datetime";
+import { getProduct } from "@/lib/catalog";
+import { buildMailTemplates, priceNote, type MailTemplate } from "@/lib/mail-templates";
 import { SENDERS, formatAddress, quoteForReply, replySubject, type SenderKey } from "@/lib/mailbox";
 import { MailboxError, automaticLog, listMail, mailboxConfigured, openMail, sentLog, type FolderKey, type MailList, type OpenedMail } from "@/server/mailbox";
 import { requireAdmin } from "@/server/session";
@@ -58,6 +60,12 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
   const alias = SENDERS.find((s) => s.key === sp.to)?.address;
   const uid = Number(sp.uid) || 0;
   const composing = sp.compose === "1" && !uid;
+
+  let templates: MailTemplate[] = [];
+  if (composing) {
+    const [test, five, ten, upgrade] = await Promise.all(["snap-test-mock", "snap-mocks-5", "snap-mocks-10", "snap-upgrade-10"].map(async (slug) => priceNote(await getProduct(slug))));
+    templates = buildMailTemplates({ test, five, ten, upgrade });
+  }
 
   let list: MailList | null = null;
   let opened: OpenedMail | null = null;
@@ -125,7 +133,7 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
         <div className={clsx(!rightActive && "hidden lg:block")}>
           {composing ? (
             <Panel title="New email" flush={false} action={<Link href={href({ compose: undefined })} className="text-[12px] font-semibold text-ink-muted lg:hidden">Close</Link>}>
-              <MailComposer doneHref="/admin/mailbox?tab=log" />
+              <MailComposer doneHref="/admin/mailbox?tab=log" templates={templates} />
             </Panel>
           ) : opened ? (
             <Reader m={opened} href={href} reply={sp.reply === "1"} />

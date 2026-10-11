@@ -7,7 +7,7 @@ import { requireAdmin } from "@/server/session";
 import { rateLimit } from "@/server/ratelimit";
 import { audit } from "@/server/audit";
 import { BUSINESS } from "@/lib/business";
-import { MAX_RECIPIENTS, SENDER_KEYS, attachmentProblem, parseRecipients } from "@/lib/mailbox";
+import { MAX_RECIPIENTS, SENDER_KEYS, attachmentProblem, firstNameOf, parseRecipients } from "@/lib/mailbox";
 import { MailboxError, sendDirect, setMailRead, trashMail } from "@/server/mailbox";
 
 type Result = { ok: true; message: string } | { ok: false; error: string };
@@ -60,7 +60,10 @@ export async function sendMailAction(form: FormData): Promise<Result> {
     }
     if (recipients.length > MAX_RECIPIENTS) return { ok: false, error: `One send can reach up to ${MAX_RECIPIENTS} people (this one has ${recipients.length}). Split it into smaller sends.` };
 
-    const r = await sendDirect({ fromKey: p.from, recipients, subject: p.subject, body: p.body, signature: p.signature, thread: p.thread ?? null, sentById: admin.id, files, footer: p.audience === "SPECIFIC" ? undefined : BULK_FOOTER });
+    // Each person's own first name for {{first_name}}: from their account when they have one.
+    const known = await db.user.findMany({ where: { email: { in: recipients } }, select: { email: true, name: true } });
+    const names = Object.fromEntries(known.map((u) => [u.email.toLowerCase(), firstNameOf(u.name)]));
+    const r = await sendDirect({ names, fromKey: p.from, recipients, subject: p.subject, body: p.body, signature: p.signature, thread: p.thread ?? null, sentById: admin.id, files, footer: p.audience === "SPECIFIC" ? undefined : BULK_FOOTER });
     await audit({ actorId: admin.id, action: "mail.send", entity: "SentMail", entityId: r.batchId, after: { from: p.from, audience: p.audience, recipients: recipients.length, sent: r.sent, subject: p.subject, attachments: files.length } });
     revalidatePath("/admin/mailbox");
     if (r.sent === 0) return { ok: false, error: `Nothing was sent. ${r.failed[0]?.error ?? ""}`.trim() };

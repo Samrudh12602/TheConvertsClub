@@ -2,15 +2,16 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bold, Eye, Heading, Link2, List, MousePointerClick, Paperclip, Quote, Send, X } from "lucide-react";
+import { Bold, Eye, Heading, Link2, List, MousePointerClick, Paperclip, Quote, Send, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { sendMailAction } from "@/app/admin/mailbox/actions";
-import { ATTACH_MAX_FILES, LOGO_URL, MAX_RECIPIENTS, SENDERS, attachmentProblem, composeHtml, fileSizeLabel, signatureText, type SenderKey } from "@/lib/mailbox";
+import type { MailTemplate } from "@/lib/mail-templates";
+import { ATTACH_MAX_FILES, LOGO_URL, MAX_RECIPIENTS, SENDERS, attachmentProblem, composeHtml, fileSizeLabel, fillMergeFields, signatureText, type SenderKey } from "@/lib/mailbox";
 
 type Audience = "SPECIFIC" | "ALL_STUDENTS" | "ALL_MENTORS";
-type ToolKey = "heading" | "bold" | "list" | "box" | "button" | "link";
+type ToolKey = "heading" | "bold" | "list" | "box" | "button" | "link" | "name";
 const TOOLS: { key: ToolKey; label: string; icon: typeof Bold }[] = [
   { key: "heading", label: "Heading", icon: Heading },
   { key: "bold", label: "Bold", icon: Bold },
@@ -18,6 +19,7 @@ const TOOLS: { key: ToolKey; label: string; icon: typeof Bold }[] = [
   { key: "box", label: "Highlighted box", icon: Quote },
   { key: "button", label: "Button", icon: MousePointerClick },
   { key: "link", label: "Link", icon: Link2 },
+  { key: "name", label: "First name", icon: UserRound },
 ];
 const input = "min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-[13px]";
 
@@ -30,7 +32,7 @@ export interface ComposerDefaults {
 }
 
 /** Write and send an email from support@, admin@ or samrudh@ to anyone: typed addresses, or every active student or mentor. */
-export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerDefaults; doneHref: string }) {
+export function MailComposer({ defaults = {}, doneHref, templates = [] }: { defaults?: ComposerDefaults; doneHref: string; templates?: MailTemplate[] }) {
   const [from, setFrom] = useState<SenderKey>(defaults.from ?? "support");
   const [audience, setAudience] = useState<Audience>("SPECIFIC");
   const [to, setTo] = useState(defaults.to ?? "");
@@ -68,7 +70,15 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
     else if (key === "list") insert("- First point\n- Second point", { block: true, select: [2, 13] });
     else if (key === "box") { const t = picked || "Something to stand out"; insert(`> ${t}`, { block: true, select: [2, 2 + t.length] }); }
     else if (key === "button") insert("[button: Button text | https://theconvertsclub.in]", { block: true, select: [9, 22] });
+    else if (key === "name") insert("{{first_name}}");
     else { const t = picked || "link text"; insert(`[${t}](https://)`, { select: [t.length + 4, t.length + 8] }); }
+  }
+
+  function applyTemplate(id: string) {
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    if ((body.trim() || subject.trim()) && !window.confirm("Replace what you have written with this template?")) return;
+    setFrom(t.from); setAudience(t.audience); setSubject(t.subject); setBody(t.body); setPreview(true);
   }
 
   function addFiles(picked: FileList | null) {
@@ -97,6 +107,16 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
   return (
     <form className="flex flex-col gap-3.5" onSubmit={(e) => { e.preventDefault(); if (bulk) setAsk(true); else send(); }}>
       <ConfirmDialog open={ask} onClose={() => setAsk(false)} title="Send to everyone in this group?" body={<>This sends a separate email from <b>{sender.address}</b> to {who}, up to {MAX_RECIPIENTS} people. A short opt-out line is added at the end. It cannot be unsent.</>} confirmLabel="Send" busy={pending} onConfirm={send} />
+      {templates.length > 0 && (
+        <div className="rounded-xl border border-oxblood-line bg-oxblood-tint/40 p-3.5">
+          <label htmlFor="mc-tpl" className="type-label mb-1.5 block text-oxblood">Start from a ready-made email</label>
+          <select id="mc-tpl" value="" onChange={(e) => applyTemplate(e.target.value)} className={input}>
+            <option value="">Choose a template, or write your own below…</option>
+            {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <p className="mt-1.5 text-[11.5px] leading-normal text-ink-faint">It fills in the subject and message, and you can change anything before sending. Prices and seats left come live from your Products page.</p>
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="mc-from" className="type-label mb-1.5 block text-ink-faint">From</label>
@@ -134,11 +154,11 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
           <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className={`ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-[12px] font-semibold ${preview ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-ink-2 hover:border-ink"}`}><Eye className="size-3.5" aria-hidden /> {preview ? "Back to writing" : "Preview"}</button>
         </div>
         {preview ? (
-          <iframe title="Preview of the email" sandbox="" srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${composeHtml(body.trim() || "(Your message appears here.)", signature ? sender : null, LOGO_URL)}</body>`} className="h-[560px] w-full rounded-lg border border-line-strong bg-white" />
+          <iframe title="Preview of the email" sandbox="" srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${composeHtml(fillMergeFields(body.trim() || "(Your message appears here.)", "Priya"), signature ? sender : null, LOGO_URL)}</body>`} className="h-[560px] w-full rounded-lg border border-line-strong bg-white" />
         ) : (
           <textarea id="mc-body" ref={bodyRef} required rows={11} value={body} onChange={(e) => setBody(e.target.value)} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13.5px] leading-[1.6]" />
         )}
-        <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Use the buttons above for headings, bold, lists, highlighted boxes, buttons and links. <b>Preview</b> shows exactly what the reader sees.</p>
+        <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Use the buttons above for headings, bold, lists, highlighted boxes, buttons and links. <b>First name</b> becomes each person\u2019s own first name (or &ldquo;there&rdquo;). <b>Preview</b> shows exactly what the reader sees, using &ldquo;Priya&rdquo; as the example.</p>
       </div>
       <label className="flex items-start gap-2 text-[12.5px] text-ink-muted">
         <input type="checkbox" checked={signature} onChange={(e) => setSignature(e.target.checked)} className="mt-0.5 size-4" />
