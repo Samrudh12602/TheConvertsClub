@@ -2,9 +2,9 @@ import Link from "next/link";
 import { CalendarClock, Clock, GraduationCap, IndianRupee, Landmark, PiggyBank, Percent } from "lucide-react";
 import { Sparkline } from "@/components/ui/charts";
 import { PortalPage } from "@/components/portal/portal-page";
-import { Empty, Kpi, KpiGrid, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
+import { Empty, Flash, Kpi, KpiGrid, Meter, Panel, Section, StatusPill } from "@/components/portal/ui";
 import { adminDb } from "@/server/demo";
-import { GATEWAY_EFFECTIVE_PERCENT, GATEWAY_FEE_RATE, GATEWAY_GST_RATE, gatewayCost } from "@/lib/gateway-fee";
+import { GATEWAY_EFFECTIVE_PERCENT, GATEWAY_FEE_STARTS_AT, gatewayCost, gatewayFeeNotice } from "@/lib/gateway-fee";
 import { fmtTime } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { formatPaise } from "@/lib/money";
@@ -43,7 +43,10 @@ export default async function AdminDashboard() {
   const trend = Array.from({ length: 14 }, (_, i) => recentPaid.filter((o) => Math.floor((o.createdAt.getTime() - trendFrom.getTime()) / 86_400_000) === i).reduce((n, o) => n + o.amountPaise, 0) / 100);
 
   const revenue = revenueAgg._sum.amountPaise ?? 0;
-  const gateway = gatewayCost(revenue);
+  // Razorpay's fee holiday: payments before the start date cost nothing; only money taken from then on carries the 2.36%.
+  const feeNotice = gatewayFeeNotice(now);
+  const feeBearing = feeNotice.freeNow ? 0 : (await db.order.aggregate({ where: { status: "PAID", createdAt: { gte: GATEWAY_FEE_STARTS_AT } }, _sum: { amountPaise: true } }))._sum.amountPaise ?? 0;
+  const gateway = gatewayCost(feeBearing);
 
   const [piBooked, piTotal, gdSeatsFilled, gdSeatsTotal] = await Promise.all([
     db.slot.count({ where: { status: "BOOKED", startsAt: { gte: now, lt: new Date(now.getTime() + 7 * 86_400_000) } } }),
@@ -61,12 +64,18 @@ export default async function AdminDashboard() {
 
   return (
     <PortalPage>
+      {feeNotice.freeNow && (
+        <Flash tone="green">
+          <b>Razorpay fee holiday.</b> Razorpay is not charging its {GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}% processing fee until <b>{feeNotice.lastFreeDayLabel}</b>
+          {" "}({feeNotice.daysLeft === 0 ? "last free day today" : `${feeNotice.daysLeft} day${feeNotice.daysLeft === 1 ? "" : "s"} left`}). Until then the dashboard and Finance count the gateway cost as ₹0, so what you see as kept is what you actually keep. From {feeNotice.startsLabel} they count {GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}% on every payment.
+        </Flash>
+      )}
       <KpiGrid min={168}>
         <Kpi label="Active students" value={activeStudents} icon={<GraduationCap />} accent="indigo" />
         <Kpi label="Sessions, 2wk window" value={sessionsThisWeek} note={`${unassignedCount} unassigned`} noteTone={unassignedCount ? "oxblood" : "muted"} icon={<CalendarClock />} accent="teal" />
         <Kpi label="Feedback overdue" value={overdue.length} noteTone={overdue.length ? "oxblood" : "muted"} icon={<Clock />} accent={overdue.length ? "oxblood" : "stone"} />
         <Kpi label="Revenue, season" value={formatPaise(revenue)} note={<span className="flex items-center justify-between gap-2"><span>{`+${formatPaise(weekOrders._sum.amountPaise ?? 0)} this week`}</span><Sparkline data={trend} tone="teal" width={64} height={22} /></span>} noteTone="green" icon={<IndianRupee />} accent="teal" />
-        <Kpi label="Gateway cost" value={formatPaise(gateway.totalPaise)} note={`Razorpay ${GATEWAY_FEE_RATE * 100}% + ${GATEWAY_GST_RATE * 100}% GST (${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}%)`} noteTone="muted" icon={<Percent />} accent="stone" />
+        <Kpi label="Gateway cost" value={formatPaise(gateway.totalPaise)} note={feeNotice.freeNow ? `Waived until ${feeNotice.lastFreeDayLabel}, counted as ₹0` : `Razorpay ${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}% incl. GST, since ${feeNotice.startsLabel}`} noteTone={feeNotice.freeNow ? "green" : "muted"} icon={<Percent />} accent="stone" />
         <Kpi label="Payable to mentors" value={formatPaise(payable._sum.amountPaise ?? 0)} note={`${payable._count} accruals pending`} noteTone="amber" icon={<Landmark />} accent="gold" />
         <Kpi label="Kept after gateway & mentors" value={formatPaise(revenue - gateway.totalPaise - (payable._sum.amountPaise ?? 0))} note="Before refunds and bonuses paid" noteTone="green" icon={<PiggyBank />} accent="teal" />
       </KpiGrid>

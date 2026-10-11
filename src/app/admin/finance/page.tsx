@@ -6,7 +6,7 @@ import { RefundButton } from "@/components/admin/refund-form";
 import { adminDb } from "@/server/demo";
 import { fmtDate } from "@/lib/format";
 import { formatPaise } from "@/lib/money";
-import { gatewayCost } from "@/lib/gateway-fee";
+import { GATEWAY_EFFECTIVE_PERCENT, GATEWAY_FEE_STARTS_AT, gatewayCost, gatewayFeeNotice } from "@/lib/gateway-fee";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Finance" };
@@ -15,7 +15,8 @@ export default async function FinancePage() {
   const db = await adminDb();
   const [grossAgg, feeAgg, refundAgg, payableAgg, payments, byProduct] = await Promise.all([
     db.order.aggregate({ where: { status: { in: ["PAID", "PARTIALLY_REFUNDED"] } }, _sum: { amountPaise: true } }),
-    db.payment.aggregate({ where: { status: "CAPTURED" }, _sum: { amountPaise: true } }),
+    // Only money taken since the fee holiday ended carries Razorpay's fee (see gateway-fee.ts).
+    db.payment.aggregate({ where: { status: "CAPTURED", capturedAt: { gte: GATEWAY_FEE_STARTS_AT } }, _sum: { amountPaise: true } }),
     db.refund.aggregate({ _sum: { amountPaise: true }, _count: true }),
     db.payoutAccrual.aggregate({ _sum: { amountPaise: true } }),
     db.order.findMany({ where: { status: { in: ["PAID", "REFUNDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" }, take: 25, include: { product: { select: { name: true } }, payments: { select: { razorpayPaymentId: true } } } }),
@@ -24,6 +25,7 @@ export default async function FinancePage() {
   const products = Object.fromEntries((await db.product.findMany({ select: { id: true, name: true } })).map((p) => [p.id, p.name]));
   const gross = grossAgg._sum.amountPaise ?? 0;
   // One rule everywhere: Razorpay keeps 2% plus 18% GST on that 2% (2.36% in all). Refunds don't return the gateway's fee.
+  const feeNotice = gatewayFeeNotice();
   const gateway = gatewayCost(feeAgg._sum.amountPaise ?? 0);
   const fees = gateway.totalPaise;
   const refunds = refundAgg._sum.amountPaise ?? 0;
@@ -35,7 +37,7 @@ export default async function FinancePage() {
     <PortalPage width="max-w-[1000px]">
       <KpiGrid>
         <Kpi label="Gross revenue" value={formatPaise(gross)} note="Season to date" icon={<Banknote />} accent="teal" />
-        <Kpi label="Gateway cost" value={formatPaise(fees)} note={`2% fee ${formatPaise(gateway.feePaise)} + 18% GST ${formatPaise(gateway.gstPaise)}`} icon={<Landmark />} accent="stone" />
+        <Kpi label="Gateway cost" value={formatPaise(fees)} note={feeNotice.freeNow ? `Fee waived until ${feeNotice.lastFreeDayLabel}, counted as ₹0` : `2% fee ${formatPaise(gateway.feePaise)} + 18% GST ${formatPaise(gateway.gstPaise)} (${GATEWAY_EFFECTIVE_PERCENT.toFixed(2)}%)`} noteTone={feeNotice.freeNow ? "green" : undefined} icon={<Landmark />} accent="stone" />
         <Kpi label="Refunds" value={formatPaise(refunds)} note={`${refundAgg._count} orders`} noteTone="oxblood" icon={<Undo2 />} />
         <Kpi label="Mentor cost" value={formatPaise(mentorCost)} note={gross ? `${((mentorCost / gross) * 100).toFixed(0)}% of gross` : ""} icon={<Wallet />} accent="indigo" />
         <Kpi label="Net" value={formatPaise(net)} note="After fees, refunds, payouts" noteTone="green" icon={<PiggyBank />} accent="teal" />
