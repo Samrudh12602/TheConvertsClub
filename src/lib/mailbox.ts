@@ -133,7 +133,7 @@ export function composeHtml(body: string, sender: Sender | null, logoSrc: string
       + `<p style="${line};color:${INK}"><b>Tel.:</b> <a href="${BUSINESS.phoneHref}" style="${LINK}">${BUSINESS.phone}</a></p>`
       + `<p style="${line};color:${INK}"><b>Email:</b> <a href="mailto:${sender.address}" style="${LINK}">${sender.address}</a></p>`
     : "";
-  const signature = `<div style="margin-top:28px;border-top:1px solid #E6DFD5;padding-top:18px;font-size:14px;line-height:1.5">${details}<div style="margin:12px 0 8px">${LOGO_IMG(logoSrc, 72, 65)}</div><p style="${line}"><a href="${SITE}" style="${LINK}">${BUSINESS.domain}</a></p></div>`;
+  const signature = `<div style="margin-top:28px;border-top:1px solid #E6DFD5;padding-top:18px;font-size:14px;line-height:1.5">${details}<div style="margin:12px 0 8px">${LOGO_IMG(logoSrc, 40, 36)}</div><p style="${line}"><a href="${SITE}" style="${LINK}">${BUSINESS.domain}</a></p></div>`;
   const header = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px"><tbody><tr><td style="vertical-align:middle;line-height:0">${LOGO_IMG(logoSrc, 58, 52)}</td><td style="vertical-align:middle;padding-left:14px;font-size:26px;font-weight:800;letter-spacing:-0.4px;color:${INK};line-height:1.1">${BUSINESS.brand}</td></tr></tbody></table>`;
   return `<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:${BODY};max-width:600px;margin:0 auto;padding:8px 4px">${header}${blocks}${signature}</div>`;
 }
