@@ -5,7 +5,7 @@ import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import nodemailer from "nodemailer";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { db } from "@/lib/db";
-import { composeHtml, composeText, formatAddress, senderFor, threadHeaders } from "@/lib/mailbox";
+import { LOGO_CID, LOGO_URL, composeHtml, composeText, fileSizeLabel, formatAddress, senderFor, threadHeaders } from "@/lib/mailbox";
 
 /** The website's mailbox, read over IMAP and written over SMTP with the same login the site already sends with. */
 export class MailboxError extends Error {}
@@ -242,6 +242,22 @@ export async function unreadCount(): Promise<number | null> {
 /** Copies saved to the mailbox's own Sent folder, so they show up in webmail too. Only for small sends, to keep the folder readable. */
 const COPY_TO_SENT_UP_TO = 10;
 
+export interface MailFile { filename: string; content: Buffer; contentType: string }
+
+let logoCache: Buffer | null = null;
+/** The logo as bytes, fetched once from our own site and kept. Null if it can't be fetched, in which case the mail links the picture instead. */
+async function loadLogo(): Promise<Buffer | null> {
+  if (logoCache) return logoCache;
+  try {
+    const r = await fetch(LOGO_URL, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    logoCache = Buffer.from(await r.arrayBuffer());
+    return logoCache;
+  } catch {
+    return null;
+  }
+}
+
 export interface SendArgs {
   fromKey: string;
   recipients: string[];
@@ -252,6 +268,7 @@ export interface SendArgs {
   sentById: string | null;
   /** Added to the end of every message of a bulk send. */
   footer?: string;
+  files?: MailFile[];
 }
 
 export interface SendResult { batchId: string; sent: number; failed: { to: string; error: string }[] }
@@ -264,24 +281,31 @@ export async function sendDirect(a: SendArgs): Promise<SendResult> {
   const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST || "smtp.hostinger.com", port, secure: port === 465, pool: true, maxConnections: 2, auth: { user: process.env.SMTP_USER as string, pass: process.env.SMTP_PASS as string } });
   const signature = a.signature ? sender.signature : null;
   const body = a.footer ? `${a.body.trim()}\n\n${a.footer}` : a.body;
+  const logo = await loadLogo();
+  const files = a.files ?? [];
   const text = composeText(body, signature);
-  const html = composeHtml(body, signature);
+  const html = composeHtml(body, signature, sender.style, logo ? `cid:${LOGO_CID}` : LOGO_URL);
+  const attachments = [
+    ...(logo ? [{ filename: "logo.png", content: logo, contentType: "image/png", cid: LOGO_CID, contentDisposition: "inline" as const }] : []),
+    ...files.map((f) => ({ filename: f.filename, content: f.content, contentType: f.contentType })),
+  ];
+  const logged = files.length ? `${text}\n\n[Attachments: ${files.map((f) => `${f.filename} (${fileSizeLabel(f.content.length)})`).join(", ")}]` : text;
   const batchId = randomUUID();
   const failed: { to: string; error: string }[] = [];
   const copies: Buffer[] = [];
   let sent = 0;
   try {
     for (const to of a.recipients) {
-      const mail = { from: { name: sender.name, address: sender.address }, to, replyTo: sender.address, subject: a.subject, text, html, ...threadHeaders(a.thread?.messageId, a.thread?.references) };
+      const mail = { from: { name: sender.name, address: sender.address }, to, replyTo: sender.address, subject: a.subject, text, html, attachments, ...threadHeaders(a.thread?.messageId, a.thread?.references) };
       try {
         const info = await transport.sendMail(mail);
         sent++;
-        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: text, status: "SENT", messageId: info.messageId ?? null, sentById: a.sentById } });
+        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: logged, status: "SENT", messageId: info.messageId ?? null, sentById: a.sentById } });
         if (a.recipients.length <= COPY_TO_SENT_UP_TO) copies.push(await new MailComposer({ ...mail, messageId: info.messageId }).compile().build());
       } catch (e) {
         const error = e instanceof Error ? e.message : "Send failed";
         failed.push({ to, error });
-        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: text, status: "FAILED", error, sentById: a.sentById } });
+        await db.sentMail.create({ data: { batchId, fromAddress: sender.address, toAddress: to, subject: a.subject, body: logged, status: "FAILED", error, sentById: a.sentById } });
       }
     }
   } finally {

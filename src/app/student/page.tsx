@@ -29,6 +29,12 @@ const firstSentence = (s?: string | null) => (s ?? "").split(/(?<=[.!?])\s/)[0];
 
 export default async function StudentDashboard() {
   const user = await requireStudent();
+  if (!user.studentProfile?.welcomedAt) {
+    // First visit (typically right after signing in with Google): offer the profile details once, then never redirect again.
+    const now = new Date();
+    await db.studentProfile.upsert({ where: { userId: user.id }, create: { userId: user.id, welcomedAt: now }, update: { welcomedAt: now } });
+    redirect("/student/profile?welcome=1");
+  }
   if (!user.studentProfile?.onboardedAt && (user.studentProfile?.onboardingStep ?? 0) === 0) {
     // Only a GDPI purchase needs the interview-prep onboarding; someone who only bought SNAP mocks doesn't.
     const bought = await db.enrollment.count({ where: { userId: user.id, product: { slug: { not: { startsWith: "snap-" } } } } });

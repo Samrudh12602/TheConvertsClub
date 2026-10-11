@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PortalPage } from "@/components/portal/portal-page";
 import { Panel } from "@/components/portal/ui";
 import { AvatarUploader } from "@/components/profile/avatar-uploader";
@@ -13,8 +14,9 @@ export const metadata = { title: "Your profile" };
 
 const s = (v: string | number | null | undefined) => (v === null || v === undefined ? "" : String(v));
 
-export default async function StudentProfilePage() {
+export default async function StudentProfilePage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const user = await requireStudent();
+  const welcome = (await searchParams).welcome === "1";
   const [p, docs] = await Promise.all([db.studentProfile.findUnique({ where: { userId: user.id } }), db.profileDocument.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" } })]);
   const { pct, missing } = studentCompleteness(p, docs.length, Boolean(user.avatarKey));
   const initial: StudentBackgroundValues = {
@@ -25,6 +27,14 @@ export default async function StudentProfilePage() {
   const rows: DocRow[] = docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title, year: d.year, score: d.score, note: d.note, fileName: d.fileName, hasFile: Boolean(d.fileKey) }));
   return (
     <PortalPage width="max-w-[760px]">
+      {welcome && (
+        <section className="rounded-2xl border border-oxblood-line bg-gradient-to-br from-oxblood-tint to-white p-5 shadow-card" aria-label="Welcome">
+          <p className="type-eyebrow text-oxblood">Welcome to The Converts Club</p>
+          <h2 className="mt-1.5 font-display text-[21px] font-bold leading-[1.25] text-ink">{user.name ? `Hi ${user.name.split(" ")[0]}, tell us a little about you` : "Tell us a little about you"}</h2>
+          <p className="mt-2 max-w-[60ch] text-[13px] leading-[1.65] text-ink-muted">Your details help us match your mocks and mentors to you. It takes about three minutes, every field is optional, and you can change it any time from your profile. Only you and our team can see it.</p>
+          <Link href="/student" className="mt-3 inline-block text-[12.5px] font-semibold text-ink-muted underline">Skip for now, take me to my dashboard</Link>
+        </section>
+      )}
       <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <AvatarUploader userId={user.id} name={user.name} avatarKey={user.avatarKey} />
@@ -43,6 +53,12 @@ export default async function StudentProfilePage() {
         <p className="mb-3 text-[12.5px] leading-[1.6] text-ink-muted">Add your CAT, XAT, NMAT, SNAP or other results, and any call or admit letters. A score alone is fine; a file (PDF, JPG or PNG) is optional. Only you and the admin team can see these.</p>
         <DocumentsPanel docs={rows} kinds={["EXAM_RESULT", "CALL_LETTER", "ADMIT_LETTER", "OTHER"]} defaultKind="EXAM_RESULT" />
       </Panel>
+      {welcome && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-card">
+          <Link href="/student" className="inline-flex min-h-11 items-center rounded-lg bg-brand px-[18px] text-[13px] font-semibold text-white no-underline shadow-glow hover:no-underline hover:brightness-110">Done, go to my dashboard →</Link>
+          <p className="text-[12px] text-ink-faint">Save each section above first. You can finish the rest later.</p>
+        </div>
+      )}
     </PortalPage>
   );
 }

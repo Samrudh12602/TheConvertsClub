@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composeHtml, composeText, framedEmailHtml, parseRecipients, quoteForReply, replySubject, senderFor, SENDERS, threadHeaders } from "./mailbox";
+import { ATTACH_MAX_FILES, LOGO_CID, attachmentProblem, composeHtml, composeText, framedEmailHtml, parseRecipients, quoteForReply, replySubject, senderFor, SENDERS, threadHeaders } from "./mailbox";
 
 describe("senders", () => {
   it("offers exactly support, admin and samrudh on the domain", () => {
@@ -41,6 +41,50 @@ describe("composing", () => {
     expect(h).toContain('<a href="https://theconvertsclub.in/mocks"');
     expect(h).toContain("<br>");
     expect(h.match(/<p /g)).toHaveLength(2);
+  });
+});
+
+describe("logo", () => {
+  const imgAt = (h: string) => h.indexOf(`cid:${LOGO_CID}`);
+  it("sits at the top, above the message, for support and admin mail", () => {
+    const h = composeHtml("Hello there", "Support team", "brand");
+    expect(imgAt(h)).toBeGreaterThan(-1);
+    expect(imgAt(h)).toBeLessThan(h.indexOf("Hello there"));
+  });
+  it("sits below the message, with the signature, for Samrudh's personal mail", () => {
+    const h = composeHtml("Hello there", "Samrudh Dhaimodkar", "personal");
+    expect(imgAt(h)).toBeGreaterThan(h.indexOf("Hello there"));
+    expect(imgAt(h)).toBeLessThan(h.indexOf("Samrudh Dhaimodkar"));
+  });
+  it("is there even when the signature is switched off", () => {
+    expect(composeHtml("Hi", null, "brand")).toContain(`cid:${LOGO_CID}`);
+    expect(composeHtml("Hi", null, "personal")).toContain(`cid:${LOGO_CID}`);
+  });
+  it("falls back to a linked picture when it cannot be embedded", () => {
+    expect(composeHtml("Hi", null, "brand", "https://theconvertsclub.in/brand/mark.png")).toContain('src="https://theconvertsclub.in/brand/mark.png"');
+  });
+  it("uses the personal style only for samrudh", () => {
+    expect(SENDERS.map((x) => `${x.key}:${x.style}`)).toEqual(["support:brand", "admin:brand", "samrudh:personal"]);
+  });
+});
+
+describe("attachmentProblem", () => {
+  const mb = 1024 * 1024;
+  it("accepts a few ordinary files", () => expect(attachmentProblem([{ name: "offer.pdf", size: 2 * mb }, { name: "a.png", size: 100 }], false)).toBeNull());
+  it("refuses more than the allowed number of files", () => {
+    expect(attachmentProblem(Array.from({ length: ATTACH_MAX_FILES + 1 }, (_, i) => ({ name: `f${i}.pdf`, size: 10 })), false)).toMatch(/up to/i);
+  });
+  it("refuses a single file over 10 MB, and a total over 15 MB", () => {
+    expect(attachmentProblem([{ name: "big.pdf", size: 11 * mb }], false)).toMatch(/over 10 MB/);
+    expect(attachmentProblem([{ name: "a.pdf", size: 9 * mb }, { name: "b.pdf", size: 9 * mb }], false)).toMatch(/15 MB/);
+  });
+  it("keeps attachments small when the message goes to a whole group", () => {
+    expect(attachmentProblem([{ name: "a.pdf", size: 4 * mb }], true)).toMatch(/whole group/);
+    expect(attachmentProblem([{ name: "a.pdf", size: 2 * mb }], true)).toBeNull();
+  });
+  it("blocks programs and scripts", () => {
+    expect(attachmentProblem([{ name: "setup.exe", size: 10 }], false)).toMatch(/can't be sent/);
+    expect(attachmentProblem([{ name: "run.JS", size: 10 }], false)).toMatch(/can't be sent/);
   });
 });
 

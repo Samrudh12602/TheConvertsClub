@@ -48,7 +48,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
   const verifyLink = await createVerifyEmailLink(email);
   await sendEmail({ template: "verify_email", to: email, url: verifyLink });
 
-  const next = safeNext(String(formData.get("next") ?? "")) ?? "/student/onboarding";
+  const next = safeNext(String(formData.get("next") ?? "")) ?? "/student";
   try {
     await signIn("password", { email, password, redirectTo: next });
   } catch (e) {

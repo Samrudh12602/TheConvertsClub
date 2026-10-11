@@ -5,8 +5,9 @@ import { useActionState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { signupAction, type SignupState } from "@/app/(public)/signup/actions";
+import { googleSignIn } from "@/app/(public)/login/actions";
 
-export function SignupCard({ next }: { next?: string }) {
+export function SignupCard({ next, googleEnabled = false }: { next?: string; googleEnabled?: boolean }) {
   const [state, action, actionPending] = useActionState<SignupState, FormData>(signupAction, {});
   const [, startTransition] = useTransition();
   const pending = actionPending;
@@ -17,6 +18,20 @@ export function SignupCard({ next }: { next?: string }) {
         For students. Mentors join by invite or by applying — see{" "}
         <Link href="/become-a-mentor">Become a mentor</Link>.
       </p>
+      {googleEnabled && (
+        <>
+          <form action={googleSignIn} className="mt-5">
+            <input type="hidden" name="next" value={next ?? ""} />
+            <Button type="submit" variant="secondary" size="lg" block className="rounded-[9px] text-[13px] font-semibold">Continue with Google</Button>
+            <p className="mt-2 text-center text-[11.5px] leading-[1.5] text-ink-faint">You&apos;ll be asked to agree to our Terms, Privacy and Refund Policy, then add a few details about you.</p>
+          </form>
+          <div className="my-[18px] flex items-center gap-[11px]" role="separator" aria-label="or">
+            <div className="h-px flex-1 bg-line" />
+            <span className="text-[11px] font-medium leading-none text-ink-faint">or sign up with email</span>
+            <div className="h-px flex-1 bg-line" />
+          </div>
+        </>
+      )}
       {/* Submitted through a transition rather than the form's `action` attribute: React resets a form after
           an action, which would wipe everything the person typed whenever there is a validation error. */}
       <form

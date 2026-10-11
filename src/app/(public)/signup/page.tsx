@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth, googleEnabled } from "@/auth";
 import { SignupCard } from "@/components/site/signup-card";
 import { roleHome, safeNext } from "@/lib/roles";
 
@@ -13,7 +13,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="mx-auto max-w-[420px] px-5 py-12">
-      <SignupCard next={safeNext(sp.next) ?? undefined} />
+      <SignupCard next={safeNext(sp.next) ?? undefined} googleEnabled={googleEnabled()} />
     </div>
   );
 }

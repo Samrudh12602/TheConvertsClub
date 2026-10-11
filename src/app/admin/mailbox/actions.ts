@@ -7,7 +7,7 @@ import { requireAdmin } from "@/server/session";
 import { rateLimit } from "@/server/ratelimit";
 import { audit } from "@/server/audit";
 import { BUSINESS } from "@/lib/business";
-import { MAX_RECIPIENTS, SENDER_KEYS, parseRecipients } from "@/lib/mailbox";
+import { MAX_RECIPIENTS, SENDER_KEYS, attachmentProblem, parseRecipients } from "@/lib/mailbox";
 import { MailboxError, sendDirect, setMailRead, trashMail } from "@/server/mailbox";
 
 type Result = { ok: true; message: string } | { ok: false; error: string };
@@ -33,11 +33,18 @@ const sendSchema = z.object({
 
 const BULK_FOOTER = `You are getting this because you have an account with ${BUSINESS.brand}. If you would rather not hear from us like this, just reply and say so.`;
 
-export async function sendMailAction(input: unknown): Promise<Result> {
+/** The form posts the message as JSON in `payload` and any attachments as `files`. */
+export async function sendMailAction(form: FormData): Promise<Result> {
   try {
     const admin = await requireAdmin();
     if (!(await rateLimit(`mailbox:send:${admin.id}`, 30, 3600)).ok) return { ok: false, error: "That is a lot of sending in an hour. Wait a little and try again." };
-    const p = sendSchema.parse(input);
+    let json: unknown;
+    try { json = JSON.parse(String(form.get("payload") ?? "")); } catch { return { ok: false, error: "That message could not be read. Please try again." }; }
+    const p = sendSchema.parse(json);
+    const uploaded = form.getAll("files").filter((f): f is File => typeof f !== "string" && f.size > 0);
+    const problem = attachmentProblem(uploaded.map((f) => ({ name: f.name, size: f.size })), p.audience !== "SPECIFIC");
+    if (problem) return { ok: false, error: problem };
+    const files = await Promise.all(uploaded.map(async (f) => ({ filename: f.name.replace(/[\r\n"]+/g, "_").slice(0, 150) || "attachment", content: Buffer.from(await f.arrayBuffer()), contentType: f.type || "application/octet-stream" })));
 
     let recipients: string[];
     if (p.audience === "SPECIFIC") {
@@ -53,8 +60,8 @@ export async function sendMailAction(input: unknown): Promise<Result> {
     }
     if (recipients.length > MAX_RECIPIENTS) return { ok: false, error: `One send can reach up to ${MAX_RECIPIENTS} people (this one has ${recipients.length}). Split it into smaller sends.` };
 
-    const r = await sendDirect({ fromKey: p.from, recipients, subject: p.subject, body: p.body, signature: p.signature, thread: p.thread ?? null, sentById: admin.id, footer: p.audience === "SPECIFIC" ? undefined : BULK_FOOTER });
-    await audit({ actorId: admin.id, action: "mail.send", entity: "SentMail", entityId: r.batchId, after: { from: p.from, audience: p.audience, recipients: recipients.length, sent: r.sent, subject: p.subject } });
+    const r = await sendDirect({ fromKey: p.from, recipients, subject: p.subject, body: p.body, signature: p.signature, thread: p.thread ?? null, sentById: admin.id, files, footer: p.audience === "SPECIFIC" ? undefined : BULK_FOOTER });
+    await audit({ actorId: admin.id, action: "mail.send", entity: "SentMail", entityId: r.batchId, after: { from: p.from, audience: p.audience, recipients: recipients.length, sent: r.sent, subject: p.subject, attachments: files.length } });
     revalidatePath("/admin/mailbox");
     if (r.sent === 0) return { ok: false, error: `Nothing was sent. ${r.failed[0]?.error ?? ""}`.trim() };
     const tail = r.failed.length ? ` ${r.failed.length} could not be sent: ${r.failed.slice(0, 3).map((f) => f.to).join(", ")}${r.failed.length > 3 ? "…" : ""}. See the sent log for why.` : "";

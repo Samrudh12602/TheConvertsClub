@@ -296,6 +296,8 @@ model StudentProfile {
   preferences      Json?
   onboardingStep   Int       @default(0)
   onboardedAt      DateTime?
+  /// Set the first time the student is sent to the "tell us about you" profile step, so that step is offered once.
+  welcomedAt       DateTime?
   /// Background the student chooses to share on their profile page.
   dob              DateTime?
   state            String?
