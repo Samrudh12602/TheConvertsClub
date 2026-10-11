@@ -77,7 +77,15 @@ export function threadHeaders(messageId: string | null | undefined, references: 
  */
 export function framedEmailHtml(html: string, allowImages: boolean): string {
   const csp = `default-src 'none'; img-src data: cid:${allowImages ? " https: http:" : ""}; style-src 'unsafe-inline'; font-src data:`;
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.55;color:#16130F;margin:12px;word-wrap:break-word}img{max-width:100%;height:auto}pre{white-space:pre-wrap}</style></head><body>${html}</body></html>`;
+  const guard = `<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank">`;
+  // A page that refreshes itself could send the frame elsewhere.
+  const safe = html.replace(/<meta\b[^>]*http-equiv\s*=\s*["']?refresh[^>]*>/gi, "");
+  // Marketing emails are whole documents with their own <body> colours, so they are used as the document itself (the policy goes in first).
+  if (/<html[\s>]/i.test(safe)) {
+    if (/<head[\s>]/i.test(safe)) return safe.replace(/<head(\s[^>]*)?>/i, (m) => `${m}${guard}`);
+    return safe.replace(/<html(\s[^>]*)?>/i, (m) => `${m}<head>${guard}</head>`);
+  }
+  return `<!doctype html><html><head>${guard}<style>body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.55;color:#16130F;margin:12px;word-wrap:break-word}img{max-width:100%;height:auto}pre{white-space:pre-wrap}</style></head><body>${safe}</body></html>`;
 }
 
 /** Plain text shown as HTML in the same frame, when a message has no HTML part. */

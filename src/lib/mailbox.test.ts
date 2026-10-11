@@ -67,6 +67,15 @@ describe("framedEmailHtml", () => {
     expect(f).toContain("img-src data: cid:;");
     expect(f).not.toContain("script-src");
   });
+  it("uses a whole-document email as the document itself, with the policy first in its head", () => {
+    const f = framedEmailHtml('<!DOCTYPE html><html lang="en"><head><title>x</title></head><body style="background:#000">Hi</body></html>', false);
+    expect(f.match(/<body/g)).toHaveLength(1);
+    expect(f.indexOf("Content-Security-Policy")).toBeLessThan(f.indexOf("<title>"));
+    expect(f).toContain('<body style="background:#000">');
+  });
+  it("removes a meta refresh so the frame cannot be sent elsewhere", () => {
+    expect(framedEmailHtml('<html><head><meta http-equiv="refresh" content="0;url=https://evil.example"></head><body>x</body></html>', true)).not.toMatch(/http-equiv="refresh"/i);
+  });
   it("allows remote images only when asked", () => {
     expect(framedEmailHtml("x", true)).toContain("img-src data: cid: https: http:");
   });
