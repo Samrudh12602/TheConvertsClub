@@ -13,7 +13,7 @@ export async function SystemStatus() {
   const rows: { label: string; ok: boolean; detail: string }[] = [
     { label: "Payments (Razorpay)", ok: paymentsConfigured(), detail: paymentsConfigured() ? "Key configured — checkout will charge real Razorpay orders" : "No Razorpay key set — checkout is disabled" },
     { label: "Payment webhook", ok: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET), detail: process.env.RAZORPAY_WEBHOOK_SECRET ? "Webhook secret set" : "No webhook secret — payment confirmation relies on the browser callback only" },
-    { label: "Email sending", ok: provider !== null, detail: provider === "gmail" ? `Gmail — ${process.env.GMAIL_USER}` : provider === "resend" ? "Resend" : "No provider — emails are logged but never sent" },
+    { label: "Email sending", ok: provider !== null, detail: provider === "smtp" ? `Domain mailbox — ${process.env.EMAIL_FROM ?? process.env.SMTP_USER}` : provider === "gmail" ? `Gmail — ${process.env.GMAIL_USER}` : provider === "resend" ? "Resend" : "No provider — emails are logged but never sent" },
     { label: "Google sign-in", ok: googleEnabled(), detail: googleEnabled() ? "Enabled" : "Not configured — students/mentors use password or demo login" },
     { label: "Live URL", ok: true, detail: appUrl() },
   ];

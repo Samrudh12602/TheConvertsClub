@@ -7,10 +7,11 @@ import { appUrl } from "@/lib/env";
 import { TransactionalEmail } from "@/emails/transactional";
 import { TEMPLATES, buildProps, type TemplateKey } from "@/server/email-templates";
 
-export type EmailProvider = "gmail" | "resend" | null;
+export type EmailProvider = "smtp" | "gmail" | "resend" | null;
 
-/** Gmail (an app password) wins over Resend when both are set. To send from the domain address, remove the Gmail variables and set EMAIL_FROM. */
+/** The domain mailbox (SMTP) wins, then Gmail (an app password), then Resend. To send from the domain address, set the SMTP_* variables and EMAIL_FROM. */
 export function emailProvider(env: Record<string, string | undefined> = process.env): EmailProvider {
+  if (env.SMTP_USER && env.SMTP_PASS) return "smtp";
   if (env.GMAIL_USER && env.GMAIL_APP_PASSWORD) return "gmail";
   if (env.RESEND_API_KEY) return "resend";
   return null;
@@ -41,6 +42,19 @@ export interface SendArgs {
 }
 
 interface Rendered { subject: string; html: string; text: string }
+
+/** The business mailbox over SMTP (Hostinger by default). EMAIL_FROM may be any address the mailbox is allowed to send as, e.g. an alias. */
+async function deliverSmtp(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
+  const user = process.env.SMTP_USER as string;
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST || "smtp.hostinger.com", port, secure: port === 465, auth: { user, pass: process.env.SMTP_PASS as string } });
+  const reply = replyTo ?? process.env.EMAIL_REPLY_TO;
+  const info = await transport.sendMail({
+    from: process.env.EMAIL_FROM || { name: "The Converts Club", address: user }, to, ...(reply ? { replyTo: reply } : {}), subject: r.subject, html: r.html, text: r.text,
+    attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
+  });
+  return info.messageId as string;
+}
 
 async function deliverGmail(to: string, r: Rendered, replyTo?: string, attachments?: EmailAttachment[]) {
   const user = process.env.GMAIL_USER as string;
@@ -81,14 +95,15 @@ export async function sendEmail(a: SendArgs): Promise<{ status: "SENT" | "FAILED
   }
   const provider = emailProvider();
   if (!provider) {
-    await log("SKIPPED", { error: "no email provider configured (set GMAIL_USER + GMAIL_APP_PASSWORD, or RESEND_API_KEY)" });
+    await log("SKIPPED", { error: "no email provider configured (set SMTP_USER + SMTP_PASS, GMAIL_USER + GMAIL_APP_PASSWORD, or RESEND_API_KEY)" });
     return { status: "SKIPPED" };
   }
   try {
     const html = await render(createElement(TransactionalEmail, props));
     const text = await render(createElement(TransactionalEmail, props), { plainText: true });
     const rendered = { subject, html, text };
-    const id = provider === "gmail" ? await deliverGmail(a.to, rendered, a.replyTo, a.attachments) : await deliverResend(a.to, rendered, a.replyTo, a.attachments);
+    const deliver = provider === "smtp" ? deliverSmtp : provider === "gmail" ? deliverGmail : deliverResend;
+    const id = await deliver(a.to, rendered, a.replyTo, a.attachments);
     await log("SENT", { providerId: id });
     return { status: "SENT", id };
   } catch (e) {
@@ -97,5 +112,5 @@ export async function sendEmail(a: SendArgs): Promise<{ status: "SENT" | "FAILED
   }
 }
 
-/** The owner's inbox for alerts (new application, new message). Real environments only; demo traffic never emails the owner. */
-export const adminInbox = () => process.env.ADMIN_EMAIL?.trim() || null;
+/** The owner's inbox for alerts (new application, new message). ALERT_EMAIL wins so alerts can go to the domain mailbox while ADMIN_EMAIL stays the admin's sign-in address. */
+export const adminInbox = () => process.env.ALERT_EMAIL?.trim() || process.env.ADMIN_EMAIL?.trim() || null;

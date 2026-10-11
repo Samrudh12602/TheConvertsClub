@@ -9,7 +9,7 @@ import { DEMO_ACCOUNTS } from "@/lib/roles";
 import { demoEnabled } from "@/server/demo";
 import { safeEqual } from "@/server/crypto";
 import { rateLimit } from "@/server/ratelimit";
-import { sendEmail } from "@/server/email";
+import { emailConfigured, sendEmail } from "@/server/email";
 import { audit } from "@/server/audit";
 import { verifyPassword } from "@/server/password";
 import { tempPasswordExpired } from "@/server/temp-password";
@@ -28,7 +28,8 @@ async function clientIp() {
 }
 
 export const googleEnabled = () => Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
-export const emailLoginEnabled = () => Boolean(process.env.RESEND_API_KEY);
+/** Email sign-in links need any working email provider (the link itself is sent by sendEmail below). */
+export const emailLoginEnabled = () => emailConfigured();
 
 export const { handlers, auth, signIn, signOut, unstable_update: refreshSession } = NextAuth({
   adapter: PrismaAdapter(db as never),
