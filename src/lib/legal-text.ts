@@ -15,7 +15,7 @@ export interface LegalPolicy {
 }
 
 /** Where to write to us, phrased so it stays true on whatever address the site is served from. */
-const CONTACT = "the Contact page on our website";
+const CONTACT = `the Contact page on our website, by email at ${B.supportEmail} or by phone on ${B.phone}`;
 
 /**
  * The full legal text. Numbers that the admin can change (refund window, notice period...) are filled in
@@ -127,6 +127,8 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
         { heading: "What we collect", items: [
           "Account details: your name, email address, phone number, and password (stored only as a one-way cryptographic hash, never in readable form).",
           "Profile details you choose to give us: college, work experience, calls received, target institutes, strengths and weaknesses, and similar preparation information.",
+          "Background details you choose to add to your profile: date of birth, state and city, the exams you are taking, your schooling and graduation details (boards, percentages, years), your work experience and employer, and a profile photo. All of these are optional.",
+          "Documents you choose to upload to your profile, such as entrance-exam results (CAT, XAT, NMAT, SNAP or others), call letters and admit letters. They may contain personal details printed on them, such as your name, date of birth and registration number.",
           "What you submit: resumes, essays, SOPs and other documents, and your messages with us and your mentors.",
           "Session data: bookings, attendance, mentor feedback and scores, ratings you give, and, where sessions are recorded, the recording.",
           "Payment records: order amount, coupon used, and payment status and reference from Razorpay. We do not receive or store your full card, UPI PIN or bank login details.",
@@ -144,11 +146,12 @@ export function buildLegalDocs(p: LegalPolicy): Record<LegalDocKey, LegalDoc> {
         { heading: "Who can see your data", items: [
           "Your assigned mentor sees the profile information, documents and history needed to run your session. Mentors are bound by a confidentiality and data-protection agreement with us.",
           "Our administrators see what they need to run and support the service.",
+          "Your profile photo, background details and the documents you upload to your profile are kept in private storage. Only you and our administrators can open them. Your mentor does not see them unless we add a way to share them and ask for your permission first.",
           "Other students never see your data. In group discussions, other participants see your first name or display name and what you say in the session.",
           "On public pages, a mentor’s name, photo, college, bio, and an average rating and session count may be shown. Students’ names and comments are not shown publicly.",
         ] },
         { heading: "Service providers we rely on", items: [
-          "We use trusted providers to run the service: Razorpay (payments); Vercel (website hosting and file storage); Neon (database hosting); Google (email delivery through Gmail, and sign-in if you choose it) and Resend (email delivery); and a video-meeting provider for sessions (the mentor’s own meeting link or a Jitsi Meet room).",
+          `We use trusted providers to run the service: Razorpay (payments); Vercel (website hosting and file storage); Neon (database hosting); Hostinger (our domain and business email, which is how we send and receive email from the address ${B.domain}); Google (sign-in, if you choose it); Resend (backup email delivery); and a video-meeting provider for sessions (the mentor’s own meeting link or a Jitsi Meet room).`,
           "These providers process data only to provide their service to us, under their own security and privacy commitments. Some of them store or process data on servers outside India. By accepting this policy you consent to that transfer, which is made in accordance with the DPDP Act and any restrictions notified under it.",
           "We may disclose data where the law requires it, or to protect our rights, safety or those of others, in response to a lawful order from a competent authority.",
         ] },

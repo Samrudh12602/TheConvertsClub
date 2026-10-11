@@ -937,6 +937,26 @@ model EmailLog {
   @@index([template, createdAt])
 }
 
+/// An email the admin sent by hand from the Mailbox page (one row per recipient). Plain strings, no relations,
+/// so the log survives anyone being deleted. Automatic emails are in EmailLog.
+model SentMail {
+  id          String      @id @default(cuid())
+  /// Groups the rows of one send (a message to many people is one batch).
+  batchId     String
+  fromAddress String
+  toAddress   String
+  subject     String
+  body        String
+  status      EmailStatus
+  messageId   String?
+  error       String?
+  sentById    String?
+  createdAt   DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([batchId])
+}
+
 model EmailTemplate {
   key       String   @id
   subject   String

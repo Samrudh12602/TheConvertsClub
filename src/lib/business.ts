@@ -11,4 +11,9 @@ export const BUSINESS = {
   grievanceOfficer: "Samrudh Dhaimodkar",
   /** Contact page is the primary channel; it reaches the owner's inbox. */
   contactPath: "/contact",
+  /** Public support contact, shown on the site and in the legal documents. */
+  supportEmail: "support@theconvertsclub.in",
+  phone: "+91 77988 89355",
+  phoneHref: "tel:+917798889355",
+  domain: "theconvertsclub.in",
 } as const;

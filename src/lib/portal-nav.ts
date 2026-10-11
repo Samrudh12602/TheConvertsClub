@@ -104,6 +104,7 @@ export const adminPortal: PortalConfig = {
       items: [
         { href: "/admin", label: "Dashboard", title: "Overview", sub: "Dashboard" },
         { href: "/admin/inbox", label: "Inbox", title: "Inbox", sub: "Everything waiting on you" },
+        { href: "/admin/mailbox", label: "Mailbox", title: "Mailbox", sub: "Read and send email as support, admin or Samrudh" },
         { href: "/admin/analytics", label: "Analytics", title: "Analytics", sub: "Overview" },
       ],
     },
