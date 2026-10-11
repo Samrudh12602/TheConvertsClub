@@ -26,8 +26,7 @@ export function SiteFooter({ account, comingSoon = false }: { account: { role: R
             {comingSoon ? "SNAP mocks on the real exam screen, with an analysis of what went wrong. GDPI prep from people who converted is coming soon." : "GDPI prep run by people who converted last season. Real mocks, honest feedback, prices in the open."}
           </p>
           <p className="mt-3.5 text-[13px] leading-[1.9] text-dark-muted">
-            <a href={`mailto:${BUSINESS.supportEmail}`} className="text-dark-soft no-underline hover:text-surface hover:no-underline">{BUSINESS.supportEmail}</a><br />
-            <a href={BUSINESS.phoneHref} className="text-dark-soft no-underline hover:text-surface hover:no-underline">{BUSINESS.phone}</a>
+            <a href={`mailto:${BUSINESS.supportEmail}`} className="text-dark-soft no-underline hover:text-surface hover:no-underline">{BUSINESS.supportEmail}</a>
           </p>
           <Link href={last.href} className="mt-4 inline-flex min-h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3.5 text-[12.5px] font-semibold text-surface no-underline transition-colors hover:bg-white/[0.09] hover:no-underline">{last.label} →</Link>
         </div>

@@ -64,17 +64,25 @@ describe("signature and logo", () => {
       expect(h.indexOf("theconvertsclub.in</a></p></div></div>")).toBeGreaterThan(last);
     }
   });
-  it("signs support as the team, in the brand colour, with a tap-to-call phone and the support email", () => {
+  it("signs support as the team, in the brand colour, with the support email and no phone number", () => {
     const h = composeHtml("Hi", sup);
     expect(h).toContain("Support Team");
     expect(h).toContain("color:#7A1F2B\">The Converts Club</p>");
-    expect(h).toContain('href="tel:+917798889355"');
     expect(h).toContain('href="mailto:support@theconvertsclub.in"');
+    expect(h).not.toMatch(/Tel\.|tel:|7798889355|77988 89355/);
   });
-  it("signs samrudh by name as the founder", () => {
+  it("never puts the founder's phone number in support or admin mail, html or text", () => {
+    for (const key of ["support", "admin"]) {
+      const sender = senderFor(key)!;
+      expect(composeHtml("Hi", sender)).not.toMatch(/Tel\.|tel:|77988/);
+      expect(signatureText(sender)).not.toMatch(/Tel\.|77988/);
+    }
+  });
+  it("signs samrudh by name as the founder, and only his mail carries the phone number", () => {
     const h = composeHtml("Hi", sam);
     expect(h).toContain("Samrudh Dhaimodkar");
     expect(h).toContain("Founder");
+    expect(h).toContain('href="tel:+917798889355"');
     expect(h).toContain('href="mailto:samrudh@theconvertsclub.in"');
   });
   it("still has the header, logo and website when the signature is switched off", () => {
@@ -88,6 +96,7 @@ describe("signature and logo", () => {
   });
   it("has a plain-text signature too", () => {
     expect(signatureText(sam)).toBe("Samrudh Dhaimodkar\nFounder, The Converts Club\nTel.: +91 77988 89355\nEmail: samrudh@theconvertsclub.in\ntheconvertsclub.in");
+    expect(signatureText(sup)).toBe("Support Team\nThe Converts Club\nEmail: support@theconvertsclub.in\ntheconvertsclub.in");
   });
 });
 

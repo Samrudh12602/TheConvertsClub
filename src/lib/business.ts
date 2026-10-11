@@ -11,9 +11,10 @@ export const BUSINESS = {
   grievanceOfficer: "Samrudh Dhaimodkar",
   /** Contact page is the primary channel; it reaches the owner's inbox. */
   contactPath: "/contact",
-  /** Public support contact, shown on the site and in the legal documents. */
+  /** The only contact shown publicly (site, footer, legal documents, support and admin emails). */
   supportEmail: "support@theconvertsclub.in",
-  phone: "+91 77988 89355",
-  phoneHref: "tel:+917798889355",
+  /** The founder's personal number. Shown ONLY in the signature of emails sent from samrudh@. Never put it on the site, in the legal documents or in other emails. */
+  founderPhone: "+91 77988 89355",
+  founderPhoneHref: "tel:+917798889355",
   domain: "theconvertsclub.in",
 } as const;

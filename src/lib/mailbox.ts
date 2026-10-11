@@ -5,9 +5,9 @@ import { BUSINESS } from "@/lib/business";
  * aliases, so mail sent to any of them lands in the same inbox, and the site sends through that mailbox's SMTP login.
  */
 export const SENDERS = [
-  { key: "support", address: `support@${BUSINESS.domain}`, name: "The Converts Club Support", title: "Support Team", role: null },
-  { key: "admin", address: `admin@${BUSINESS.domain}`, name: "The Converts Club", title: "The Converts Club Team", role: null },
-  { key: "samrudh", address: `samrudh@${BUSINESS.domain}`, name: "Samrudh · The Converts Club", title: "Samrudh Dhaimodkar", role: "Founder" },
+  { key: "support", address: `support@${BUSINESS.domain}`, name: "The Converts Club Support", title: "Support Team", role: null, showPhone: false },
+  { key: "admin", address: `admin@${BUSINESS.domain}`, name: "The Converts Club", title: "The Converts Club Team", role: null, showPhone: false },
+  { key: "samrudh", address: `samrudh@${BUSINESS.domain}`, name: "Samrudh · The Converts Club", title: "Samrudh Dhaimodkar", role: "Founder", showPhone: true },
 ] as const;
 
 export type SenderKey = (typeof SENDERS)[number]["key"];
@@ -18,9 +18,9 @@ export const senderFor = (key: string) => SENDERS.find((s) => s.key === key) ?? 
 
 const SITE = `https://${BUSINESS.domain}`;
 
-/** The signature as plain text: the name, the organisation, then how to reach us. */
+/** The signature as plain text: the name, the organisation, then how to reach us. The founder's phone number is only ever on his own (samrudh@) mail. */
 export function signatureText(s: Sender): string {
-  return [s.title, s.role ? `${s.role}, ${BUSINESS.brand}` : BUSINESS.brand, `Tel.: ${BUSINESS.phone}`, `Email: ${s.address}`, BUSINESS.domain].join("\n");
+  return [s.title, s.role ? `${s.role}, ${BUSINESS.brand}` : BUSINESS.brand, ...(s.showPhone ? [`Tel.: ${BUSINESS.founderPhone}`] : []), `Email: ${s.address}`, BUSINESS.domain].join("\n");
 }
 
 /** The most addresses one send may reach. A hosting mailbox is not a bulk-mail service, and a burst over its hourly limit would bounce. */
@@ -130,7 +130,7 @@ export function composeHtml(body: string, sender: Sender | null, logoSrc: string
     ? `<p style="${line};font-weight:700;color:${INK}">${escapeHtml(sender.title)}</p>`
       + (sender.role ? `<p style="${line};color:${INK}">${escapeHtml(sender.role)}</p>` : "")
       + `<p style="${line};font-weight:700;color:${OXBLOOD}">${BUSINESS.brand}</p>`
-      + `<p style="${line};color:${INK}"><b>Tel.:</b> <a href="${BUSINESS.phoneHref}" style="${LINK}">${BUSINESS.phone}</a></p>`
+      + (sender.showPhone ? `<p style="${line};color:${INK}"><b>Tel.:</b> <a href="${BUSINESS.founderPhoneHref}" style="${LINK}">${BUSINESS.founderPhone}</a></p>` : "")
       + `<p style="${line};color:${INK}"><b>Email:</b> <a href="mailto:${sender.address}" style="${LINK}">${sender.address}</a></p>`
     : "";
   const signature = `<div style="margin-top:28px;border-top:1px solid #E6DFD5;padding-top:18px;font-size:14px;line-height:1.5">${details}<div style="margin:12px 0 8px">${LOGO_IMG(logoSrc, 40, 36)}</div><p style="${line}"><a href="${SITE}" style="${LINK}">${BUSINESS.domain}</a></p></div>`;

@@ -15,7 +15,7 @@ export interface LegalPolicy {
 }
 
 /** Where to write to us, phrased so it stays true on whatever address the site is served from. */
-const CONTACT = `the Contact page on our website, by email at ${B.supportEmail} or by phone on ${B.phone}`;
+const CONTACT = `the Contact page on our website or by email at ${B.supportEmail}`;
 
 /**
  * The full legal text. Numbers that the admin can change (refund window, notice period...) are filled in
