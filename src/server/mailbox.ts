@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { ImapFlow, type FetchMessageObject, type MailboxObject, type SearchObject } from "imapflow";
 import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import nodemailer from "nodemailer";
@@ -286,11 +287,14 @@ export async function sendDirect(a: SendArgs): Promise<SendResult> {
   } finally {
     transport.close();
   }
+  // Saving the Sent copy takes a few seconds, so it runs after the confirmation is on its way to the page.
   if (copies.length) {
-    await withClient(async (c) => {
-      const sentPath = (await folderPaths(c)).sent;
-      for (const raw of copies) await c.append(sentPath, raw, ["\\Seen"]);
-    }).catch((e) => console.error("could not save copy to Sent", e));
+    after(() =>
+      withClient(async (c) => {
+        const sentPath = (await folderPaths(c)).sent;
+        for (const raw of copies) await c.append(sentPath, raw, ["\\Seen"]);
+      }).catch((e) => console.error("could not save copy to Sent", e)),
+    );
   }
   return { batchId, sent, failed };
 }
