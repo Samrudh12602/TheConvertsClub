@@ -158,7 +158,7 @@ export function MailComposer({ defaults = {}, doneHref, templates = [] }: { defa
         ) : (
           <textarea id="mc-body" ref={bodyRef} required rows={11} value={body} onChange={(e) => setBody(e.target.value)} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13.5px] leading-[1.6]" />
         )}
-        <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Use the buttons above for headings, bold, lists, highlighted boxes, buttons and links. <b>First name</b> becomes each person\u2019s own first name (or &ldquo;there&rdquo;). <b>Preview</b> shows exactly what the reader sees, using &ldquo;Priya&rdquo; as the example.</p>
+        <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Use the buttons above for headings, bold, lists, highlighted boxes, buttons and links. <b>First name</b> becomes each person&rsquo;s own first name (or &ldquo;there&rdquo;). <b>Preview</b> shows exactly what the reader sees, using &ldquo;Priya&rdquo; as the example.</p>
       </div>
       <label className="flex items-start gap-2 text-[12.5px] text-ink-muted">
         <input type="checkbox" checked={signature} onChange={(e) => setSignature(e.target.checked)} className="mt-0.5 size-4" />
