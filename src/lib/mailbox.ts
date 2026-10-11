@@ -5,15 +5,23 @@ import { BUSINESS } from "@/lib/business";
  * aliases, so mail sent to any of them lands in the same inbox, and the site sends through that mailbox's SMTP login.
  */
 export const SENDERS = [
-  { key: "support", style: "brand", address: `support@${BUSINESS.domain}`, name: "The Converts Club Support", signature: `The Converts Club Support\n${BUSINESS.supportEmail} · ${BUSINESS.phone}` },
-  { key: "admin", style: "brand", address: `admin@${BUSINESS.domain}`, name: "The Converts Club", signature: `The Converts Club team\n${BUSINESS.supportEmail} · ${BUSINESS.phone}` },
-  { key: "samrudh", style: "personal", address: `samrudh@${BUSINESS.domain}`, name: "Samrudh · The Converts Club", signature: `Samrudh Dhaimodkar\nThe Converts Club\n${BUSINESS.phone}` },
+  { key: "support", address: `support@${BUSINESS.domain}`, name: "The Converts Club Support", title: "Support Team", role: null },
+  { key: "admin", address: `admin@${BUSINESS.domain}`, name: "The Converts Club", title: "The Converts Club Team", role: null },
+  { key: "samrudh", address: `samrudh@${BUSINESS.domain}`, name: "Samrudh · The Converts Club", title: "Samrudh Dhaimodkar", role: "Founder" },
 ] as const;
 
 export type SenderKey = (typeof SENDERS)[number]["key"];
 export const SENDER_KEYS = SENDERS.map((s) => s.key) as [SenderKey, ...SenderKey[]];
 
+export type Sender = (typeof SENDERS)[number];
 export const senderFor = (key: string) => SENDERS.find((s) => s.key === key) ?? null;
+
+const SITE = `https://${BUSINESS.domain}`;
+
+/** The signature as plain text: the name, the organisation, then how to reach us. */
+export function signatureText(s: Sender): string {
+  return [s.title, s.role ? `${s.role}, ${BUSINESS.brand}` : BUSINESS.brand, `Tel.: ${BUSINESS.phone}`, `Email: ${s.address}`, BUSINESS.domain].join("\n");
+}
 
 /** The most addresses one send may reach. A hosting mailbox is not a bulk-mail service, and a burst over its hourly limit would bounce. */
 export const MAX_RECIPIENTS = 100;
@@ -42,35 +50,92 @@ function linkify(escaped: string): string {
   return escaped.replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)"'])/g, (u) => `<a href="${u}" style="color:#7A1F2B">${u}</a>`);
 }
 
+const BUTTON = /^\[button:\s*(.+?)\s*\|\s*(https?:\/\/[^\s\]]+)\s*\]$/i;
+const MD_LINK = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g;
+const MD_LINK_ONE = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/;
+
+/**
+ * The little formatting the message box understands, each on its own line or block:
+ *   # Big heading     ## Smaller heading     - a bullet     > a highlighted box     **bold**     [text](https://link)
+ *   [button: Label | https://link]   a button
+ * This turns it into plain text for the text part of the mail (and the sent log).
+ */
+export function plainFromMarkup(body: string): string {
+  return body.replace(/\r\n/g, "\n").trim().split("\n").map((l) => {
+    const btn = l.trim().match(BUTTON);
+    if (btn) return `${btn[1]}: ${btn[2]}`;
+    return l.replace(/^#{1,2}\s+/, "").replace(/^>\s?/, "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1 ($2)");
+  }).join("\n");
+}
+
 /** Plain text body with the signature appended (the text part of the mail, and what is logged). */
 export function composeText(body: string, signature: string | null): string {
-  const b = body.replace(/\r\n/g, "\n").trim();
+  const b = plainFromMarkup(body);
   return signature ? `${b}\n\n--\n${signature}` : b;
 }
 
-/** The picture embedded in every email we write by hand (attached inline, so it shows even where remote pictures are blocked). */
+/** The logo embedded at the bottom of every email we write by hand (attached inline, so it shows even where remote pictures are blocked). */
 export const LOGO_CID = "tcc-logo@theconvertsclub.in";
 export const LOGO_URL = `https://${BUSINESS.domain}/brand/mark.png`;
 
-export type MailStyle = "brand" | "personal";
+const LOGO_IMG = (src: string, w: number, h: number) => `<img src="${src}" width="${w}" height="${h}" alt="${BUSINESS.brand}" style="display:block;border:0;outline:none">`;
+const LINK = "color:#1a56c4;text-decoration:underline";
+const OXBLOOD = "#7A1F2B";
+const INK = "#16130F";
+const BODY = "#3B352E";
 
-const LOGO_IMG = (src: string) => `<img src="${src}" width="28" height="25" alt="${BUSINESS.brand}" style="display:block;border:0">`;
+/** Inline formatting inside one line: **bold**, [text](https://link) and bare links. Everything typed is escaped first. */
+function inline(raw: string): string {
+  return raw.split(MD_LINK).map((part) => {
+    const m = part.match(MD_LINK_ONE);
+    if (m) return `<a href="${escapeHtml(m[2])}" style="${LINK}">${escapeHtml(m[1])}</a>`;
+    return linkify(escapeHtml(part).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"));
+  }).join("");
+}
+
+const buttonHtml = (label: string, url: string) =>
+  `<a href="${escapeHtml(url)}" target="_blank" style="display:inline-block;background:${OXBLOOD};color:#ffffff;font-size:15px;font-weight:700;line-height:1;text-decoration:none;padding:15px 28px;border-radius:999px;margin:0 10px 10px 0">${escapeHtml(label)}</a>`;
+
+/** One blank-line-separated block of the message as email-safe HTML. */
+function blockHtml(block: string): string {
+  const lines = block.split("\n");
+  if (lines.every((l) => BUTTON.test(l.trim()))) {
+    return `<p style="margin:6px 0 20px;line-height:1">${lines.map((l) => { const m = l.trim().match(BUTTON)!; return buttonHtml(m[1], m[2]); }).join("")}</p>`;
+  }
+  const head = lines[0].match(/^(#{1,2})\s+(.+)$/);
+  if (head) {
+    const big = head[1].length === 1;
+    const h = `<p style="margin:0 0 ${big ? 14 : 10}px;font-size:${big ? 30 : 20}px;line-height:1.2;font-weight:700;color:${INK};letter-spacing:-0.3px">${inline(head[2])}</p>`;
+    return lines.length > 1 ? `${h}${blockHtml(lines.slice(1).join("\n"))}` : h;
+  }
+  if (lines.every((l) => /^[-•]\s+/.test(l))) {
+    return `<ul style="margin:0 0 18px;padding-left:22px">${lines.map((l) => `<li style="margin:0 0 6px">${inline(l.replace(/^[-•]\s+/, ""))}</li>`).join("")}</ul>`;
+  }
+  if (lines.every((l) => l.startsWith(">"))) {
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px"><tbody><tr><td style="background:#F3F1EE;border-radius:14px;padding:18px 22px;font-size:15px;line-height:1.6;color:${INK}">${lines.map((l) => inline(l.replace(/^>\s?/, ""))).join("<br>")}</td></tr></tbody></table>`;
+  }
+  return `<p style="margin:0 0 18px">${lines.map(inline).join("<br>")}</p>`;
+}
 
 /**
- * The HTML body. Support and admin mail carry the logo and name in a header on top, like our automatic emails. Mail from Samrudh is
- * personal: plain paragraphs, then the signature with the logo below it. Only paragraphs, line breaks and links are ever produced from the typed text.
+ * The HTML of an email written by hand, laid out like a modern product email: the logo and the name large at the top, a clear type
+ * hierarchy (headings, readable body text), buttons, soft highlighted boxes, then a signature block in the style of an institute's
+ * email signature (bold name, the organisation in the brand colour, Tel. and Email, the logo beneath, the website). The logo is also
+ * at the bottom, in the signature. Only what the formatting above allows is ever produced from the typed text.
  */
-export function composeHtml(body: string, signature: string | null, style: MailStyle = "brand", logoSrc: string = `cid:${LOGO_CID}`): string {
-  const paragraphs = body.replace(/\r\n/g, "\n").trim().split(/\n{2,}/).map((p) => `<p style="margin:0 0 14px">${linkify(escapeHtml(p)).replace(/\n/g, "<br>")}</p>`).join("");
-  const sigText = signature ? `<div style="color:#6F655A;font-size:13px;line-height:1.55">${escapeHtml(signature).replace(/\n/g, "<br>")}</div>` : "";
-  const wrap = (inner: string) => `<div style="font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.6;color:#16130F;max-width:600px">${inner}</div>`;
-  if (style === "personal") {
-    const sig = `<div style="margin-top:18px;border-top:1px solid #E6DFD5;padding-top:12px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tbody><tr><td style="vertical-align:top;padding-right:10px;width:28px">${LOGO_IMG(logoSrc)}</td><td style="vertical-align:top">${sigText}</td></tr></tbody></table></div>`;
-    return wrap(`${paragraphs}${sig}`);
-  }
-  const header = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-bottom:1px solid #E6DFD5;margin-bottom:18px"><tbody><tr><td style="width:28px;padding:0 0 12px;line-height:0">${LOGO_IMG(logoSrc)}</td><td style="padding:0 0 12px 8px;font-weight:700;font-size:14px;color:#16130F">${BUSINESS.brand}</td></tr></tbody></table>`;
-  const sig = sigText ? `<div style="margin-top:18px;border-top:1px solid #E6DFD5;padding-top:12px">${sigText}</div>` : "";
-  return wrap(`${header}${paragraphs}${sig}`);
+export function composeHtml(body: string, sender: Sender | null, logoSrc: string = `cid:${LOGO_CID}`): string {
+  const blocks = body.replace(/\r\n/g, "\n").trim().split(/\n{2,}/).map(blockHtml).join("");
+  const line = "margin:0 0 3px";
+  const details = sender
+    ? `<p style="${line};font-weight:700;color:${INK}">${escapeHtml(sender.title)}</p>`
+      + (sender.role ? `<p style="${line};color:${INK}">${escapeHtml(sender.role)}</p>` : "")
+      + `<p style="${line};font-weight:700;color:${OXBLOOD}">${BUSINESS.brand}</p>`
+      + `<p style="${line};color:${INK}"><b>Tel.:</b> <a href="${BUSINESS.phoneHref}" style="${LINK}">${BUSINESS.phone}</a></p>`
+      + `<p style="${line};color:${INK}"><b>Email:</b> <a href="mailto:${sender.address}" style="${LINK}">${sender.address}</a></p>`
+    : "";
+  const signature = `<div style="margin-top:28px;border-top:1px solid #E6DFD5;padding-top:18px;font-size:14px;line-height:1.5">${details}<div style="margin:12px 0 8px">${LOGO_IMG(logoSrc, 72, 65)}</div><p style="${line}"><a href="${SITE}" style="${LINK}">${BUSINESS.domain}</a></p></div>`;
+  const header = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px"><tbody><tr><td style="vertical-align:middle;line-height:0">${LOGO_IMG(logoSrc, 58, 52)}</td><td style="vertical-align:middle;padding-left:14px;font-size:26px;font-weight:800;letter-spacing:-0.4px;color:${INK};line-height:1.1">${BUSINESS.brand}</td></tr></tbody></table>`;
+  return `<div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:${BODY};max-width:600px;margin:0 auto;padding:8px 4px">${header}${blocks}${signature}</div>`;
 }
 
 /** Limits for files attached to an email written here. */

@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Paperclip, Send, X } from "lucide-react";
+import { Bold, Eye, Heading, Link2, List, MousePointerClick, Paperclip, Quote, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { sendMailAction } from "@/app/admin/mailbox/actions";
-import { ATTACH_MAX_FILES, MAX_RECIPIENTS, SENDERS, attachmentProblem, fileSizeLabel, type SenderKey } from "@/lib/mailbox";
+import { ATTACH_MAX_FILES, LOGO_URL, MAX_RECIPIENTS, SENDERS, attachmentProblem, composeHtml, fileSizeLabel, signatureText, type SenderKey } from "@/lib/mailbox";
 
 type Audience = "SPECIFIC" | "ALL_STUDENTS" | "ALL_MENTORS";
+type ToolKey = "heading" | "bold" | "list" | "box" | "button" | "link";
+const TOOLS: { key: ToolKey; label: string; icon: typeof Bold }[] = [
+  { key: "heading", label: "Heading", icon: Heading },
+  { key: "bold", label: "Bold", icon: Bold },
+  { key: "list", label: "List", icon: List },
+  { key: "box", label: "Highlighted box", icon: Quote },
+  { key: "button", label: "Button", icon: MousePointerClick },
+  { key: "link", label: "Link", icon: Link2 },
+];
 const input = "min-h-11 w-full rounded-lg border border-line-strong bg-white px-3 text-[13px]";
 
 export interface ComposerDefaults {
@@ -29,6 +38,8 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
   const [body, setBody] = useState(defaults.body ?? "");
   const [signature, setSignature] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
+  const [preview, setPreview] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [ask, setAsk] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -37,6 +48,28 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
   const sender = SENDERS.find((s) => s.key === from)!;
   const bulk = audience !== "SPECIFIC";
   const who = audience === "ALL_STUDENTS" ? "every active student" : "every active mentor";
+
+  /** Puts a snippet at the cursor (or over the selection), as its own block when asked, and selects the part to type over. */
+  function insert(snippet: string, opts: { block?: boolean; select?: [number, number] } = {}) {
+    const el = bodyRef.current;
+    const start = el?.selectionStart ?? body.length;
+    const end = el?.selectionEnd ?? body.length;
+    const before = body.slice(0, start);
+    const lead = opts.block && before.trim() ? (before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n") : "";
+    setBody(before + lead + snippet + body.slice(end));
+    const base = before.length + lead.length;
+    requestAnimationFrame(() => { el?.focus(); const [a, b] = opts.select ?? [snippet.length, snippet.length]; el?.setSelectionRange(base + a, base + b); });
+  }
+  function applyTool(key: ToolKey) {
+    const el = bodyRef.current;
+    const picked = el ? body.slice(el.selectionStart, el.selectionEnd) : "";
+    if (key === "heading") { const t = picked || "Your heading"; insert(`# ${t}`, { block: true, select: [2, 2 + t.length] }); }
+    else if (key === "bold") { const t = picked || "bold text"; insert(`**${t}**`, { select: [2, 2 + t.length] }); }
+    else if (key === "list") insert("- First point\n- Second point", { block: true, select: [2, 13] });
+    else if (key === "box") { const t = picked || "Something to stand out"; insert(`> ${t}`, { block: true, select: [2, 2 + t.length] }); }
+    else if (key === "button") insert("[button: Button text | https://theconvertsclub.in]", { block: true, select: [9, 22] });
+    else { const t = picked || "link text"; insert(`[${t}](https://)`, { select: [t.length + 4, t.length + 8] }); }
+  }
 
   function addFiles(picked: FileList | null) {
     if (!picked) return;
@@ -94,11 +127,22 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
       </div>
       <div>
         <label htmlFor="mc-body" className="type-label mb-1.5 block text-ink-faint">Message</label>
-        <textarea id="mc-body" required rows={11} value={body} onChange={(e) => setBody(e.target.value)} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13.5px] leading-[1.6]" />
+        <div className="mb-1.5 flex flex-wrap items-center gap-1" role="toolbar" aria-label="Formatting">
+          {TOOLS.map((t) => (
+            <button key={t.key} type="button" onClick={() => applyTool(t.key)} title={t.label} aria-label={t.label} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-white px-2.5 text-[12px] font-medium text-ink-2 hover:border-ink"><t.icon className="size-3.5" aria-hidden /> {t.label}</button>
+          ))}
+          <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className={`ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-[12px] font-semibold ${preview ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-ink-2 hover:border-ink"}`}><Eye className="size-3.5" aria-hidden /> {preview ? "Back to writing" : "Preview"}</button>
+        </div>
+        {preview ? (
+          <iframe title="Preview of the email" sandbox="" srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${composeHtml(body.trim() || "(Your message appears here.)", signature ? sender : null, LOGO_URL)}</body>`} className="h-[560px] w-full rounded-lg border border-line-strong bg-white" />
+        ) : (
+          <textarea id="mc-body" ref={bodyRef} required rows={11} value={body} onChange={(e) => setBody(e.target.value)} className="w-full rounded-lg border border-line-strong bg-white p-3 text-[13.5px] leading-[1.6]" />
+        )}
+        <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Use the buttons above for headings, bold, lists, highlighted boxes, buttons and links. <b>Preview</b> shows exactly what the reader sees.</p>
       </div>
       <label className="flex items-start gap-2 text-[12.5px] text-ink-muted">
         <input type="checkbox" checked={signature} onChange={(e) => setSignature(e.target.checked)} className="mt-0.5 size-4" />
-        <span>Add the signature for {sender.address}<span className="mt-1 block whitespace-pre-line text-[11.5px] text-ink-faint">{sender.signature}</span></span>
+        <span>Add the signature for {sender.address}<span className="mt-1 block whitespace-pre-line text-[11.5px] text-ink-faint">{signatureText(sender)}</span></span>
       </label>
       <div>
         <div className="flex flex-wrap items-center gap-2">
@@ -122,7 +166,7 @@ export function MailComposer({ defaults = {}, doneHref }: { defaults?: ComposerD
       {error && <p role="alert" className="text-[12.5px] text-oxblood">{error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}><Send className="size-4" aria-hidden /> {pending ? "Sending…" : "Send"}</Button>
-        <span className="text-[11.5px] text-ink-faint">Replies come to {sender.address}. The logo is added to every email{sender.style === "personal" ? " below your signature" : " at the top"}.</span>
+        <span className="text-[11.5px] text-ink-faint">Replies come to {sender.address}. The logo goes at the bottom of every email.</span>
       </div>
     </form>
   );

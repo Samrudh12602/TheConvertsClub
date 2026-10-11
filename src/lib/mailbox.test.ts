@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ATTACH_MAX_FILES, LOGO_CID, attachmentProblem, composeHtml, composeText, framedEmailHtml, parseRecipients, quoteForReply, replySubject, senderFor, SENDERS, threadHeaders } from "./mailbox";
+import { ATTACH_MAX_FILES, LOGO_CID, attachmentProblem, composeHtml, composeText, framedEmailHtml, parseRecipients, quoteForReply, replySubject, senderFor, SENDERS, signatureText, threadHeaders } from "./mailbox";
 
 describe("senders", () => {
   it("offers exactly support, admin and samrudh on the domain", () => {
@@ -40,31 +40,85 @@ describe("composing", () => {
     const h = composeHtml("See https://theconvertsclub.in/mocks.\nThanks\n\nSecond paragraph", null);
     expect(h).toContain('<a href="https://theconvertsclub.in/mocks"');
     expect(h).toContain("<br>");
-    expect(h.match(/<p /g)).toHaveLength(2);
+    expect(h.match(/<p style="margin:0 0 18px">/g)).toHaveLength(2);
   });
 });
 
-describe("logo", () => {
-  const imgAt = (h: string) => h.indexOf(`cid:${LOGO_CID}`);
-  it("sits at the top, above the message, for support and admin mail", () => {
-    const h = composeHtml("Hello there", "Support team", "brand");
-    expect(imgAt(h)).toBeGreaterThan(-1);
-    expect(imgAt(h)).toBeLessThan(h.indexOf("Hello there"));
+describe("signature and logo", () => {
+  const sup = senderFor("support")!;
+  const sam = senderFor("samrudh")!;
+  const count = (h: string) => h.match(new RegExp(`cid:${LOGO_CID}`, "g"))?.length ?? 0;
+  it("has the logo and the name large at the top, before the message", () => {
+    for (const sender of SENDERS) {
+      const h = composeHtml("Hello there", sender);
+      expect(h.indexOf(`cid:${LOGO_CID}`)).toBeLessThan(h.indexOf("Hello there"));
+      expect(h.indexOf("font-size:26px")).toBeLessThan(h.indexOf("Hello there"));
+    }
   });
-  it("sits below the message, with the signature, for Samrudh's personal mail", () => {
-    const h = composeHtml("Hello there", "Samrudh Dhaimodkar", "personal");
-    expect(imgAt(h)).toBeGreaterThan(h.indexOf("Hello there"));
-    expect(imgAt(h)).toBeLessThan(h.indexOf("Samrudh Dhaimodkar"));
+  it("also has the logo at the bottom, after the signature details", () => {
+    for (const sender of SENDERS) {
+      const h = composeHtml("Hello there", sender);
+      expect(count(h)).toBe(2);
+      const last = h.lastIndexOf(`cid:${LOGO_CID}`);
+      expect(last).toBeGreaterThan(h.indexOf(sender.title));
+      expect(h.indexOf("theconvertsclub.in</a></p></div></div>")).toBeGreaterThan(last);
+    }
   });
-  it("is there even when the signature is switched off", () => {
-    expect(composeHtml("Hi", null, "brand")).toContain(`cid:${LOGO_CID}`);
-    expect(composeHtml("Hi", null, "personal")).toContain(`cid:${LOGO_CID}`);
+  it("signs support as the team, in the brand colour, with a tap-to-call phone and the support email", () => {
+    const h = composeHtml("Hi", sup);
+    expect(h).toContain("Support Team");
+    expect(h).toContain("color:#7A1F2B\">The Converts Club</p>");
+    expect(h).toContain('href="tel:+917798889355"');
+    expect(h).toContain('href="mailto:support@theconvertsclub.in"');
+  });
+  it("signs samrudh by name as the founder", () => {
+    const h = composeHtml("Hi", sam);
+    expect(h).toContain("Samrudh Dhaimodkar");
+    expect(h).toContain("Founder");
+    expect(h).toContain('href="mailto:samrudh@theconvertsclub.in"');
+  });
+  it("still has the header, logo and website when the signature is switched off", () => {
+    const h = composeHtml("Hi", null);
+    expect(count(h)).toBe(2);
+    expect(h).toContain("https://theconvertsclub.in");
+    expect(h).not.toContain("Tel.:");
   });
   it("falls back to a linked picture when it cannot be embedded", () => {
-    expect(composeHtml("Hi", null, "brand", "https://theconvertsclub.in/brand/mark.png")).toContain('src="https://theconvertsclub.in/brand/mark.png"');
+    expect(composeHtml("Hi", sup, "https://theconvertsclub.in/brand/mark.png")).toContain('src="https://theconvertsclub.in/brand/mark.png"');
   });
-  it("uses the personal style only for samrudh", () => {
-    expect(SENDERS.map((x) => `${x.key}:${x.style}`)).toEqual(["support:brand", "admin:brand", "samrudh:personal"]);
+  it("has a plain-text signature too", () => {
+    expect(signatureText(sam)).toBe("Samrudh Dhaimodkar\nFounder, The Converts Club\nTel.: +91 77988 89355\nEmail: samrudh@theconvertsclub.in\ntheconvertsclub.in");
+  });
+});
+
+describe("message formatting", () => {
+  const h = (b: string) => composeHtml(b, null);
+  it("makes a heading, bullets, a highlighted box and bold text", () => {
+    expect(h("# Big news")).toContain("font-size:30px");
+    expect(h("## Smaller")).toContain("font-size:20px");
+    expect(h("- one\n- two")).toContain("<ul");
+    expect(h("> note")).toContain("background:#F3F1EE");
+    expect(h("this is **bold**")).toContain("<b>bold</b>");
+  });
+  it("makes a button from [button: Label | https://link], and only for web links", () => {
+    const x = h("[button: Start your mock | https://theconvertsclub.in/mocks]");
+    expect(x).toContain('href="https://theconvertsclub.in/mocks"');
+    expect(x).toContain("border-radius:999px");
+    expect(x).toContain(">Start your mock</a>");
+    expect(h("[button: Bad | javascript:alert(1)]")).not.toContain("href=\"javascript");
+    expect(h("[button: Bad | javascript:alert(1)]")).not.toContain("border-radius:999px");
+  });
+  it("makes [text](https://link) a link, and bare links links", () => {
+    expect(h("see [the mocks](https://theconvertsclub.in/mocks) or https://theconvertsclub.in/faq")).toMatch(/>the mocks<\/a>.*href="https:\/\/theconvertsclub.in\/faq"/);
+  });
+  it("never lets typed HTML through, even inside headings, buttons and links", () => {
+    const x = h("# <img src=x onerror=alert(1)>\n\n[button: <b>x</b> | https://a.com/\"onmouseover=\"alert(1)]\n\n[<script>](https://a.com)");
+    expect(x).not.toMatch(/<img src=x/);
+    expect(x).not.toContain("<script>");
+    expect(x).not.toMatch(/onmouseover="alert/);
+  });
+  it("gives a readable plain-text version", () => {
+    expect(composeText("# Hello\n\n**Note** the [guide](https://x.com/g)\n\n[button: Go | https://x.com/go]\n\n> quoted", null)).toBe("Hello\n\nNote the guide (https://x.com/g)\n\nGo: https://x.com/go\n\nquoted");
   });
 });
 

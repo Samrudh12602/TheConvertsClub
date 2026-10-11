@@ -5,7 +5,7 @@ import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import nodemailer from "nodemailer";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { db } from "@/lib/db";
-import { LOGO_CID, LOGO_URL, composeHtml, composeText, fileSizeLabel, formatAddress, senderFor, threadHeaders } from "@/lib/mailbox";
+import { LOGO_CID, LOGO_URL, composeHtml, composeText, fileSizeLabel, formatAddress, senderFor, signatureText, threadHeaders } from "@/lib/mailbox";
 
 /** The website's mailbox, read over IMAP and written over SMTP with the same login the site already sends with. */
 export class MailboxError extends Error {}
@@ -279,12 +279,12 @@ export async function sendDirect(a: SendArgs): Promise<SendResult> {
   if (!mailboxConfigured()) throw new MailboxError("The mailbox is not connected on this server (SMTP_USER and SMTP_PASS are not set).");
   const port = Number(process.env.SMTP_PORT) || 465;
   const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST || "smtp.hostinger.com", port, secure: port === 465, pool: true, maxConnections: 2, auth: { user: process.env.SMTP_USER as string, pass: process.env.SMTP_PASS as string } });
-  const signature = a.signature ? sender.signature : null;
+  const signature = a.signature ? signatureText(sender) : null;
   const body = a.footer ? `${a.body.trim()}\n\n${a.footer}` : a.body;
   const logo = await loadLogo();
   const files = a.files ?? [];
   const text = composeText(body, signature);
-  const html = composeHtml(body, signature, sender.style, logo ? `cid:${LOGO_CID}` : LOGO_URL);
+  const html = composeHtml(body, a.signature ? sender : null, logo ? `cid:${LOGO_CID}` : LOGO_URL);
   const attachments = [
     ...(logo ? [{ filename: "logo.png", content: logo, contentType: "image/png", cid: LOGO_CID, contentDisposition: "inline" as const }] : []),
     ...files.map((f) => ({ filename: f.filename, content: f.content, contentType: f.contentType })),
