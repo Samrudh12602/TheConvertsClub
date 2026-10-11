@@ -55,7 +55,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <RangeTabs current={range.key} />
       </div>
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatTile tone="oxblood" label="Revenue" value={compactInr(t.revenue.value)} pct={t.revenue.pct} sub={`Before: ${compactInr(t.revenue.prev)}`} icon={<IndianRupee />} series={t.revenue.series} />
         <StatTile tone="gold" label="Orders" value={t.orders.value} pct={t.orders.pct} sub={aov ? `${compactInr(aov)} average order` : "No orders yet"} icon={<ShoppingBag />} series={t.orders.series} />
         <StatTile tone="teal" label="New students" value={t.signups.value} pct={t.signups.pct} sub={`${t.googleSignups.value} Google · ${Math.max(0, emailSplit)} email`} icon={<Users />} series={t.signups.series} />

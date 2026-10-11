@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import clsx from "clsx";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { compactInr, pctDelta, sum } from "@/lib/metrics";
+import { compactInr, pctDelta, smoothPath as smooth, sum } from "@/lib/metrics";
 import { COLOR, TINT, type Tone } from "./palette";
 
 export interface TrendMetric { key: string; label: string; tone: Tone; kind: "inr" | "int"; current: number[]; previous?: number[] }
@@ -16,18 +16,6 @@ function niceMax(v: number, floor: number): number {
   const p = 10 ** Math.floor(Math.log10(m));
   for (const f of [1, 2, 2.5, 5, 10]) if (m <= f * p) return f * p;
   return 10 * p;
-}
-
-/** A smooth line through the points (Catmull-Rom turned into Béziers). */
-function smooth(pts: readonly (readonly [number, number])[]): string {
-  if (pts.length < 2) return pts.length ? `M${pts[0][0]},${pts[0][1]}` : "";
-  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] ?? p2;
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
-  }
-  return d;
 }
 
 const full = (m: TrendMetric, v: number) => (m.kind === "inr" ? `₹${Math.round(v / 100).toLocaleString("en-IN")}` : v.toLocaleString("en-IN"));
@@ -93,10 +81,10 @@ export function TrendChart({ labels, metrics, caption }: { labels: string[]; met
           {ticks.map((t) => (
             <g key={t}>
               <line x1={PAD_L} x2={W - PAD_R} y1={y(t)} y2={y(t)} stroke="var(--color-line-soft)" strokeDasharray={t === 0 ? undefined : "3 5"} />
-              <text x={PAD_L - 8} y={y(t)} textAnchor="end" dominantBaseline="middle" fontSize="10.5" fill="var(--color-ink-faint)">{short(m, t)}</text>
+              <text x={PAD_L - 8} y={y(t)} textAnchor="end" dominantBaseline="middle" fontSize="9.5" fill="var(--color-ink-faint)">{short(m, t)}</text>
             </g>
           ))}
-          {xTicks.map((i) => <text key={i} x={x(i)} y={H - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"} fontSize="10.5" fill="var(--color-ink-faint)">{labels[i]}</text>)}
+          {xTicks.map((i) => <text key={i} x={x(i)} y={H - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"} fontSize="9.5" fill="var(--color-ink-faint)">{labels[i]}</text>)}
           {prevPts.length > 1 && <path d={smooth(prevPts)} fill="none" stroke="var(--color-ink-faint)" strokeOpacity="0.55" strokeWidth="1.6" strokeDasharray="5 5" />}
           {!empty && <path d={area} fill={`url(#${gid})`} />}
           {empty ? (

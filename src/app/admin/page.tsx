@@ -115,7 +115,7 @@ export default async function AdminDashboard() {
               ))}
             </div>
           </div>
-          <div className="lg:justify-self-end lg:self-stretch"><HeroSpark data={t.revenue.series} labels={t.labels} /></div>
+          <div className="min-w-0 lg:self-center"><HeroSpark data={t.revenue.series} labels={t.labels} /></div>
         </div>
       </section>
 
@@ -128,7 +128,7 @@ export default async function AdminDashboard() {
       )}
 
       {/* Headline tiles */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatTile tone="oxblood" label="Revenue · 30 days" value={compactInr(t.revenue.value)} pct={t.revenue.pct} sub={`Before: ${compactInr(t.revenue.prev)}`} icon={<IndianRupee />} series={t.revenue.series} />
         <StatTile tone="gold" label="Orders · 30 days" value={t.orders.value} pct={t.orders.pct} sub={aov ? `${compactInr(aov)} average order` : "No orders yet"} icon={<ShoppingBag />} series={t.orders.series} />
         <StatTile tone="teal" label="New students · 30 days" value={t.signups.value} pct={t.signups.pct} sub={`${t.googleSignups.value} through Google`} icon={<Users />} series={t.signups.series} />
@@ -145,6 +145,9 @@ export default async function AdminDashboard() {
       <Section cols={380}>
         <Panel title="What is selling" flush={false} action={<Link href="/admin/analytics" className="text-xs font-semibold">Full analytics</Link>}>
           <Donut slices={t.salesMix.map((s) => ({ label: s.name, value: s.paise, text: compactInr(s.paise) }))} centerValue={compactInr(t.revenue.value)} centerLabel="last 30 days" emptyText="No sales yet" />
+          <dl className="mt-5 grid grid-cols-3 gap-2.5 text-center">
+            {[{ k: "Orders", v: String(t.orders.value), cls: "bg-gold-tint text-gold-deep" }, { k: "Average order", v: aov ? compactInr(aov) : "—", cls: "bg-teal-tint text-teal" }, { k: "Early-bird", v: String(t.earlyBirdOrders), cls: "bg-plum-tint text-plum" }].map((x) => <div key={x.k} className={`rounded-xl px-2 py-2.5 ${x.cls}`}><dd className="tnum font-display text-[18px] font-bold leading-none">{x.v}</dd><dt className="mt-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] opacity-80">{x.k}</dt></div>)}
+          </dl>
         </Panel>
         <Panel title="Where students drop off" flush={false}>
           <Funnel steps={[
