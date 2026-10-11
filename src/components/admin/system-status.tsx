@@ -9,9 +9,10 @@ import { paymentsConfigured } from "@/server/razorpay";
  * reads the same functions the real checkout/email code paths use, so this can't drift from reality. */
 export async function SystemStatus() {
   const provider = emailProvider();
+  const razorpayLive = (process.env.RAZORPAY_KEY_ID ?? "").startsWith("rzp_live_");
   const demo = await demoEnabled();
   const rows: { label: string; ok: boolean; detail: string }[] = [
-    { label: "Payments (Razorpay)", ok: paymentsConfigured(), detail: paymentsConfigured() ? "Key configured — checkout will charge real Razorpay orders" : "No Razorpay key set — checkout is disabled" },
+    { label: "Payments (Razorpay)", ok: paymentsConfigured() && razorpayLive, detail: !paymentsConfigured() ? "No Razorpay key set — checkout is disabled" : razorpayLive ? "LIVE keys — checkout charges real money" : "TEST keys — checkout works but no real money moves. Switch to the live keys to take real payments" },
     { label: "Payment webhook", ok: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET), detail: process.env.RAZORPAY_WEBHOOK_SECRET ? "Webhook secret set" : "No webhook secret — payment confirmation relies on the browser callback only" },
     { label: "Email sending", ok: provider !== null, detail: provider === "smtp" ? `Domain mailbox — ${process.env.EMAIL_FROM ?? process.env.SMTP_USER}` : provider === "gmail" ? `Gmail — ${process.env.GMAIL_USER}` : provider === "resend" ? "Resend" : "No provider — emails are logged but never sent" },
     { label: "Google sign-in", ok: googleEnabled(), detail: googleEnabled() ? "Enabled" : "Not configured — students/mentors use password or demo login" },
