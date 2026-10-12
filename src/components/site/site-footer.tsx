@@ -4,14 +4,14 @@ import { LogoMark } from "@/components/brand/logo-mark";
 import { BUSINESS } from "@/lib/business";
 
 const GROUPS = [
-  { title: "Prepare", links: [{ href: "/packages", label: "Packages" }, { href: "/how-it-works", label: "How it works" }, { href: "/mentors", label: "Mentors" }, { href: "/faq", label: "FAQ" }] },
+  { title: "Prepare", links: [{ href: "/guidance", label: "1:1 guidance" }, { href: "/packages", label: "Packages" }, { href: "/how-it-works", label: "How it works" }, { href: "/mentors", label: "Mentors" }, { href: "/faq", label: "FAQ" }] },
   { title: "Company", links: [{ href: "/become-a-mentor", label: "Become a mentor" }, { href: "/contact", label: "Contact" }] },
   { title: "Legal", links: [{ href: "/terms", label: "Terms" }, { href: "/privacy", label: "Privacy" }, { href: "/refunds", label: "Refunds" }, { href: "/mentor-agreement", label: "Mentor Agreement" }] },
 ];
 
 export function SiteFooter({ account, comingSoon = false }: { account: { role: RoleName; home: string } | null; comingSoon?: boolean }) {
   const last = account ? { href: account.home, label: PORTAL_LABEL[account.role] } : { href: "/login", label: "Log in" };
-  const groups = comingSoon ? [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, { href: "/packages", label: "GDPI prep (coming soon)" }] }, ...GROUPS.slice(1)] : [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, ...GROUPS[0].links] }, ...GROUPS.slice(1)];
+  const groups = comingSoon ? [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, { href: "/guidance", label: "1:1 guidance calls" }, { href: "/packages", label: "GDPI prep (coming soon)" }] }, ...GROUPS.slice(1)] : [{ title: "Prepare", links: [{ href: "/mocks", label: "SNAP 2026 mocks" }, ...GROUPS[0].links] }, ...GROUPS.slice(1)];
   const link = "block py-1.5 text-[13px] leading-none text-dark-soft no-underline transition-colors hover:text-surface hover:no-underline";
   return (
     <footer className="relative mt-12 overflow-hidden bg-night px-5 pb-8 pt-12">

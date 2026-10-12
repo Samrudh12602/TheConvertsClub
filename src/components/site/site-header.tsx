@@ -11,6 +11,7 @@ import { LogoMark } from "@/components/brand/logo-mark";
 const NAV_SOON = [
   { href: "/", label: "Home" },
   { href: "/mocks", label: "SNAP Mocks" },
+  { href: "/guidance", label: "1:1 Guidance" },
   { href: "/packages", label: "GDPI prep · soon" },
   { href: "/contact", label: "Contact" },
   { href: "/become-a-mentor", label: "Become a mentor" },
@@ -19,6 +20,7 @@ const NAV_SOON = [
 const NAV = [
   { href: "/", label: "Home" },
   { href: "/mocks", label: "SNAP Mocks" },
+  { href: "/guidance", label: "1:1 Guidance" },
   { href: "/packages", label: "Packages" },
   { href: "/services", label: "Services" },
   { href: "/how-it-works", label: "How it works" },

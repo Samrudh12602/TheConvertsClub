@@ -22,7 +22,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       <div className="mx-auto max-w-[420px] px-5 py-12">
         <Card className="p-7">
           <h1 className="font-display text-[21px] font-bold leading-[1.25] text-ink">This invite isn&apos;t valid</h1>
-          <p className="mt-2 text-[13px] leading-[1.6] text-ink-faint">The link may have expired or already been used. Ask Samrudh to send a fresh one.</p>
+          <p className="mt-2 text-[13px] leading-[1.6] text-ink-faint">The link may have expired or already been used. Ask the team to send a fresh one.</p>
         </Card>
       </div>
     );

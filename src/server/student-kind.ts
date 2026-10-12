@@ -1,4 +1,5 @@
 import type { db as Db } from "@/lib/db";
+import { GUIDANCE_KINDS, GUIDANCE_SLUGS } from "@/lib/guidance";
 
 /** SNAP mock products are sold as `snap-…`. Everything else is part of the GDPI prep offering. */
 export const isSnapSlug = (slug: string) => slug.startsWith("snap-");
@@ -8,7 +9,19 @@ export const isSnapSlug = (slug: string) => slug.startsWith("snap-");
  * interview-prep screens (booking, GD batches, onboarding), so the portal keeps them to the mocks.
  */
 export async function hasGdpiPlan(client: Pick<typeof Db, "enrollment">, userId: string): Promise<boolean> {
-  return (await client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: { not: { startsWith: "snap-" } } } } })) > 0;
+  return (await client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: { not: { startsWith: "snap-" }, notIn: [...GUIDANCE_SLUGS] } } } })) > 0;
+}
+
+/** Guidance calls (strategy / trial guidance) are not interview prep: a student with only these still gets the simple portal. */
+const NOT_GUIDANCE_SESSION = { type: { notIn: [...GUIDANCE_KINDS] } };
+
+/** True when the student bought a guidance call (credit still to use, or a call already booked). */
+export async function hasGuidance(client: Pick<typeof Db, "creditLedger" | "session">, userId: string): Promise<boolean> {
+  const [credits, sessions] = await Promise.all([
+    client.creditLedger.count({ where: { userId, type: "GRANT", kind: { in: [...GUIDANCE_KINDS] } } }),
+    client.session.count({ where: { studentId: userId, type: { in: [...GUIDANCE_KINDS] } } }),
+  ]);
+  return credits + sessions > 0;
 }
 
 /** True for a student who only ever bought SNAP mocks and has no GDPI plan, session or review. */
@@ -16,7 +29,7 @@ export async function isMockOnly(client: Pick<typeof Db, "enrollment" | "session
   const [snap, gdpi, sessions, reviews] = await Promise.all([
     client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: { startsWith: "snap-" } } } }),
     hasGdpiPlan(client, userId),
-    client.session.count({ where: { studentId: userId } }),
+    client.session.count({ where: { studentId: userId, ...NOT_GUIDANCE_SESSION } }),
     client.review.count({ where: { studentId: userId } }),
   ]);
   return snap > 0 && !gdpi && sessions === 0 && reviews === 0;
@@ -36,9 +49,9 @@ export type StudentStage = "new" | "mocks" | "gdpi";
 export async function studentStage(client: Pick<typeof Db, "enrollment" | "session" | "review" | "creditLedger" | "mockAttempt">, userId: string): Promise<StudentStage> {
   const [gdpiPlan, sessions, reviews, gdpiCredits, snapPlan, snapCredits, attempts] = await Promise.all([
     hasGdpiPlan(client, userId),
-    client.session.count({ where: { studentId: userId } }),
+    client.session.count({ where: { studentId: userId, ...NOT_GUIDANCE_SESSION } }),
     client.review.count({ where: { studentId: userId } }),
-    client.creditLedger.count({ where: { userId, type: "GRANT", kind: { notIn: ["SNAP_MOCK", "SNAP_TEST_MOCK"] } } }),
+    client.creditLedger.count({ where: { userId, type: "GRANT", kind: { notIn: ["SNAP_MOCK", "SNAP_TEST_MOCK", ...GUIDANCE_KINDS] } } }),
     client.enrollment.count({ where: { userId, status: "ACTIVE", product: { slug: { startsWith: "snap-" } } } }),
     client.creditLedger.count({ where: { userId, type: "GRANT", kind: { in: ["SNAP_MOCK", "SNAP_TEST_MOCK"] } } }),
     client.mockAttempt.count({ where: { userId } }),

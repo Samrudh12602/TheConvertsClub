@@ -21,6 +21,7 @@ import { renderReceiptPdf } from "@/server/receipt-pdf";
 import type { CreditKind } from "@/generated/prisma/client";
 
 import { isSellable } from "@/server/site-mode";
+import { isGuidanceSlug } from "@/lib/guidance";
 const PANEL_PI_SLUG = "panel-pi";
 
 export class CheckoutError extends Error {}
@@ -39,7 +40,7 @@ export async function quote(slug: string, couponCode?: string | null, now = new 
   if (couponCode?.trim()) {
     const c = await db.coupon.findUnique({ where: { code: couponCode.trim().toUpperCase() } });
     // Sessions with Samrudh are the owner's own time, so mentors' referral codes don't discount them (a general code still can).
-    const r = c?.mentorId && product.withAdmin ? { ok: false as const, reason: "Mentor codes don't apply to sessions with Samrudh." } : checkCoupon(c, v.payablePaise, now, product.mentorPricePaise);
+    const r = c?.mentorId && product.withAdmin ? { ok: false as const, reason: "Mentor codes don't apply to one-to-one sessions." } : checkCoupon(c, v.payablePaise, now, product.mentorPricePaise);
     if (r.ok) {
       discountPaise = r.discountPaise;
       couponId = c!.id;
@@ -183,18 +184,19 @@ export async function fulfilOrder(razorpayOrderId: string, pay: PaymentFacts) {
     const upgradeFailed = order.product.slug === PANEL_UPGRADE_SLUG ? !(await convertPiToPanel(tx, user.id, enrollment.id)) : false;
     if (order.couponId) await tx.coupon.update({ where: { id: order.couponId }, data: { usedCount: { increment: 1 } } });
     await tx.studentProfile.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
-    return { kind: "fulfilled" as const, orderId: order.id, user, created, product: order.product, amountPaise: order.amountPaise, upgradeFailed };
+    return { kind: "fulfilled" as const, orderId: order.id, user, created, product: order.product, amountPaise: order.amountPaise, upgradeFailed, guestPhone: order.guestPhone };
   });
 
   if (result.kind === "fulfilled") {
     // Best-effort side effects after the money and credits are safely committed.
     try {
       const snap = result.product.slug.startsWith("snap-");
-      const link = await createLoginLink(result.user.email, snap ? "/student/mocks" : "/student/onboarding");
+      const guidance = isGuidanceSlug(result.product.slug);
+      const link = await createLoginLink(result.user.email, snap ? "/student/mocks" : guidance ? "/student" : "/student/onboarding");
       const receipt = await loadReceiptData(result.orderId);
       const attachments = receipt ? [{ filename: `receipt-${result.orderId}.pdf`, content: await renderReceiptPdf(receipt), contentType: "application/pdf" }] : undefined;
       await sendEmail({
-        template: snap ? "welcome_snap" : "welcome", to: result.user.email, url: link, vars: { package: result.product.name },
+        template: snap ? "welcome_snap" : guidance ? "welcome_guidance" : "welcome", to: result.user.email, url: link, vars: { package: result.product.name, phone: result.guestPhone || result.user.phone || "the number you gave us" },
         details: [{ k: "Package", v: result.product.name }, { k: "Paid", v: formatPaise(result.amountPaise) }, { k: "Credits", v: result.product.slug === PANEL_UPGRADE_SLUG ? (result.upgradeFailed ? "Nothing changed yet. We'll sort it out" : "1 mock PI is now a Panel PI") : result.product.credits.map((c) => describeCredit(c, "short")).join(" · ") }],
         attachments,
       });
@@ -225,19 +227,20 @@ export async function markOrderFailed(razorpayOrderId: string) {
  * Someone paid for a session directly with the owner (PI or strategy call). Tell the owner, specifically, the moment it
  * happens, by email and in the app, with who and what, so nothing waits for them to notice a new order.
  */
-async function alertAdminDirectRequest(r: { orderId: string; user: { id: string; name: string | null; email: string; phone: string | null; isDemo: boolean }; product: { name: string }; amountPaise: number }) {
+async function alertAdminDirectRequest(r: { orderId: string; user: { id: string; name: string | null; email: string; phone: string | null; isDemo: boolean }; product: { name: string; slug: string }; amountPaise: number; guestPhone: string }) {
   try {
+    const callNumber = r.guestPhone || r.user.phone;
     const inbox = adminInbox();
     const label = r.product.name;
     if (inbox && !r.user.isDemo) {
       await sendEmail({
-        template: "direct_request", to: inbox, replyTo: r.user.email, url: `/admin/students/${r.user.id}`,
-        vars: { student: r.user.name ?? r.user.email, product: label },
-        details: [{ k: "Student", v: r.user.name ?? "—" }, { k: "Email", v: r.user.email }, { k: "Phone", v: r.user.phone ?? "—" }, { k: "Asked for", v: label }, { k: "Paid", v: formatPaise(r.amountPaise) }],
+        template: isGuidanceSlug(r.product.slug) ? "guidance_request" : "direct_request", to: inbox, replyTo: r.user.email, url: isGuidanceSlug(r.product.slug) ? "/admin/inbox" : `/admin/students/${r.user.id}`,
+        vars: { student: r.user.name ?? r.user.email, product: label, phone: callNumber ?? "(no number given)" },
+        details: [{ k: "Student", v: r.user.name ?? "—" }, { k: "Email", v: r.user.email }, { k: "Phone", v: callNumber ?? "—" }, { k: "Asked for", v: label }, { k: "Paid", v: formatPaise(r.amountPaise) }],
       });
     }
     const admins = await db.user.findMany({ where: { role: "ADMIN", status: "ACTIVE", isDemo: r.user.isDemo }, select: { id: true } });
-    await Promise.all(admins.map((a) => notify(a.id, { title: `${r.user.name ?? "A student"} asked for: ${label}`, body: "They'll book a slot with you next.", href: `/admin/students/${r.user.id}` })));
+    await Promise.all(admins.map((a) => notify(a.id, { title: isGuidanceSlug(r.product.slug) ? `Call ${r.user.name ?? "a student"}: ${label}` : `${r.user.name ?? "A student"} asked for: ${label}`, body: isGuidanceSlug(r.product.slug) ? `Phone ${callNumber ?? "(no number given)"}` : "They'll book a slot with you next.", href: isGuidanceSlug(r.product.slug) ? "/admin/inbox" : `/admin/students/${r.user.id}` })));
   } catch (e) { console.error("direct request alert failed", e); }
 }
 

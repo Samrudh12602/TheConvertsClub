@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, DarkPanel } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { formatPaise } from "@/lib/money";
+import { isGuidanceSlug } from "@/lib/guidance";
 import Link from "next/link";
 import { checkoutDetailsSchema, type CheckoutDetails } from "@/lib/validation/forms";
 import { openRazorpay } from "@/lib/razorpay-client";
@@ -92,7 +93,7 @@ export function CheckoutView({ summary }: { summary: CheckoutSummary }) {
           <form id="checkout-form" noValidate className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit(pay)}>
             <Field label="Name" autoComplete="name" placeholder="Your full name" error={errors.name?.message} {...register("name")} />
             <Field label="Email" type="email" autoComplete="email" inputMode="email" placeholder="Receipts and login link go here" readOnly={summary.lockEmail} hint={summary.lockEmail ? "You're signed in, so this purchase and its receipt go to your account." : undefined} error={errors.email?.message} {...register("email")} />
-            <Field label="Phone" type="tel" autoComplete="tel" placeholder="+91 · for session reminders" error={errors.phone?.message} {...register("phone")} />
+            <Field label={isGuidanceSlug(summary.slug) ? "Mobile number (we will call you on this)" : "Phone"} type="tel" autoComplete="tel" placeholder={isGuidanceSlug(summary.slug) ? "10-digit mobile number you answer" : "+91 · for session reminders"} hint={isGuidanceSlug(summary.slug) ? "Required. We phone you within one working day to agree a time for your call." : undefined} error={errors.phone?.message} {...register("phone")} />
             <div>
               <label className="flex items-start gap-2.5 text-[12.5px] leading-[1.55] text-ink-2">
                 <input type="checkbox" className="mt-0.5 size-4 flex-none" aria-invalid={errors.acceptTerms ? true : undefined} {...register("acceptTerms")} />

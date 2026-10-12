@@ -14,9 +14,9 @@ export const TYPE_LABEL: Record<SessionType, string> = {
   STRATEGY_CALL: "Strategy call",
   GUIDANCE: "Guidance call",
   GD_BATCH: "GD/GE",
-  PI_DIRECT: "PI with Samrudh",
-  STRATEGY_DIRECT: "Strategy call with Samrudh",
-  TRIAL_GUIDANCE: "Trial guidance call",
+  PI_DIRECT: "One-to-one mock interview",
+  STRATEGY_DIRECT: "Strategy call",
+  TRIAL_GUIDANCE: "Guidance call",
   TRIAL_PI: "Trial mock PI",
   PANEL_PI: "Panel PI",
 };
@@ -27,7 +27,7 @@ export const sessionTitle = (type: SessionType, focus?: PiFocus | null) =>
 export const REVIEW_LABEL: Record<ReviewKind, string> = { WAT: "WAT evaluation", SOP_BASIC: "Basic SOP review", SOP_DETAILED: "Detailed SOP review" };
 
 export const CREDIT_LABEL: Record<CreditKind, string> = {
-  PI: "PI", GD: "GD", WAT: "WAT", SOP_BASIC: "SOP basic", SOP_DETAILED: "SOP", SOP_REVISION: "SOP rev", STRATEGY: "strategy", GUIDANCE: "guidance", PI_DIRECT: "PI w/ Samrudh", STRATEGY_DIRECT: "strategy w/ Samrudh", TRIAL_GUIDANCE: "trial guidance", TRIAL_PI: "trial PI", PANEL_PI: "Panel PI", SNAP_MOCK: "SNAP mock", SNAP_TEST_MOCK: "SNAP test mock",
+  PI: "PI", GD: "GD", WAT: "WAT", SOP_BASIC: "SOP basic", SOP_DETAILED: "SOP", SOP_REVISION: "SOP rev", STRATEGY: "strategy", GUIDANCE: "guidance", PI_DIRECT: "1:1 mock interview", STRATEGY_DIRECT: "strategy call", TRIAL_GUIDANCE: "guidance call", TRIAL_PI: "trial PI", PANEL_PI: "Panel PI", SNAP_MOCK: "SNAP mock", SNAP_TEST_MOCK: "SNAP test mock",
 };
 
 /** Full, singular names — used wherever a credit type needs to read unambiguously on its own,
@@ -41,9 +41,9 @@ export const CREDIT_FULL_LABEL: Record<CreditKind, string> = {
   SOP_REVISION: "SOP revision",
   STRATEGY: "Strategy call",
   GUIDANCE: "Guidance call",
-  PI_DIRECT: "PI with Samrudh",
-  STRATEGY_DIRECT: "Strategy call with Samrudh",
-  TRIAL_GUIDANCE: "Trial guidance call",
+  PI_DIRECT: "One-to-one mock interview",
+  STRATEGY_DIRECT: "Strategy call",
+  TRIAL_GUIDANCE: "Guidance call",
   TRIAL_PI: "Trial mock PI",
   PANEL_PI: "Panel PI",
   SNAP_MOCK: "SNAP mock",

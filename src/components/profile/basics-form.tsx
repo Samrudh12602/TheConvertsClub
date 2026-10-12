@@ -17,7 +17,7 @@ export function BasicsForm({ name, email, phone, nameLocked = false }: { name: s
   return (
     <form className={cardCls} onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await saveBasicsAction(v); if (r.ok) { toast.success(r.message ?? "Saved."); router.refresh(); } else toast.error(r.error); }); }}>
       <div className={gridCls} style={gridStyle}>
-        <Field label="Full name" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} autoComplete="name" readOnly={nameLocked} disabled={nameLocked} hint={nameLocked ? "Your name appears on the public mentors page, so Samrudh changes it for you." : undefined} />
+        <Field label="Full name" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} autoComplete="name" readOnly={nameLocked} disabled={nameLocked} hint={nameLocked ? "Your name appears on the public mentors page, so the admin team changes it for you." : undefined} />
         <Field label="Mobile number" value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} inputMode="tel" autoComplete="tel" hint="10 digits. Used for session reminders." />
         <Field label="Email (your login)" value={email} readOnly disabled hint="To change your email, message us." />
       </div>

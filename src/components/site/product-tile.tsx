@@ -13,8 +13,8 @@ const LOOK: Record<string, { icon: LucideIcon; tint: string }> = {
   "sop-basic": { icon: FileText, tint: "bg-gold-tint text-gold-deep" },
   "sop-detailed": { icon: FileText, tint: "bg-gold-tint text-gold-deep" },
   "quick-guidance": { icon: MessageCircle, tint: "bg-plum-tint text-plum" },
-  "pi-with-samrudh": { icon: Crown, tint: "bg-gold-tint text-gold-deep" },
-  "strategy-with-samrudh": { icon: Crown, tint: "bg-gold-tint text-gold-deep" },
+  "pi-one-to-one": { icon: Crown, tint: "bg-gold-tint text-gold-deep" },
+  "strategy-call": { icon: Crown, tint: "bg-gold-tint text-gold-deep" },
 };
 
 export function ProductTile({ product }: { product: CatalogProduct }) {

@@ -36,7 +36,7 @@ export function Hero({ featured, seatsLeft, feedbackHours }: { featured: Catalog
           </ul>
           {seatsLeft !== null && seatsLeft > 0 && (
             <Link href="/packages" className="mt-6 inline-flex items-center gap-2 rounded-full border border-gold-line bg-gold-tint px-3.5 py-2 text-[12px] font-semibold leading-none text-gold-deep no-underline shadow-xs transition-shadow hover:shadow-card hover:no-underline">
-              <Sparkles className="size-3.5" aria-hidden /> Early bird with Samrudh · {seatsLeft} seats left <ArrowRight className="size-3.5" aria-hidden />
+              <Sparkles className="size-3.5" aria-hidden /> Early bird, one-to-one · {seatsLeft} seats left <ArrowRight className="size-3.5" aria-hidden />
             </Link>
           )}
         </div>
@@ -128,14 +128,14 @@ export function TrialStrip({ trials }: { trials: CatalogProduct[] }) {
           <div className="min-w-0">
             <p className="type-eyebrow text-gold">Not sure yet? Try us first</p>
             <h2 className="mt-2 font-display text-[22px] font-bold leading-[1.2]">Feel the quality before you commit.</h2>
-            <p className="mt-2 text-[12.5px] leading-[1.65] text-dark-soft">Same sessions, same standard, taken by Samrudh himself. See how good we really are for a token amount.</p>
+            <p className="mt-2 text-[12.5px] leading-[1.65] text-dark-soft">Same sessions, same standard, taken by an expert from our team. See how good we really are for a token amount.</p>
           </div>
           {trials.map((t) => (
             <div key={t.slug} className="flex items-center gap-3 rounded-xl bg-white/[0.07] p-3.5 ring-1 ring-white/10">
-              <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-white/10 text-gold">{t.slug === "trial-guidance" ? <MessageSquareText className="size-5" aria-hidden /> : <Video className="size-5" aria-hidden />}</span>
+              <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-white/10 text-gold"><Video className="size-5" aria-hidden /></span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-semibold leading-[1.25]">{t.slug === "trial-guidance" ? "Guidance call" : "Mock PI"}</span>
-                <span className="mt-0.5 block text-[11.5px] leading-[1.35] text-dark-soft">{t.slug === "trial-guidance" ? "25 minutes with Samrudh" : "A real mock with feedback"}</span>
+                <span className="block text-[14px] font-semibold leading-[1.25]">Mock PI</span>
+                <span className="mt-0.5 block text-[11.5px] leading-[1.35] text-dark-soft">A real mock with feedback</span>
               </span>
               <span className="tnum font-display text-[26px] font-bold leading-none">{trialPrice(t)}</span>
               <ButtonLink href={buyHref(t)} variant="onDark" size="sm" className="flex-none" data-track={`trial_book_${t.slug}`}>Book</ButtonLink>
@@ -207,7 +207,7 @@ export function DirectSpotlight({ items }: { items: CatalogProduct[] }) {
       <span aria-hidden className="absolute -bottom-20 right-0 size-72 rounded-full bg-oxblood/40 blur-3xl" />
       <Reveal className="relative max-w-[560px]">
         <span className="inline-flex items-center gap-2 rounded-full bg-gold/15 px-3 py-1.5 text-[11.5px] font-semibold leading-none text-[#e8c476] ring-1 ring-gold/30"><Crown className="size-3.5" aria-hidden /> Straight from the founder</span>
-        <h2 id="direct" className="type-display mt-4 text-surface">Want it directly with Samrudh?</h2>
+        <h2 id="direct" className="type-display mt-4 text-surface">Want it one-to-one?</h2>
         <p className="mt-3 text-[15px] leading-[1.7] text-dark-soft">A one-hour mock PI or a focused strategy call, one-to-one with the person who built this. Limited early-bird seats.</p>
       </Reveal>
       <div className="relative mt-7 grid gap-4 md:grid-cols-2">

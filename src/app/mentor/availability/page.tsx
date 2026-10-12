@@ -58,7 +58,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
       }>
         <WeekGrid days={days} rows={rows} />
       </Panel>
-      <Flash>Booked slots can&apos;t be removed here. Ask Samrudh to move the session and the slot frees up.</Flash>
+      <Flash>Booked slots can&apos;t be removed here. Ask the admin to move the session and the slot frees up.</Flash>
       </ModeProvider>
     </PortalPage>
   );

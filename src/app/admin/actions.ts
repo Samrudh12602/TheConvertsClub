@@ -17,6 +17,8 @@ import { cancelSession, BookingError } from "@/server/booking";
 import { AvailabilityError } from "@/server/availability";
 import { adminAddHours, adminBookFor, adminBookSlot, adminTimesFor, enableAdminMentor, pauseAdminMentor } from "@/server/admin-mentor";
 import { refundOrder, CheckoutError } from "@/server/checkout";
+import { GUIDANCE_KINDS } from "@/lib/guidance";
+import { adjustCredit, getBalances, lockUser } from "@/server/credits";
 import { DocxError, parseMockDocx, type ParsedMock } from "@/lib/mock-docx";
 import { MockImportError, createMockFromParsed, nextMockNumber, replaceMockPaper, slugify } from "@/server/mock-import";
 import { PanelError, setPanelists } from "@/server/panel";
@@ -687,5 +689,23 @@ export async function deleteMockAction(input: unknown): Promise<Result> {
     await audit({ actorId: actor.id, action: "mock.delete", entity: "Mock", entityId: id, before: { slug: m.slug, title: m.title } });
     refreshMocks();
     return { ok: true, message: `Deleted “${m.title}”.` };
+  } catch (e) { return fail(e); }
+}
+
+// ───────────────── Guidance calls (the owner phones the buyer) ─────────────────
+
+export async function markGuidanceCalledAction(userId: string, kind: string): Promise<Result> {
+  try {
+    const actor = await guard("guidance");
+    const k = z.enum(GUIDANCE_KINDS).parse(kind);
+    await db.$transaction(async (tx) => {
+      await lockUser(tx, userId);
+      const bal = (await getBalances(tx, userId))[k];
+      if (!bal || bal.available < 1) throw new AdminError("That call is already marked as done.");
+      await adjustCredit(tx, { userId, kind: k, delta: -1, reason: "Guidance call made", createdById: actor.id });
+    });
+    await audit({ actorId: actor.id, action: "guidance.called", entity: "User", entityId: userId, after: { kind: k } });
+    refreshAll();
+    return { ok: true, message: "Marked as called." };
   } catch (e) { return fail(e); }
 }

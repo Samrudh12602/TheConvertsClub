@@ -34,11 +34,11 @@ export default async function Profile() {
     <PortalPage>
       <section className="max-w-[660px] rounded-2xl border border-line bg-card p-5 shadow-card">
         <AvatarUploader userId={user.id} name={user.name} avatarKey={user.avatarKey} />
-        <p className="mt-3 text-[11.5px] leading-[1.5] text-ink-faint">This photo is for your portal. The photo on the public mentors page is set by Samrudh.</p>
+        <p className="mt-3 text-[11.5px] leading-[1.5] text-ink-faint">This photo is for your portal. The photo on the public mentors page is set by the admin team.</p>
       </section>
       <div className="max-w-[660px]"><BasicsForm name={user.name ?? ""} email={user.email} phone={user.phone ?? ""} nameLocked /></div>
       <dl className="grid max-w-[660px] gap-3 rounded-[10px] border border-line bg-card p-4 text-[13px]" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-        {[["Name", user.name?.replace(/\s*\(demo\)/, "")], ["College and batch", `${mentor.college ?? "—"}${mentor.batchYear ? `, ${mentor.batchYear}` : ""}`], ["Tier", `${mentor.tier} · set by Samrudh, never shown to students`], ["Email", user.email]].map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v}</dd></div>)}
+        {[["Name", user.name?.replace(/\s*\(demo\)/, "")], ["College and batch", `${mentor.college ?? "—"}${mentor.batchYear ? `, ${mentor.batchYear}` : ""}`], ["Tier", `${mentor.tier} · set by the admin team, never shown to students`], ["Email", user.email]].map(([k, v]) => <div key={k}><dt className="type-label text-ink-faint">{k}</dt><dd className="mt-1 text-ink-body">{v}</dd></div>)}
       </dl>
       {coupon && (
         <Panel title="Your referral code" flush={false}>

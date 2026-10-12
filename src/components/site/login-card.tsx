@@ -96,7 +96,7 @@ export function LoginCard({ heading, sub, next, googleEnabled, emailEnabled, dem
       {demoAccounts && demoAccounts.length > 0 && (
         <form action={demoAction} className="mt-6 border-t border-line pt-5" aria-label="Demo access">
           <p className="type-label text-oxblood">Demo access</p>
-          <p className="mt-1.5 text-xs leading-[1.5] text-ink-faint">Pre-filled test accounts with fake data. Ask Samrudh for the passcodes.</p>
+          <p className="mt-1.5 text-xs leading-[1.5] text-ink-faint">Pre-filled test accounts with fake data. Ask the admin team for the passcodes.</p>
           <input type="hidden" name="next" value={next ?? ""} />
           <div className="mt-3 flex flex-col gap-3">
             <div>

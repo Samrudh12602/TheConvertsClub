@@ -14,7 +14,7 @@ describe("Additional PI eligibility", () => {
     for (const slug of ADDITIONAL_PI_PLANS) expect(await canBuyAdditionalPi(fake([slug]), "u")).toBe(true);
   });
   it("is closed to everyone else: WAT, SOP, GD, guidance, trials, direct sessions", async () => {
-    for (const slug of ["wat", "sop-basic", "sop-detailed", "mock-gd", "quick-guidance", "trial-mock-pi", "trial-guidance", "pi-with-samrudh", "strategy-with-samrudh", "panel-pi"]) {
+    for (const slug of ["wat", "sop-basic", "sop-detailed", "mock-gd", "quick-guidance", "trial-mock-pi", "guidance-call", "pi-one-to-one", "strategy-call", "panel-pi"]) {
       expect(await canBuyAdditionalPi(fake([slug]), "u"), slug).toBe(false);
     }
     expect(await canBuyAdditionalPi(fake([]), "u")).toBe(false);

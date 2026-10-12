@@ -32,7 +32,7 @@ function TierBox({ tier }: { tier: "SENIOR" | "JUNIOR" }) {
         <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.1em] text-dark-muted">Your tier</span>
         <span className="rounded bg-gradient-to-b from-gold to-gold-deep px-1.5 py-1 text-[10px] font-bold leading-none tracking-[0.09em] text-white shadow-xs">{tier}</span>
       </div>
-      <p className="mt-2 text-[11px] leading-normal text-dark-muted">Visible only to you and Samrudh. Students never see it.</p>
+      <p className="mt-2 text-[11px] leading-normal text-dark-muted">Visible only to you and the admin team. Students never see it.</p>
     </div>
   );
 }

@@ -21,6 +21,8 @@ import { listMocksFor } from "@/server/mocks";
 import { gdpiComingSoon } from "@/server/site-mode";
 import { studentStage } from "@/server/student-kind";
 import { SnapOffers } from "@/components/student/snap-offers";
+import { GuidanceCard } from "@/components/student/guidance-card";
+import { GUIDANCE_KINDS, GUIDANCE_SLUGS } from "@/lib/guidance";
 import { paymentsConfigured } from "@/server/razorpay";
 import { requireStudent } from "@/server/session";
 
@@ -49,6 +51,7 @@ export default async function StudentDashboard() {
   ]);
   const bookable = (["PI", "STRATEGY", "GUIDANCE", "PI_DIRECT", "STRATEGY_DIRECT", "GD"] as const).reduce((n, k) => n + (creditSummary[k]?.available ?? 0), 0);
   const [soon, stage, snap] = await Promise.all([gdpiComingSoon(), studentStage(db, user.id), listMocksFor(user.id)]);
+  const guidancePhone = stage !== "gdpi" ? (await db.order.findFirst({ where: { userId: user.id, status: "PAID", product: { slug: { in: [...GUIDANCE_SLUGS] } } }, orderBy: { createdAt: "desc" }, select: { guestPhone: true } }))?.guestPhone : null;
   const inProgress = snap.mocks.find((m) => m.attempt?.status === "IN_PROGRESS");
   const startable = snap.mocks.find((m) => m.canStart);
   const lastDone = [...snap.mocks].reverse().find((m) => m.attempt?.status === "SUBMITTED");
@@ -64,6 +67,10 @@ export default async function StudentDashboard() {
   return (
     <PortalPage>
       {enrolledCount > 0 && stage === "gdpi" && <WelcomeTour name={user.name?.split(" ")[0] ?? "there"} />}
+      {stage !== "gdpi" && (() => {
+        const requests = GUIDANCE_KINDS.map((k) => ({ label: CREDIT_LABEL[k], count: creditSummary[k]?.available ?? 0 })).filter((b) => b.count > 0);
+        return <GuidanceCard requests={requests} phone={guidancePhone ?? user.phone} />;
+      })()}
       {stage === "new" ? (
         <>
           <SnapOffers user={user} title="Welcome. Pick a plan and take your first SNAP mock" lead="Sit a full-length mock on the real exam screen, then see exactly where your marks went. Start with the ₹50 test mock, or take a pack of 5 or 10." />

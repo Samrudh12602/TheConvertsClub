@@ -33,7 +33,7 @@ export function ReviewUpload({ kinds, uploadsEnabled }: { kinds: string[]; uploa
   return (
     <form onSubmit={submit} className="rounded-[11px] border border-dashed border-[#CFC6B9] bg-card p-6">
       <h2 className="text-center font-display text-[15px] font-bold leading-[1.3] text-ink">Submit your WAT or SOP</h2>
-      <p className="mx-auto mt-1.5 max-w-[52ch] text-center text-[12.5px] leading-normal text-ink-faint">PDF or DOCX, up to 5 MB. Files stay private and are visible only to your assigned mentor and Samrudh.</p>
+      <p className="mx-auto mt-1.5 max-w-[52ch] text-center text-[12.5px] leading-normal text-ink-faint">PDF or DOCX, up to 5 MB. Files stay private and are visible only to your assigned mentor and our admin team.</p>
       <div className="mx-auto mt-4 flex max-w-[460px] flex-col gap-3">
         <div>
           <label htmlFor="kind" className="type-label mb-1.5 block text-ink-faint">What are you submitting</label>

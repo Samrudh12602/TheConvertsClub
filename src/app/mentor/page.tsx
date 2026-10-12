@@ -127,7 +127,7 @@ export default async function MentorDashboard() {
             <p className="text-[12.5px] leading-[1.55] text-ink-2">Refer <strong>{referral.every}</strong> students with your code and earn <strong>{referral.percent}%</strong> of the fees they paid.</p>
             <div className="mt-3.5"><Meter label={`${referral.students % referral.every} of ${referral.every} students toward your next bonus`} note={`${referral.toNext} to go`} pct={((referral.students % referral.every) / referral.every) * 100} tone="oxblood" /></div>
             <p className="tnum mt-3 text-[12px] text-ink-faint">{referral.students} student{referral.students === 1 ? "" : "s"} referred in total{referral.awards.length > 0 ? ` · ${referral.awards.length} bonus${referral.awards.length === 1 ? "" : "es"} earned (${formatPaise(referral.awards.reduce((n, a) => n + a.amountPaise, 0))})` : ""}</p>
-            <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">A student counts once their purchase is past the refund window. Bonuses are approved by Samrudh and paid with your session pay.</p>
+            <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-faint">A student counts once their purchase is past the refund window. Bonuses are approved by the admin team and paid with your session pay.</p>
           </Panel>
         )}
       </Section>

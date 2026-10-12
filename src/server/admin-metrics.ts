@@ -2,6 +2,7 @@ import type { db as Db } from "@/lib/db";
 import { getProducts } from "@/lib/catalog";
 import { appUrl } from "@/lib/env";
 import { GATEWAY_FEE_STARTS_AT, gatewayCost, gatewayFeeNotice } from "@/lib/gateway-fee";
+import { GUIDANCE_KINDS } from "@/lib/guidance";
 import { bucketByDay, lastDays, pctDelta, sum, weekHeat } from "@/lib/metrics";
 
 type Client = typeof Db;
@@ -188,3 +189,19 @@ export async function loadMoney(db: Client, now: Date = new Date()) {
   return { gross, gateway, owed, owedCount: payable._count, refunded, refundCount: refunds._count, kept: gross - gateway - owed - refunded };
 }
 
+
+export interface GuidanceRequest { key: string; userId: string; kind: (typeof GUIDANCE_KINDS)[number]; name: string; email: string; phone: string; product: string; paidAt: string }
+
+const SLUG_FOR_KIND = { TRIAL_GUIDANCE: "guidance-call", STRATEGY_DIRECT: "strategy-call" } as const;
+
+/** One-to-one guidance calls that are paid for and not yet marked as called, newest first, with the number to ring. */
+export async function loadGuidanceRequests(db: Client): Promise<GuidanceRequest[]> {
+  const rows = await db.creditLedger.groupBy({ by: ["userId", "kind"], _sum: { delta: true }, where: { kind: { in: [...GUIDANCE_KINDS] } } });
+  const pending = rows.filter((r) => (r._sum.delta ?? 0) > 0) as { userId: string; kind: (typeof GUIDANCE_KINDS)[number]; _sum: { delta: number | null } }[];
+  const out: GuidanceRequest[] = [];
+  for (const r of pending) {
+    const orders = await db.order.findMany({ where: { userId: r.userId, status: { in: [...REVENUE] }, product: { slug: SLUG_FOR_KIND[r.kind] } }, orderBy: { createdAt: "desc" }, take: r._sum.delta ?? 1, select: { id: true, guestName: true, guestEmail: true, guestPhone: true, createdAt: true, product: { select: { name: true } } } });
+    for (const o of orders) out.push({ key: o.id, userId: r.userId, kind: r.kind, name: o.guestName, email: o.guestEmail, phone: o.guestPhone, product: o.product.name, paidAt: o.createdAt.toISOString() });
+  }
+  return out.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+}

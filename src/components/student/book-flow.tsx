@@ -25,7 +25,7 @@ const FOCUS_HINT: Record<string, string> = { HR_PROFILE: "Your story, why MBA, w
 const TYPE_ICON: Record<string, React.ReactNode> = { MOCK_PI: <Mic />, STRATEGY_CALL: <Compass />, GUIDANCE: <Lightbulb />, PI_DIRECT: <Crown />, STRATEGY_DIRECT: <Crown />, TRIAL_GUIDANCE: <Lightbulb />, TRIAL_PI: <Mic />, PANEL_PI: <Users /> };
 const PART = (iso: string) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: IST, hour: "numeric", hour12: false }).format(new Date(iso))) % 24;
 const DAYPARTS = [["Morning", <Sun key="m" />, (h: number) => h < 12], ["Afternoon", <Sunset key="a" />, (h: number) => h >= 12 && h < 17], ["Evening", <Moon key="e" />, (h: number) => h >= 17]] as const;
-const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "PI with Samrudh", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call with Samrudh", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Trial guidance call · 25 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"], ["PANEL_PI", "Panel PI · 3 panelists", "PANEL_PI"]] as const;
+const TYPES = [["MOCK_PI", "Mock PI", "PI"], ["STRATEGY_CALL", "Strategy call", "STRATEGY"], ["GUIDANCE", "Guidance call", "GUIDANCE"], ["PI_DIRECT", "One-to-one mock interview", "PI_DIRECT"], ["STRATEGY_DIRECT", "Strategy call", "STRATEGY_DIRECT"], ["TRIAL_GUIDANCE", "Guidance call · 30 min", "TRIAL_GUIDANCE"], ["TRIAL_PI", "Trial mock PI", "TRIAL_PI"], ["PANEL_PI", "Panel PI · 3 panelists", "PANEL_PI"]] as const;
 
 interface Props {
   credits: Record<string, number>;

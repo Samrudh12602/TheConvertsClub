@@ -77,7 +77,7 @@ export function FeedbackForm({ targetId, proof }: { targetId: string; proof?: { 
               <input id="heldAt" type="datetime-local" value={f.heldAt} onChange={(e) => setF({ ...f, heldAt: e.target.value })} className="min-h-11 w-full rounded-xl border border-line-strong bg-white px-3 text-base text-ink transition focus:border-oxblood focus:ring-2 focus:ring-oxblood/15 md:text-[13px]" />
             </div>
           </div>
-          <p className="mt-2.5 text-[11.5px] leading-[1.5] text-ink-faint">Share the link so that Samrudh and the student can open it. Your pay for the session is added when you submit.</p>
+          <p className="mt-2.5 text-[11.5px] leading-[1.5] text-ink-faint">Share the link so that the admin team and the student can open it. Your pay for the session is added when you submit.</p>
         </div>
       )}
 
@@ -120,9 +120,9 @@ export function FeedbackForm({ targetId, proof }: { targetId: string; proof?: { 
           ))}
         </div>
         <div className="mt-5 rounded-xl border border-dashed border-oxblood-line bg-oxblood-tint/40 p-3.5">
-          <label htmlFor="privateNote" className="type-label flex items-center gap-1.5 text-oxblood"><Lock aria-hidden className="size-3.5" />Private note to Samrudh</label>
+          <label htmlFor="privateNote" className="type-label flex items-center gap-1.5 text-oxblood"><Lock aria-hidden className="size-3.5" />Private note to the admin team</label>
           <p className="mt-1 text-[11.5px] leading-normal text-ink-faint">Never shown to the student.</p>
-          <textarea id="privateNote" value={f.privateNote} onChange={(e) => setF({ ...f, privateNote: e.target.value })} rows={3} placeholder="Red flags, plagiarism, attitude, anything Samrudh should know." className="mt-2 w-full rounded-xl border border-line bg-white p-3 text-base leading-[1.6] text-ink md:text-[12.5px]" />
+          <textarea id="privateNote" value={f.privateNote} onChange={(e) => setF({ ...f, privateNote: e.target.value })} rows={3} placeholder="Red flags, plagiarism, attitude, anything the admin team should know." className="mt-2 w-full rounded-xl border border-line bg-white p-3 text-base leading-[1.6] text-ink md:text-[12.5px]" />
         </div>
       </div>
 

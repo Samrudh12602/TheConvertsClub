@@ -21,7 +21,7 @@ export async function loadInbox(isDemoViewer: boolean, now = new Date()): Promis
     db.mentorApplication.findMany({ where: { stage: { in: ["NEW", "SCREENING", "TRIAL_MOCK"] } }, orderBy: { createdAt: "asc" } }),
     db.review.findMany({ where: { status: "SUBMITTED" }, orderBy: { submittedAt: "asc" }, include: { student: { select: { name: true } } } }),
     // Students who paid for a session with the owner (trial or direct) and haven't booked it yet.
-    db.creditLedger.groupBy({ by: ["userId", "kind"], _sum: { delta: true, reservedDelta: true }, where: { kind: { in: ["TRIAL_GUIDANCE", "TRIAL_PI", "PI_DIRECT", "STRATEGY_DIRECT"] } } }),
+    db.creditLedger.groupBy({ by: ["userId", "kind"], _sum: { delta: true, reservedDelta: true }, where: { kind: { in: ["TRIAL_PI", "PI_DIRECT"] } } }),
     getInbox(isDemoViewer),
     db.order.findMany({ where: { status: "FAILED", createdAt: { gte: new Date(now.getTime() - 7 * 24 * HOUR) } }, orderBy: { createdAt: "desc" }, take: 20, include: { product: { select: { name: true } } } }),
     db.session.findMany({ where: { type: "PANEL_PI", status: { in: ["CONFIRMED", "REQUESTED"] }, startsAt: { gt: now } }, orderBy: { startsAt: "asc" }, include: { student: { select: { name: true } }, panelists: { select: { status: true } } } }),

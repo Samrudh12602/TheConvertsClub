@@ -16,15 +16,15 @@ describe("seed catalog matches the spec", () => {
       "sop-detailed": 399,
       "sop-basic": 99,
       "quick-guidance": 299,
-      "pi-with-samrudh": 699,
-      "strategy-with-samrudh": 349,
+      "pi-one-to-one": 699,
+      "strategy-call": 299,
       "snap-test-mock": 50,
       "snap-mocks-5": 499,
       "snap-mocks-10": 899,
       "snap-upgrade-10": 499,
       "panel-pi": 999,
       "panel-pi-upgrade": 199,
-      "trial-guidance": 10,
+      "guidance-call": 199,
       "trial-mock-pi": 50,
     });
   });

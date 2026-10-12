@@ -33,8 +33,8 @@ export async function getServices() {
     { name: "Mock GD / GE", price: priceRangeLabel(by("mock-gd")), body: "Eight people, a live topic, a moderator who interrupts like a real panel. You get individual notes, not a group verdict.", meta: "Batches run most evenings" },
     { name: "WAT evaluation", price: priceRangeLabel(by("wat")), body: "Upload your essay. Marked on structure, argument, balance and conclusion, with the paragraph that let you down rewritten.", meta: "24-hour turnaround" },
     { name: "SOP review", price: priceRangeLabel(by("sop-basic", "sop-detailed")), body: "Basic covers structure, tone and red flags. Detailed adds line edits and a rewritten paragraph.", meta: "Detailed includes one revision on Plus" },
-    { name: "Strategy call", price: "In packages", body: "Forty-five minutes on sequencing: which calls to prioritise, what to drop, what your profile can and can't carry.", meta: "With Samrudh" },
-    { name: "PI / Strategy with Samrudh", price: priceRangeLabel(by("pi-with-samrudh", "strategy-with-samrudh")), body: "Want it straight from the founder? A one-hour mock PI, or a 30-minute strategy call, directly with Samrudh.", meta: "Written feedback within 24 hours" },
+    { name: "Strategy call", price: "In packages", body: "Forty-five minutes on sequencing: which calls to prioritise, what to drop, what your profile can and can't carry.", meta: "One-to-one" },
+    { name: "One-to-one mock interview / Strategy call", price: priceRangeLabel(by("pi-one-to-one", "strategy-call")), body: "Want it straight from the founder? A one-hour mock PI, or a 30-minute strategy call, one-to-one with an expert from our team.", meta: "Written feedback within 24 hours" },
     { name: "Quick Guidance", price: priceRangeLabel(by("quick-guidance")), body: "For people who aren't sure they need any of the above. One call, honest answer about where you stand.", meta: "45 minutes" },
   ];
 }
@@ -49,7 +49,7 @@ const defaultFaqs = async () => {
     { q: "How long is a mock?", a: "The slot is one hour. The interview usually runs twenty to thirty minutes, and the rest is debrief — that's where the value is." },
     { q: "Are sessions recorded?", a: `Not by default. If a session is recorded we tell you before it starts, and the recording stays in your library for ${p.recordingRetentionDays} days.` },
     { q: "Is there a refund?", a: `Within ${p.refundWindowHours} hours of purchase, if you haven't used a credit. After that, unused credits can be converted but not refunded.` },
-    { q: "Who can see my SOP, marks and feedback?", a: "Your assigned mentor and Samrudh. Files are stored privately and download links expire." },
+    { q: "Who can see my SOP, marks and feedback?", a: "Your assigned mentor and our admin team. Files are stored privately and download links expire." },
   ];
 };
 
@@ -88,7 +88,7 @@ const DEMO_MENTORS: PublicMentor[] = [
   { name: "Arjun Rao", college: "SPJIMR, 2026", bio: "Ex-consulting. Good on why-MBA and career-switch stories." },
   { name: "Neha Pillai", college: "MDI Gurgaon, 2026", bio: "Commerce background. Handles academics-heavy panels." },
   { name: "Kabir Shah", college: "IIM Indore, 2026", bio: "IPM. Knows the fresher and young-profile interviews." },
-  { name: "Samrudh", college: "Founder", bio: "Runs the strategy calls and everything behind the scenes." },
+  { name: "The Converts Club team", college: "Admin", bio: "Runs the strategy calls and everything behind the scenes." },
 ].map((m, i) => ({ ...m, id: `demo-${i}`, photoSrc: null, demo: true }));
 
 /** Real ACTIVE, publicly-visible mentors, exposing name, photo, college and a short bio only. Never tier. */

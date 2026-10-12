@@ -1,3 +1,4 @@
+import { GuidanceBand } from "@/components/site/guidance-sections";
 import { GdpiTeaser, SnapAnalysisShowcase, SnapBand, SnapCatalogue, SnapFeatures, SnapHero, SnapHow, SnapPacks } from "@/components/site/snap-sections";
 import { SNAP_FAQS } from "@/lib/snap-content";
 import { listMocksFor } from "@/server/mocks";
@@ -15,7 +16,7 @@ import { getPolicy } from "@/lib/settings-db";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [soon, snapTest, snapFive, snapTen] = await Promise.all([gdpiComingSoon(), getProduct("snap-test-mock"), getProduct("snap-mocks-5"), getProduct("snap-mocks-10")]);
+  const [soon, snapTest, snapFive, snapTen, guideCall, guideStrategy] = await Promise.all([gdpiComingSoon(), getProduct("snap-test-mock"), getProduct("snap-mocks-5"), getProduct("snap-mocks-10"), getProduct("guidance-call"), getProduct("strategy-call")]);
   const snap = { test: snapTest, five: snapFive, ten: snapTen };
   if (soon) {
     // The GDPI offering is "coming soon": the front page is the SNAP mocks.
@@ -28,6 +29,7 @@ export default async function HomePage() {
         <SnapAnalysisShowcase />
         <SnapHow />
         <SnapCatalogue mocks={mocks.map((m) => ({ id: m.id, title: m.title, isTest: m.isTest, questions: m.questions, durationMin: m.durationMin, released: m.released, releaseAt: m.releaseAt }))} planned={snap.ten ? 10 : 0} />
+        <GuidanceBand p={{ guide: guideCall, strategy: guideStrategy }} />
         <GdpiTeaser />
         <FaqTeaser items={SNAP_FAQS.slice(0, 6)} />
         <FinalCta snap />
