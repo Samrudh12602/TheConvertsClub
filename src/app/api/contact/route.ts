@@ -33,9 +33,11 @@ export async function POST(req: NextRequest) {
   if (!inbox) return NextResponse.json({ error: "Messages aren't being accepted right now. Please email us directly." }, { status: 503 });
 
   const name = oneLine(d.name);
+  // Saved first, so the message is safe even if an email filter or the mail server loses the notification.
+  await db.contactMessage.create({ data: { name, email: d.email.toLowerCase(), topic: d.topic, message: d.message } });
   await sendEmail({ template: "contact_message", to: inbox, replyTo: d.email, vars: { name, topic: d.topic, message: d.message }, details: [{ k: "From", v: `${name} <${d.email}>` }, { k: "Topic", v: d.topic }] });
   await sendEmail({ template: "contact_received", to: d.email, vars: { name } });
   const admins = await db.user.findMany({ where: { role: "ADMIN", isDemo: false }, select: { id: true } });
-  await Promise.all(admins.map((a) => notify(a.id, { title: `Message from ${name}: ${d.topic}`, body: d.message.slice(0, 140), href: "/admin/mailbox?tab=mail" })));
+  await Promise.all(admins.map((a) => notify(a.id, { title: `Message from ${name}: ${d.topic}`, body: d.message.slice(0, 140), href: "/admin/inbox" })));
   return NextResponse.json({ ok: true });
 }

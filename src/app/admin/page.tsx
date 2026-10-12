@@ -6,6 +6,7 @@ import { ActivityFeed, ago } from "@/components/admin/viz/activity-feed";
 import { Donut } from "@/components/admin/viz/donut";
 import { Funnel } from "@/components/admin/viz/funnel";
 import { HeroSpark } from "@/components/admin/viz/hero-spark";
+import { ContactMessages } from "@/components/admin/contact-messages";
 import { GuidanceRequests } from "@/components/admin/guidance-requests";
 import { LaunchChecklist } from "@/components/admin/viz/launch-checklist";
 import { StatTile } from "@/components/admin/viz/stat-tile";
@@ -17,7 +18,7 @@ import { GATEWAY_EFFECTIVE_PERCENT, gatewayFeeNotice } from "@/lib/gateway-fee";
 import { fmtTime } from "@/lib/format";
 import { SESSION_STATUS, sessionTitle } from "@/lib/labels";
 import { compactInr, greeting } from "@/lib/metrics";
-import { loadActivity, loadEarlyBird, loadFunnel, loadGuidanceRequests, loadLaunchChecklist, loadMoney, loadMockBoard, loadTrends } from "@/server/admin-metrics";
+import { loadActivity, loadEarlyBird, loadContactMessages, loadFunnel, loadGuidanceRequests, loadLaunchChecklist, loadMoney, loadMockBoard, loadTrends } from "@/server/admin-metrics";
 import { overdueFeedback } from "@/server/reminders";
 import { requireAdmin } from "@/server/session";
 import { nowMs } from "@/lib/datetime";
@@ -44,8 +45,8 @@ export default async function AdminDashboard() {
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
   const weekAhead = new Date(now.getTime() + 7 * 86_400_000);
 
-  const [t, funnel, board, activity, early, money, demoOn, calls] = await Promise.all([
-    loadTrends(db, DAYS, now), loadFunnel(db), loadMockBoard(db), loadActivity(db, 12), loadEarlyBird(), loadMoney(db, now), demoEnabled(), loadGuidanceRequests(db),
+  const [t, funnel, board, activity, early, money, demoOn, calls, contacts] = await Promise.all([
+    loadTrends(db, DAYS, now), loadFunnel(db), loadMockBoard(db), loadActivity(db, 12), loadEarlyBird(), loadMoney(db, now), demoEnabled(), loadGuidanceRequests(db), loadContactMessages(db),
   ]);
   const checklist = await loadLaunchChecklist(db, { googleOn: googleEnabled(), emailOn: emailConfigured(), demoOn });
   const fee = gatewayFeeNotice(now);
@@ -120,6 +121,7 @@ export default async function AdminDashboard() {
         </div>
       </section>
 
+      <ContactMessages rows={contacts.map((c) => ({ ...c, when: ago(c.createdAt, now) }))} />
       <GuidanceRequests rows={calls.map((c) => ({ key: c.key, userId: c.userId, kind: c.kind, name: c.name, email: c.email, phone: c.phone, product: c.product, when: ago(c.paidAt, now) }))} />
 
       {fee.freeNow && (

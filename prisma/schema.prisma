@@ -959,6 +959,20 @@ model SentMail {
   @@index([batchId])
 }
 
+/// A message sent through the public Contact page. Kept here as well as emailed, so a spam filter can never hide it.
+model ContactMessage {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  topic     String
+  message   String
+  handled   Boolean   @default(false)
+  handledAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([handled, createdAt])
+}
+
 model EmailTemplate {
   key       String   @id
   subject   String

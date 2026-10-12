@@ -8,7 +8,7 @@ import { rateLimit } from "@/server/ratelimit";
 import { audit } from "@/server/audit";
 import { BUSINESS } from "@/lib/business";
 import { MAX_RECIPIENTS, SENDER_KEYS, attachmentProblem, firstNameOf, parseRecipients } from "@/lib/mailbox";
-import { MailboxError, sendDirect, setMailRead, trashMail } from "@/server/mailbox";
+import { MailboxError, moveMail, sendDirect, setMailRead, trashMail } from "@/server/mailbox";
 
 type Result = { ok: true; message: string } | { ok: false; error: string };
 
@@ -91,6 +91,17 @@ export async function setReadAction(folder: string, uid: number, read: boolean):
     await setMailRead(folderSchema.parse(folder), z.number().int().positive().parse(uid), read);
     revalidatePath("/admin/mailbox");
     return { ok: true, message: read ? "Marked as read." : "Marked as unread." };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function moveToInboxAction(folder: string, uid: number): Promise<Result> {
+  try {
+    await requireAdmin();
+    await moveMail(folderSchema.parse(folder), z.number().int().positive().parse(uid), "inbox");
+    revalidatePath("/admin/mailbox");
+    return { ok: true, message: "Moved to your Inbox." };
   } catch (e) {
     return fail(e);
   }

@@ -216,6 +216,19 @@ export async function trashMail(folder: FolderKey, uid: number): Promise<void> {
   });
 }
 
+/** Moves a message to another folder (used to rescue a real message from Spam). */
+export async function moveMail(folder: FolderKey, uid: number, dest: FolderKey): Promise<void> {
+  await withClient(async (c) => {
+    const paths = await folderPaths(c);
+    const lock = await c.getMailboxLock(paths[folder]);
+    try {
+      await c.messageMove(String(uid), paths[dest], { uid: true });
+    } finally {
+      lock.release();
+    }
+  });
+}
+
 export async function setMailRead(folder: FolderKey, uid: number, read: boolean): Promise<void> {
   await withClient(async (c) => {
     const lock = await c.getMailboxLock((await folderPaths(c))[folder]);

@@ -3,10 +3,11 @@ import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Clock, FileText
 import { PortalPage } from "@/components/portal/portal-page";
 import { Kpi, KpiGrid } from "@/components/portal/ui";
 import { loadInbox, loadWatchlist, type InboxGroup } from "@/server/inbox";
+import { ContactMessages } from "@/components/admin/contact-messages";
 import { GuidanceRequests } from "@/components/admin/guidance-requests";
 import { ago } from "@/components/admin/viz/activity-feed";
 import { adminDb } from "@/server/demo";
-import { loadGuidanceRequests } from "@/server/admin-metrics";
+import { loadContactMessages, loadGuidanceRequests } from "@/server/admin-metrics";
 import { requireAdmin } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ const TONE: Record<string, string> = { oxblood: "bg-oxblood-tint text-oxblood", 
 
 export default async function AdminInbox() {
   const admin = await requireAdmin();
-  const [groups, watch, calls] = await Promise.all([loadInbox(admin.isDemo), loadWatchlist(), adminDb().then(loadGuidanceRequests)]);
+  const [groups, watch, calls, contacts] = await Promise.all([loadInbox(admin.isDemo), loadWatchlist(), adminDb().then(loadGuidanceRequests), adminDb().then(loadContactMessages)]);
   const now = new Date();
   const open = groups.filter((g) => g.total > 0);
   const total = open.reduce((n, g) => n + g.total, 0);
@@ -25,6 +26,7 @@ export default async function AdminInbox() {
 
   return (
     <PortalPage width="max-w-[1100px]">
+      <ContactMessages rows={contacts.map((c) => ({ ...c, when: ago(c.createdAt, now) }))} />
       <GuidanceRequests rows={calls.map((c) => ({ key: c.key, userId: c.userId, kind: c.kind, name: c.name, email: c.email, phone: c.phone, product: c.product, when: ago(c.paidAt, now) }))} />
       <KpiGrid>
         <Kpi label="Needs you" value={total} note={total ? `Across ${open.length} area${open.length === 1 ? "" : "s"}` : "All clear"} noteTone={total ? "oxblood" : "green"} icon={total ? <Inbox /> : <CheckCircle2 />} accent={total ? "oxblood" : "teal"} />

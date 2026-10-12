@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import clsx from "clsx";
 import { ArrowLeft, Paperclip, PenSquare, Reply, Search } from "lucide-react";
 import { PortalPage } from "@/components/portal/portal-page";
@@ -25,6 +26,9 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 export default async function MailboxPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin();
+  // A browser prefetch must never open a connection to the mail server (or mark mail as read).
+  const h = await headers();
+  if (h.get("next-router-prefetch") || h.get("purpose") === "prefetch") return <PortalPage width="max-w-[1240px]"><div /></PortalPage>;
   const raw = await searchParams;
   const sp: Params = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, one(v)]));
   const tab = sp.tab === "log" || sp.tab === "auto" ? sp.tab : "mail";
@@ -40,10 +44,10 @@ export default async function MailboxPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Mailbox sections" className="flex flex-wrap gap-1.5">
           {([["mail", "Inbox"], ["log", "Sent log"], ["auto", "Automatic emails"]] as const).map(([k, label]) => (
-            <Link key={k} href={`/admin/mailbox?tab=${k}`} aria-current={tab === k ? "page" : undefined} className={clsx("rounded-full px-3.5 py-2.5 text-xs font-medium leading-none no-underline hover:no-underline", tab === k ? "bg-ink text-white" : "border border-line-strong bg-white text-ink-2 hover:border-ink")}>{label}</Link>
+            <Link prefetch={false} key={k} href={`/admin/mailbox?tab=${k}`} aria-current={tab === k ? "page" : undefined} className={clsx("rounded-full px-3.5 py-2.5 text-xs font-medium leading-none no-underline hover:no-underline", tab === k ? "bg-ink text-white" : "border border-line-strong bg-white text-ink-2 hover:border-ink")}>{label}</Link>
           ))}
         </nav>
-        <Link href="/admin/mailbox?tab=mail&compose=1" className={buttonClasses({ size: "sm" })}><PenSquare className="size-4" aria-hidden /> Write an email</Link>
+        <Link prefetch={false} href="/admin/mailbox?tab=mail&compose=1" className={buttonClasses({ size: "sm" })}><PenSquare className="size-4" aria-hidden /> Write an email</Link>
       </div>
       {tab === "log" ? <SentLog /> : tab === "auto" ? <AutomaticLog /> : <MailView sp={sp} href={href} />}
     </PortalPage>
@@ -71,7 +75,9 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
   let opened: OpenedMail | null = null;
   let problem: string | null = null;
   try {
-    [list, opened] = await Promise.all([listMail({ folder, page, q: sp.q, alias }), uid ? openMail(folder, uid) : Promise.resolve(null)]);
+    // One connection after the other: the mail server limits how many a mailbox may hold open at once.
+    list = await listMail({ folder, page, q: sp.q, alias });
+    opened = uid ? await openMail(folder, uid) : null;
   } catch (e) {
     problem = e instanceof MailboxError ? e.message : "The mailbox could not be read just now. Try again in a moment.";
     if (!(e instanceof MailboxError)) console.error(e);
@@ -85,7 +91,7 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
         <div className={clsx("flex flex-col gap-3", rightActive && "hidden lg:flex")}>
           <div className="flex flex-wrap gap-1.5">
             {FOLDERS.map((f) => (
-              <Link key={f.key} href={href({ folder: f.key, uid: undefined, page: undefined, compose: undefined, reply: undefined })} aria-current={folder === f.key ? "page" : undefined} className={clsx("rounded-lg px-3 py-2 text-[12px] font-semibold leading-none no-underline hover:no-underline", folder === f.key ? "bg-oxblood-tint text-oxblood" : "text-ink-muted hover:bg-surface")}>
+              <Link prefetch={false} key={f.key} href={href({ folder: f.key, uid: undefined, page: undefined, compose: undefined, reply: undefined })} aria-current={folder === f.key ? "page" : undefined} className={clsx("rounded-lg px-3 py-2 text-[12px] font-semibold leading-none no-underline hover:no-underline", folder === f.key ? "bg-oxblood-tint text-oxblood" : "text-ink-muted hover:bg-surface")}>
                 {f.label}{f.key === "inbox" && list ? <span className="tnum ml-1.5 text-ink-faint">{list.unseen ? `${list.unseen} new` : ""}</span> : null}
               </Link>
             ))}
@@ -100,7 +106,7 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
           <div className="flex flex-wrap items-center gap-1.5 text-[11.5px] text-ink-faint">
             <span>Sent to:</span>
             {[{ key: undefined, label: "All" }, ...SENDERS.map((s) => ({ key: s.key as string | undefined, label: s.key }))].map((o) => (
-              <Link key={o.label} href={href({ to: o.key, uid: undefined, page: undefined })} aria-current={(sp.to ?? undefined) === o.key ? "page" : undefined} className={clsx("rounded-full px-2.5 py-1.5 leading-none no-underline hover:no-underline", (sp.to ?? undefined) === o.key ? "bg-ink text-white" : "border border-line-strong bg-white text-ink-2")}>{o.label}</Link>
+              <Link prefetch={false} key={o.label} href={href({ to: o.key, uid: undefined, page: undefined })} aria-current={(sp.to ?? undefined) === o.key ? "page" : undefined} className={clsx("rounded-full px-2.5 py-1.5 leading-none no-underline hover:no-underline", (sp.to ?? undefined) === o.key ? "bg-ink text-white" : "border border-line-strong bg-white text-ink-2")}>{o.label}</Link>
             ))}
           </div>
           <Panel>
@@ -108,7 +114,7 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
               <ul>
                 {list.rows.map((m) => (
                   <li key={m.uid} className="border-b border-line-soft last:border-b-0">
-                    <Link href={href({ uid: String(m.uid), compose: undefined, reply: undefined })} className={clsx("block px-3.5 py-3 no-underline transition-colors hover:bg-surface hover:no-underline", m.uid === uid && "bg-oxblood-tint/50")}>
+                    <Link prefetch={false} href={href({ uid: String(m.uid), compose: undefined, reply: undefined })} className={clsx("block px-3.5 py-3 no-underline transition-colors hover:bg-surface hover:no-underline", m.uid === uid && "bg-oxblood-tint/50")}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className={clsx("min-w-0 truncate text-[13px]", m.seen ? "text-ink-2" : "font-bold text-ink")}>{!m.seen && <span aria-label="Unread" className="mr-1.5 inline-block size-2 rounded-full bg-oxblood align-middle" />}{folder === "sent" ? `To: ${m.to[0] ?? ""}` : m.from.name || m.from.address}</span>
                         <span className="tnum flex-none text-[11px] text-ink-faint">{m.date ? formatIstDateTime(new Date(m.date)) : ""}</span>
@@ -123,17 +129,17 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
           </Panel>
           {list && list.pages > 1 && (
             <div className="flex items-center justify-between text-[12px] text-ink-muted">
-              {page > 1 ? <Link href={href({ page: String(page - 1), uid: undefined })} className="font-semibold text-oxblood">← Newer</Link> : <span />}
+              {page > 1 ? <Link prefetch={false} href={href({ page: String(page - 1), uid: undefined })} className="font-semibold text-oxblood">← Newer</Link> : <span />}
               <span className="tnum">Page {page} of {list.pages} · {list.total} messages</span>
-              {page < list.pages ? <Link href={href({ page: String(page + 1), uid: undefined })} className="font-semibold text-oxblood">Older →</Link> : <span />}
+              {page < list.pages ? <Link prefetch={false} href={href({ page: String(page + 1), uid: undefined })} className="font-semibold text-oxblood">Older →</Link> : <span />}
             </div>
           )}
         </div>
 
         <div className={clsx(!rightActive && "hidden lg:block")}>
           {composing ? (
-            <Panel title="New email" flush={false} action={<Link href={href({ compose: undefined })} className="text-[12px] font-semibold text-ink-muted lg:hidden">Close</Link>}>
-              <MailComposer doneHref="/admin/mailbox?tab=log" templates={templates} />
+            <Panel title="New email" flush={false} action={<Link prefetch={false} href={href({ compose: undefined })} className="text-[12px] font-semibold text-ink-muted lg:hidden">Close</Link>}>
+              <MailComposer doneHref="/admin/mailbox?tab=log" templates={templates} defaults={{ from: SENDERS.find((x) => x.key === sp.from)?.key, to: sp.to, subject: sp.subject }} />
             </Panel>
           ) : opened ? (
             <Reader m={opened} href={href} reply={sp.reply === "1"} />
@@ -164,7 +170,7 @@ function Reader({ m, href, reply }: { m: OpenedMail; href: (p: Params) => string
     <div className="flex flex-col gap-4">
       <Panel>
         <div className="border-b border-line-soft px-4 py-3.5">
-          <Link href={href({ uid: undefined, reply: undefined })} className="mb-2 inline-flex items-center gap-1 text-[12px] font-semibold text-ink-muted lg:hidden"><ArrowLeft className="size-3.5" aria-hidden /> Back</Link>
+          <Link prefetch={false} href={href({ uid: undefined, reply: undefined })} className="mb-2 inline-flex items-center gap-1 text-[12px] font-semibold text-ink-muted lg:hidden"><ArrowLeft className="size-3.5" aria-hidden /> Back</Link>
           <h2 className="font-display text-[17px] font-bold leading-snug text-ink">{m.subject}</h2>
           <dl className="mt-2 grid gap-0.5 text-[12.5px] text-ink-muted">
             <div className="flex gap-2"><dt className="w-9 flex-none text-ink-faint">From</dt><dd className="min-w-0 break-words">{formatAddress(m.from)}</dd></div>
@@ -173,7 +179,7 @@ function Reader({ m, href, reply }: { m: OpenedMail; href: (p: Params) => string
             {m.date && <div className="flex gap-2"><dt className="w-9 flex-none text-ink-faint">Date</dt><dd>{formatIstDateTime(new Date(m.date))} IST</dd></div>}
           </dl>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link href={href({ reply: "1" })} className={buttonClasses({ size: "sm" })}><Reply className="size-4" aria-hidden /> Reply</Link>
+            <Link prefetch={false} href={href({ reply: "1" })} className={buttonClasses({ size: "sm" })}><Reply className="size-4" aria-hidden /> Reply</Link>
             <MailActions folder={m.folder} uid={m.uid} backHref={href({ uid: undefined, reply: undefined })} />
           </div>
         </div>

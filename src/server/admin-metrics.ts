@@ -128,8 +128,7 @@ export async function loadActivity(db: Client, take = 12): Promise<ActivityItem[
     db.mockAttempt.findMany({ where: { status: "SUBMITTED" }, orderBy: { submittedAt: "desc" }, take: 6, select: { submittedAt: true, score: true, user: { select: { name: true } }, mock: { select: { title: true } } } }),
     db.sentMail.findMany({ where: { status: "SENT" }, orderBy: { createdAt: "desc" }, take: 4, select: { createdAt: true, subject: true, toAddress: true } }),
     db.refund.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { amountPaise: true, createdAt: true } }),
-    // Messages sent through the Contact page: they arrive as email in the Mailbox.
-    db.emailLog.findMany({ where: { template: "contact_message", status: "SENT" }, orderBy: { createdAt: "desc" }, take: 5, select: { createdAt: true, subject: true } }),
+    db.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { createdAt: true, name: true, topic: true } }),
   ]);
   const inr = (p: number) => `₹${Math.round(p / 100).toLocaleString("en-IN")}`;
   const items: ActivityItem[] = [
@@ -137,7 +136,7 @@ export async function loadActivity(db: Client, take = 12): Promise<ActivityItem[
     ...users.map((u) => ({ kind: "signup" as const, at: u.createdAt.toISOString(), title: `${u.name ?? "A student"} joined`, sub: "New student", href: `/admin/students/${u.id}` })),
     ...attempts.filter((a) => a.submittedAt).map((a) => ({ kind: "mock" as const, at: (a.submittedAt as Date).toISOString(), title: `${a.user.name ?? "A student"} finished ${a.mock.title}`, sub: a.score !== null ? `Scored ${a.score.toFixed(1)}` : "Submitted", href: "/admin/mocks" })),
     ...mails.map((m) => ({ kind: "mail" as const, at: m.createdAt.toISOString(), title: `Email sent: ${m.subject}`, sub: `to ${m.toAddress}`, href: "/admin/mailbox?tab=log" })),
-    ...contacts.map((c) => { const m = c.subject.match(/^Contact form: (.*) — (.*)$/); return { kind: "contact" as const, at: c.createdAt.toISOString(), title: `Message from ${m?.[2] ?? "a visitor"}`, sub: m ? `Contact page · ${m[1]}` : "Contact page", href: "/admin/mailbox?tab=mail" }; }),
+    ...contacts.map((c) => ({ kind: "contact" as const, at: c.createdAt.toISOString(), title: `Message from ${c.name}`, sub: `Contact page · ${c.topic}`, href: "/admin/inbox" })),
     ...refunds.map((r) => ({ kind: "refund" as const, at: r.createdAt.toISOString(), title: "Refund issued", sub: inr(r.amountPaise), href: "/admin/finance" })),
   ];
   return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, take);
@@ -207,4 +206,12 @@ export async function loadGuidanceRequests(db: Client): Promise<GuidanceRequest[
     for (const o of orders) out.push({ key: o.id, userId: r.userId, kind: r.kind, name: o.guestName, email: o.guestEmail, phone: o.guestPhone, product: o.product.name, paidAt: o.createdAt.toISOString() });
   }
   return out.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+}
+
+export interface ContactRow { id: string; name: string; email: string; topic: string; message: string; createdAt: string }
+
+/** Contact-page messages nobody has answered yet, oldest first. */
+export async function loadContactMessages(db: Client): Promise<ContactRow[]> {
+  const rows = await db.contactMessage.findMany({ where: { handled: false }, orderBy: { createdAt: "asc" }, take: 30 });
+  return rows.map((r) => ({ id: r.id, name: r.name, email: r.email, topic: r.topic, message: r.message, createdAt: r.createdAt.toISOString() }));
 }

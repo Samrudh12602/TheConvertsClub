@@ -709,3 +709,16 @@ export async function markGuidanceCalledAction(userId: string, kind: string): Pr
     return { ok: true, message: "Marked as called." };
   } catch (e) { return fail(e); }
 }
+
+// ───────────────── Contact-page messages ─────────────────
+
+export async function markContactHandledAction(id: string): Promise<Result> {
+  try {
+    const actor = await guard("contact");
+    const r = await db.contactMessage.updateMany({ where: { id, handled: false }, data: { handled: true, handledAt: new Date() } });
+    if (r.count === 0) throw new AdminError("That message is already marked as done.");
+    await audit({ actorId: actor.id, action: "contact.handled", entity: "ContactMessage", entityId: id });
+    refreshAll();
+    return { ok: true, message: "Marked as done." };
+  } catch (e) { return fail(e); }
+}
