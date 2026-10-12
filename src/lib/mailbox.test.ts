@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 import { ATTACH_MAX_FILES, LOGO_CID, attachmentProblem, composeHtml, composeText, framedEmailHtml, parseRecipients, quoteForReply, replySubject, senderFor, SENDERS, signatureText, threadHeaders } from "./mailbox";
 
 describe("senders", () => {
-  it("offers exactly support, admin and samrudh on the domain", () => {
-    expect(SENDERS.map((s) => s.address)).toEqual(["support@theconvertsclub.in", "admin@theconvertsclub.in", "samrudh@theconvertsclub.in"]);
+  it("offers exactly support, admin, billing and samrudh on the domain", () => {
+    expect(SENDERS.map((s) => s.address)).toEqual(["support@theconvertsclub.in", "admin@theconvertsclub.in", "billing@theconvertsclub.in", "samrudh@theconvertsclub.in"]);
+  });
+  it("signs billing mail as the billing team with the email only", () => {
+    const h = composeHtml("Hi", senderFor("billing"));
+    expect(h).toContain("Billing Team");
+    expect(h).toContain('href="mailto:billing@theconvertsclub.in"');
+    expect(h).not.toMatch(/Tel\.|tel:|77988/);
   });
   it("rejects an address that is not one of ours", () => {
     expect(senderFor("support")?.address).toBe("support@theconvertsclub.in");

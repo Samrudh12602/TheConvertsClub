@@ -7,6 +7,7 @@ import { BUSINESS } from "@/lib/business";
 export const SENDERS = [
   { key: "support", address: `support@${BUSINESS.domain}`, name: "The Converts Club Support", title: "Support Team", role: null, showPhone: false },
   { key: "admin", address: `admin@${BUSINESS.domain}`, name: "The Converts Club", title: "The Converts Club Team", role: null, showPhone: false },
+  { key: "billing", address: `billing@${BUSINESS.domain}`, name: "The Converts Club Billing", title: "Billing Team", role: null, showPhone: false },
   { key: "samrudh", address: `samrudh@${BUSINESS.domain}`, name: "Samrudh · The Converts Club", title: "Samrudh Dhaimodkar", role: "Founder", showPhone: true },
 ] as const;
 

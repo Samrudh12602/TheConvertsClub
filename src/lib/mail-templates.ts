@@ -47,7 +47,7 @@ export function buildMailTemplates(p: TemplatePrices): MailTemplate[] {
       name: "SNAP mocks: introduce the product",
       blurb: "For people who haven't bought yet. Explains what makes the mocks different and starts them on the test mock.",
       audience: "SPECIFIC",
-      from: "samrudh",
+      from: "admin",
       subject: "Take SNAP 2026 on the real exam screen, then see what went wrong",
       body: `# Your SNAP 2026 mock, on the real exam screen
 
@@ -83,7 +83,7 @@ Good luck with your preparation,`,
       name: "Early-bird offer with seats left",
       blurb: "Creates real urgency from your own numbers. The prices and seats left are filled in live from your Products page.",
       audience: "SPECIFIC",
-      from: "samrudh",
+      from: "admin",
       subject: seatsOpen ? "Early-bird SNAP mock prices, while the seats last" : "SNAP 2026 mock packs, open now",
       body: seatsOpen
         ? `# Early-bird prices, while the seats last

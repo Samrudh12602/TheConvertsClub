@@ -97,3 +97,12 @@ describe("priceNote", () => {
   });
   it("is null for a product that does not exist", () => expect(priceNote(null)).toBeNull());
 });
+
+describe("sender choices", () => {
+  it("sends the promotional templates under the brand, never the founder's personal address", () => {
+    const by = Object.fromEntries(buildMailTemplates(prices).map((t) => [t.id, t.from]));
+    expect(by["snap-launch"]).toBe("admin");
+    expect(by["early-bird"]).toBe("admin");
+    expect(by["pack-followup"]).toBe("support");
+  });
+});

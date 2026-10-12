@@ -140,7 +140,7 @@ async function MailView({ sp, href }: { sp: Params; href: (p: Params) => string 
           ) : uid && !problem ? (
             <Empty art="inbox">That message could not be opened.</Empty>
           ) : (
-            <Panel flush={false}><Empty art="inbox">Pick a message to read it, or write a new email. Mail sent to support@, admin@ and samrudh@ all arrives here.</Empty></Panel>
+            <Panel flush={false}><Empty art="inbox">Pick a message to read it, or write a new email. Mail sent to support@, admin@, billing@ and samrudh@ all arrives here.</Empty></Panel>
           )}
         </div>
       </div>
