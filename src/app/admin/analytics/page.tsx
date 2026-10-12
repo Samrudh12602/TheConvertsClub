@@ -10,6 +10,7 @@ import { RANGES, RangeTabs } from "@/components/admin/viz/range-tabs";
 import { ScoreHistogram } from "@/components/admin/viz/score-histogram";
 import { StatTile } from "@/components/admin/viz/stat-tile";
 import { TrendChart } from "@/components/admin/viz/trend-chart";
+import { gatewayFeeNotice } from "@/lib/gateway-fee";
 import { compactInr, histogram } from "@/lib/metrics";
 import { loadAudience, loadFunnel, loadMockBoard, loadMoney, loadTrends } from "@/server/admin-metrics";
 import { adminDb } from "@/server/demo";
@@ -159,7 +160,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
               { k: "Kept", v: compactInr(money.kept), cls: "bg-teal-tint text-teal" },
             ].map((x) => <div key={x.k} className={`rounded-xl p-3 ${x.cls}`}><dt className="text-[11px] font-semibold uppercase tracking-[0.06em] opacity-80">{x.k}</dt><dd className="tnum mt-1 font-display text-[20px] font-bold leading-none">{x.v}</dd></div>)}
           </dl>
-          <p className="mt-3 flex items-center gap-2 text-[12px] text-ink-faint"><Percent className="size-3.5" aria-hidden /> Refund rate {refundRate}% · gateway cost {compactInr(money.gateway)} (Razorpay&apos;s fee is waived until 13 Dec 2026)</p>
+          <p className="mt-3 flex items-center gap-2 text-[12px] text-ink-faint"><Percent className="size-3.5" aria-hidden /> Refund rate {refundRate}% · gateway cost {compactInr(money.gateway)} ({gatewayFeeNotice(now).freeNow ? `Razorpay's fee is waived until ${gatewayFeeNotice(now).lastFreeDayLabel}` : "Razorpay's 2.36% fee applies"})</p>
         </Panel>
       </Section>
 

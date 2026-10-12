@@ -17,13 +17,13 @@ export function gatewayCost(amountPaise: number): GatewayCost {
 export const GATEWAY_EFFECTIVE_PERCENT = (GATEWAY_FEE_RATE * (1 + GATEWAY_GST_RATE) * 100);
 
 /**
- * Razorpay's fee holiday: no processing fee on payments until the end of this day (IST), 63 days after it was set up on 11 Oct 2026.
+ * Razorpay's fee holiday: no processing fee on payments until the end of this day (IST), 90 days after the new Razorpay account was set up on 12 Oct 2026.
  * Until then every "gateway cost" in the admin portal counts as Rs 0; from the next day it is counted at 2.36% on each payment.
  * Change this one date if Razorpay changes the offer.
  */
-export const GATEWAY_FEE_FREE_LAST_DAY = "2026-12-13";
+export const GATEWAY_FEE_FREE_LAST_DAY = "2027-01-10";
 /** The moment the fee starts to count: midnight (IST) at the start of the day after the last free day. */
-export const GATEWAY_FEE_STARTS_AT = new Date("2026-12-13T18:30:00.000Z");
+export const GATEWAY_FEE_STARTS_AT = new Date("2027-01-10T18:30:00.000Z");
 
 const IST_OFFSET_MS = 5.5 * 3_600_000;
 const istDay = (d: Date) => Math.floor((d.getTime() + IST_OFFSET_MS) / 86_400_000);
@@ -31,7 +31,7 @@ const istDay = (d: Date) => Math.floor((d.getTime() + IST_OFFSET_MS) / 86_400_00
 export interface GatewayFeeNotice {
   /** True while Razorpay is not charging a fee. */
   freeNow: boolean;
-  /** Whole days from today (IST) to the last free day: 63 on 11 Oct 2026, 0 on the last free day, negative afterwards. */
+  /** Whole days from today (IST) to the last free day: 90 on 12 Oct 2026, 0 on the last free day, negative afterwards. */
   daysLeft: number;
   lastFreeDayLabel: string;
   startsLabel: string;
