@@ -8,7 +8,7 @@ import { getInbox, getThread } from "@/server/messages";
 import { requireAdmin } from "@/server/session";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Messages" };
+export const metadata = { title: "Chats" };
 
 export default async function AdminMessages({ searchParams }: { searchParams: Promise<{ u?: string }> }) {
   const [admin, { u }] = await Promise.all([requireAdmin(), searchParams]);

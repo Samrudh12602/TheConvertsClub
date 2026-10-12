@@ -103,7 +103,7 @@ export const adminPortal: PortalConfig = {
       label: "Overview",
       items: [
         { href: "/admin", label: "Dashboard", title: "Overview", sub: "Dashboard" },
-        { href: "/admin/inbox", label: "Inbox", title: "Inbox", sub: "Everything waiting on you" },
+        { href: "/admin/inbox", label: "Needs you", title: "Needs you", sub: "Your to-do list: calls to make, overdue feedback, applications" },
         { href: "/admin/mailbox", label: "Mailbox", title: "Mailbox", sub: "Read and send email as support, admin or Samrudh" },
         { href: "/admin/analytics", label: "Analytics", title: "Analytics", sub: "Overview" },
       ],
@@ -114,7 +114,7 @@ export const adminPortal: PortalConfig = {
         { href: "/admin/students", label: "Students", title: "Students", sub: "People" },
         { href: "/admin/mentors", label: "Mentors", title: "Mentors", sub: "People" },
         { href: "/admin/applications", label: "Applications", title: "Mentor applications", sub: "People" },
-        { href: "/admin/messages", label: "Messages", title: "Messages", sub: "People" },
+        { href: "/admin/messages", label: "Chats", title: "Chats", sub: "Messages students and mentors send from their own portal" },
       ],
     },
     {
@@ -137,7 +137,7 @@ export const adminPortal: PortalConfig = {
     {
       label: "Ops",
       items: [
-        { href: "/admin/communications", label: "Communications", title: "Communications", sub: "Ops" },
+        { href: "/admin/communications", label: "Broadcasts", title: "Broadcasts", sub: "Send one announcement to all students or mentors" },
         { href: "/admin/content", label: "Content", title: "Site content", sub: "Ops" },
         { href: "/admin/settings", label: "Settings", title: "Settings", sub: "Ops" },
         { href: "/admin/audit", label: "Audit log", title: "Audit log", sub: "Ops" },

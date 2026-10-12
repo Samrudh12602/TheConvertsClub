@@ -10,7 +10,7 @@ import { loadGuidanceRequests } from "@/server/admin-metrics";
 import { requireAdmin } from "@/server/session";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Inbox" };
+export const metadata = { title: "Needs you" };
 
 const ICON = { clock: Clock, calendar: CalendarClock, inbox: Inbox, file: FileText, gift: Gift, message: MessageSquare, alert: AlertTriangle, trash: Trash2 } as const;
 const TONE: Record<string, string> = { oxblood: "bg-oxblood-tint text-oxblood", amber: "bg-gold-tint text-gold-deep", indigo: "bg-indigo-tint text-indigo" };

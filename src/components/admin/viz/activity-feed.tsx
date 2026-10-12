@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { FileCheck2, Mail, ShoppingBag, Undo2, UserPlus } from "lucide-react";
+import { FileCheck2, Mail, MessageSquare, ShoppingBag, Undo2, UserPlus } from "lucide-react";
 import clsx from "clsx";
 import type { ActivityItem } from "@/server/admin-metrics";
 import { TINT, type Tone } from "./palette";
 
 const KIND: Record<ActivityItem["kind"], { icon: typeof Mail; tone: Tone }> = {
-  order: { icon: ShoppingBag, tone: "teal" }, signup: { icon: UserPlus, tone: "indigo" }, mock: { icon: FileCheck2, tone: "gold" }, mail: { icon: Mail, tone: "plum" }, refund: { icon: Undo2, tone: "oxblood" },
+  order: { icon: ShoppingBag, tone: "teal" }, signup: { icon: UserPlus, tone: "indigo" }, mock: { icon: FileCheck2, tone: "gold" }, mail: { icon: Mail, tone: "plum" }, refund: { icon: Undo2, tone: "oxblood" }, contact: { icon: MessageSquare, tone: "oxblood" },
 };
 
 /** "5 min ago", "3 h ago", "2 days ago". */

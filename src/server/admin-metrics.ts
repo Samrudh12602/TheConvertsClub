@@ -118,16 +118,18 @@ export async function loadAudience(db: Client) {
   };
 }
 
-export interface ActivityItem { kind: "order" | "signup" | "mock" | "mail" | "refund"; at: string; title: string; sub: string; href: string }
+export interface ActivityItem { kind: "order" | "signup" | "mock" | "mail" | "refund" | "contact"; at: string; title: string; sub: string; href: string }
 
 /** The newest things that happened on the site, mixed into one timeline. */
 export async function loadActivity(db: Client, take = 12): Promise<ActivityItem[]> {
-  const [orders, users, attempts, mails, refunds] = await Promise.all([
+  const [orders, users, attempts, mails, refunds, contacts] = await Promise.all([
     db.order.findMany({ where: { status: { in: [...REVENUE] } }, orderBy: { createdAt: "desc" }, take: 6, select: { guestName: true, amountPaise: true, createdAt: true, product: { select: { name: true } } } }),
     db.user.findMany({ where: { role: "STUDENT" }, orderBy: { createdAt: "desc" }, take: 6, select: { id: true, name: true, createdAt: true } }),
     db.mockAttempt.findMany({ where: { status: "SUBMITTED" }, orderBy: { submittedAt: "desc" }, take: 6, select: { submittedAt: true, score: true, user: { select: { name: true } }, mock: { select: { title: true } } } }),
     db.sentMail.findMany({ where: { status: "SENT" }, orderBy: { createdAt: "desc" }, take: 4, select: { createdAt: true, subject: true, toAddress: true } }),
     db.refund.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { amountPaise: true, createdAt: true } }),
+    // Messages sent through the Contact page: they arrive as email in the Mailbox.
+    db.emailLog.findMany({ where: { template: "contact_message", status: "SENT" }, orderBy: { createdAt: "desc" }, take: 5, select: { createdAt: true, subject: true } }),
   ]);
   const inr = (p: number) => `₹${Math.round(p / 100).toLocaleString("en-IN")}`;
   const items: ActivityItem[] = [
@@ -135,6 +137,7 @@ export async function loadActivity(db: Client, take = 12): Promise<ActivityItem[
     ...users.map((u) => ({ kind: "signup" as const, at: u.createdAt.toISOString(), title: `${u.name ?? "A student"} joined`, sub: "New student", href: `/admin/students/${u.id}` })),
     ...attempts.filter((a) => a.submittedAt).map((a) => ({ kind: "mock" as const, at: (a.submittedAt as Date).toISOString(), title: `${a.user.name ?? "A student"} finished ${a.mock.title}`, sub: a.score !== null ? `Scored ${a.score.toFixed(1)}` : "Submitted", href: "/admin/mocks" })),
     ...mails.map((m) => ({ kind: "mail" as const, at: m.createdAt.toISOString(), title: `Email sent: ${m.subject}`, sub: `to ${m.toAddress}`, href: "/admin/mailbox?tab=log" })),
+    ...contacts.map((c) => { const m = c.subject.match(/^Contact form: (.*) — (.*)$/); return { kind: "contact" as const, at: c.createdAt.toISOString(), title: `Message from ${m?.[2] ?? "a visitor"}`, sub: m ? `Contact page · ${m[1]}` : "Contact page", href: "/admin/mailbox?tab=mail" }; }),
     ...refunds.map((r) => ({ kind: "refund" as const, at: r.createdAt.toISOString(), title: "Refund issued", sub: inr(r.amountPaise), href: "/admin/finance" })),
   ];
   return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, take);
